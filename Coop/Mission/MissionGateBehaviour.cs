@@ -52,10 +52,10 @@ namespace BloodshedModToolkit.Coop.Mission
 
             if (CoopState.IsHost)
             {
-                // buildIndex <= 0 = 메인 메뉴/로비 씬 — 미션 씬만 처리
-                if (scene.buildIndex <= 0)
+                // "00_" 접두사 = 시스템 씬 (Startup/MainMenu/LoadingScreen) — 미션 아님
+                if (scene.buildIndex <= 0 || scene.name.StartsWith("00_"))
                 {
-                    Plugin.Log.LogInfo("[MissionGate] 메뉴 씬 — MissionStart 생략");
+                    Plugin.Log.LogInfo($"[MissionGate] 시스템 씬 '{scene.name}' — MissionStart 생략");
                     return;
                 }
                 MissionState.GuestReadyMap.Clear();
@@ -66,7 +66,9 @@ namespace BloodshedModToolkit.Coop.Mission
                 return;
             }
 
-            // Guest 경로
+            // Guest 경로 — 시스템 씬은 무시
+            if (scene.buildIndex <= 0 || scene.name.StartsWith("00_")) return;
+
             if (MissionState.Status == MissionStatus.Permitted)
             {
                 MissionState.Status = MissionStatus.Idle;
