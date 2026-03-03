@@ -10,7 +10,8 @@ namespace UnityEngine
     {
         public Object(IntPtr ptr) : base(ptr) { }
         public bool isActiveAndEnabled => false;
-        public static T? FindObjectOfType<T>() where T : Object => null!;
+        public static T?   FindObjectOfType<T>()  where T : Object => null!;
+        public static T[]? FindObjectsOfType<T>() where T : Object => null;
         public static void Destroy(Object obj) { }
     }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using com8com1.SCFPS;
+using Enemies.EnemyAi;
 using BloodshedModToolkit.I18n;
 using BloodshedModToolkit.Tweaks;
 
@@ -341,7 +342,9 @@ namespace BloodshedModToolkit.UI
 
             // PLAYER ────────────────────────────────────────────────────────────
             SectionHeader("PLAYER");
+            float prevHpMult = c.PlayerHpMult;
             c.PlayerHpMult    = SliderRow("HP",    c.PlayerHpMult,    0.10f, 4.00f);
+            if (c.PlayerHpMult != prevHpMult) PS()?.RecalculateStats();
             c.PlayerSpeedMult = SliderRow("Speed", c.PlayerSpeedMult, 0.50f, 3.00f);
 
             // WEAPON ────────────────────────────────────────────────────────────
@@ -353,7 +356,9 @@ namespace BloodshedModToolkit.UI
             // ENEMY ─────────────────────────────────────────────────────────────
             SectionHeader("ENEMY");
             c.EnemyHpMult     = SliderRow("HP",     c.EnemyHpMult,     0.25f, 5.00f);
+            float prevESpd = c.EnemySpeedMult;
             c.EnemySpeedMult  = SliderRow("Speed",  c.EnemySpeedMult,  0.25f, 3.00f);
+            if (c.EnemySpeedMult != prevESpd) RefreshEnemySpeeds();
             c.EnemyDamageMult = SliderRow("Damage", c.EnemyDamageMult, 0.25f, 5.00f);
 
             // SPAWN ─────────────────────────────────────────────────────────────
@@ -431,6 +436,13 @@ namespace BloodshedModToolkit.UI
         }
 
         private void HealFull() => PS()?.RestoreHp(99999f);
+
+        private void RefreshEnemySpeeds()
+        {
+            var enemies = Object.FindObjectsOfType<EnemyAbilityController>();
+            if (enemies == null) return;
+            foreach (var ec in enemies) ec.RefreshAgentSpeed();
+        }
 
         private void ForceLevelUp()
         {

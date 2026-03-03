@@ -1,3 +1,7 @@
+using UnityEngine;
+using com8com1.SCFPS;
+using Enemies.EnemyAi;
+
 namespace BloodshedModToolkit.Tweaks
 {
     public static class TweakState
@@ -10,6 +14,12 @@ namespace BloodshedModToolkit.Tweaks
             ActivePreset = preset;
             Current      = TweakPresets.Get(preset);
             Plugin.Log.LogInfo($"[TweakState] 프리셋 → {preset}");
+
+            // 프리셋 전환 즉시 반영 — 게임 미시작 시에는 null이므로 안전
+            Object.FindObjectOfType<PlayerStats>()?.RecalculateStats();
+            var enemies = Object.FindObjectsOfType<EnemyAbilityController>();
+            if (enemies != null)
+                foreach (var ec in enemies) ec.RefreshAgentSpeed();
         }
 
         public static void Initialize() => Apply(TweakPresetType.Hunter);
