@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# pre-commit hook — 스텁 빌드로 컴파일 에러를 커밋 전에 차단합니다.
+# 설치: scripts/Install-Hooks.ps1 실행
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx}"
+
+echo "[pre-commit] 컴파일 검사 중 (stub 빌드)..."
+
+dotnet build "$REPO_ROOT" -c Release \
+    "-p:UseStubs=true" \
+    "-p:BepInExPath=$BEPINEX_PATH" \
+    --no-incremental \
+    -v minimal
+
+echo "[pre-commit] OK"
+exit 0

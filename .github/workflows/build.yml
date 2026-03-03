@@ -1,4 +1,4 @@
-name: Build
+name: Build Check
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build & Upload Artifact
+    name: Compile Check (Stubs)
     runs-on: windows-latest
 
     steps:
@@ -23,65 +23,27 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # BepInEx 6.x (win_x64) 을 GitHub Releases 에서 다운로드
-      - name: Download BepInEx 6.x
-        id: bepinex
+      # BepInEx 6.x 코어 DLL 다운로드 (BepInEx.Core, 0Harmony, Il2CppInterop 등)
+      # interop/ 폴더는 필요 없음 — 게임 타입은 Stubs/*.cs 로 대체
+      - name: Download BepInEx 6.x core
         shell: pwsh
         run: |
           $releases = Invoke-RestMethod "https://api.github.com/repos/BepInEx/BepInEx/releases"
           $release  = $releases | Where-Object { $_.tag_name -like "v6*" } | Select-Object -First 1
           $asset    = $release.assets | Where-Object { $_.name -match "win[._-]x64" } | Select-Object -First 1
-          Write-Host "Downloading: $($asset.name)"
+          Write-Host "Downloading BepInEx $($release.tag_name): $($asset.name)"
           Invoke-WebRequest $asset.browser_download_url -OutFile bepinex.zip
           Expand-Archive bepinex.zip -DestinationPath bepinex-dl
-          $path = (Resolve-Path "bepinex-dl\BepInEx").Path
-          echo "BEPINEX_PATH=$path" >> $env:GITHUB_ENV
-          Write-Host "BepInEx path: $path"
+          $corePath = (Resolve-Path "bepinex-dl\BepInEx").Path
+          echo "BEPINEX_PATH=$corePath" >> $env:GITHUB_ENV
+          Write-Host "BepInEx core path: $corePath"
 
-      # GAME_LIBS_B64 시크릿 설정 여부 확인
-      # 설정되지 않은 경우 빌드를 건너뛰고 경고만 출력합니다.
-      # 설정 방법: BepInEx/interop/ 폴더를 zip으로 압축 후 base64 인코딩
-      #   PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("interop.zip"))
-      - name: Check game interop secret
-        id: check-secret
-        shell: bash
-        env:
-          SECRET_VALUE: ${{ secrets.GAME_LIBS_B64 }}
-        run: |
-          if [ -n "$SECRET_VALUE" ]; then
-            echo "available=true" >> $GITHUB_OUTPUT
-          else
-            echo "available=false" >> $GITHUB_OUTPUT
-            echo "::warning::GAME_LIBS_B64 secret is not set — build skipped."
-            echo "::warning::See README: Building from Source > CI Setup for instructions."
-          fi
-
-      - name: Install game interop DLLs
-        if: steps.check-secret.outputs.available == 'true'
-        shell: pwsh
-        env:
-          GAME_LIBS_B64: ${{ secrets.GAME_LIBS_B64 }}
-        run: |
-          $bytes = [Convert]::FromBase64String($env:GAME_LIBS_B64)
-          [IO.File]::WriteAllBytes("game_interop.zip", $bytes)
-          $interopPath = "$env:BEPINEX_PATH\interop"
-          New-Item -ItemType Directory -Force -Path $interopPath | Out-Null
-          Expand-Archive game_interop.zip -DestinationPath $interopPath -Force
-          $count = (Get-ChildItem $interopPath -Filter *.dll).Count
-          Write-Host "Installed $count interop DLLs to $interopPath"
-
-      - name: Build
-        if: steps.check-secret.outputs.available == 'true'
+      # UseStubs=true: Stubs/*.cs 로 게임·Unity 타입 대체 (110MB interop 불필요)
+      # 이 빌드의 결과물은 런타임 동작을 보장하지 않음 (컴파일 에러 조기 발견 목적)
+      - name: Build (stub mode)
         shell: pwsh
         run: |
-          dotnet build BloodshedModToolkit.csproj -c Release `
-            /p:BepInExPath="$env:BEPINEX_PATH" `
+          dotnet build -c Release `
+            "-p:UseStubs=true" `
+            "-p:BepInExPath=$env:BEPINEX_PATH" `
             --no-incremental
-
-      - name: Upload artifact
-        if: steps.check-secret.outputs.available == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: BloodshedModToolkit-${{ github.sha }}
-          path: bin/Release/net6.0/BloodshedModToolkit.dll
-          retention-days: 7

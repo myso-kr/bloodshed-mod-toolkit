@@ -10,8 +10,8 @@
     <BepInExPath Condition="'$(BepInExPath)' == ''">$(BEPINEX_PATH)</BepInExPath>
   </PropertyGroup>
 
+  <!-- ── BepInEx Core (항상 참조: CI에서도 GitHub 릴리즈로 다운로드됨) ── -->
   <ItemGroup>
-    <!-- ── BepInEx Core ── -->
     <Reference Include="BepInEx.Core">
       <HintPath>$(BepInExPath)\core\BepInEx.Core.dll</HintPath>
       <Private>false</Private>
@@ -24,14 +24,10 @@
       <HintPath>$(BepInExPath)\core\BepInEx.Unity.Common.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
-    <!-- ── HarmonyX (BepInEx 6 에서는 0Harmony.dll) ── -->
     <Reference Include="0Harmony">
       <HintPath>$(BepInExPath)\core\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
-    <!-- ── Il2CppInterop ── -->
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>$(BepInExPath)\core\Il2CppInterop.Runtime.dll</HintPath>
       <Private>false</Private>
@@ -40,8 +36,6 @@
       <HintPath>$(BepInExPath)\core\Il2CppInterop.HarmonySupport.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
-    <!-- ── MonoMod ── -->
     <Reference Include="MonoMod.Utils">
       <HintPath>$(BepInExPath)\core\MonoMod.Utils.dll</HintPath>
       <Private>false</Private>
@@ -50,8 +44,18 @@
       <HintPath>$(BepInExPath)\core\MonoMod.RuntimeDetour.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
 
-    <!-- ── Il2Cpp 인터롭 어셈블리 (게임 실행 후 생성됨) ── -->
+  <!--
+    ── 인터롭 어셈블리 전략 ──────────────────────────────────────────────────────
+    로컬 개발 (UseStubs != true):  BepInEx/interop/ 의 실제 IL2CPP 래퍼 DLL 참조
+    CI 빌드   (UseStubs == true):  Stubs/*.cs 의 컴파일 전용 스텁 소스 사용
+              → 스텁 빌드 결과물은 런타임에서 동작하지 않음 (컴파일 검증 전용)
+              → 배포 가능한 DLL은 반드시 로컬 빌드로 생성할 것
+  ─────────────────────────────────────────────────────────────────────────── -->
+
+  <!-- 로컬 전용: 게임 실행 후 BepInEx/interop/ 에 자동 생성되는 DLL -->
+  <ItemGroup Condition="'$(UseStubs)' != 'true'">
     <Reference Include="Il2Cppmscorlib">
       <HintPath>$(BepInExPath)\interop\Il2Cppmscorlib.dll</HintPath>
       <Private>false</Private>
@@ -64,8 +68,6 @@
       <HintPath>$(BepInExPath)\interop\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
-    <!-- ── Unity 엔진 인터롭 ── -->
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(BepInExPath)\interop\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
@@ -84,9 +86,12 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Inspector 서브프로젝트는 빌드에서 제외 -->
+  <!-- Inspector는 항상 제외, Stubs는 로컬 빌드 시에만 제외 (CI에서는 SDK 기본 glob으로 포함됨) -->
   <ItemGroup>
     <Compile Remove="Inspector\**" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseStubs)' != 'true'">
+    <Compile Remove="Stubs\**" />
   </ItemGroup>
 
   <!-- 번역 파일을 DLL에 포함 -->
