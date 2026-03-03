@@ -241,6 +241,13 @@ namespace UnityEngine
         public static Quaternion LookRotation(Vector3 forward) => identity;
     }
 
+    // ── Camera ──────────────────────────────────────────────────────────────────
+    public class Camera : Behaviour
+    {
+        public Camera(IntPtr ptr) : base(ptr) { }
+        public static Camera? main => null;
+    }
+
     // ── Shader ──────────────────────────────────────────────────────────────────
     public class Shader : Object
     {

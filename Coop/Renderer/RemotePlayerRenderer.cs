@@ -14,6 +14,7 @@ namespace BloodshedModToolkit.Coop.Renderer
 
         private readonly Dictionary<ulong, GameObject> _avatars = new();
         private readonly Dictionary<ulong, Vector3>    _lastPos = new();
+        private readonly Dictionary<ulong, Transform>  _labels  = new();
         private ulong _localId;
 
         private static readonly Color BotColor  = new(0f, 1f, 1f);      // 시안
@@ -51,6 +52,12 @@ namespace BloodshedModToolkit.Coop.Renderer
                 if (!_avatars.ContainsKey(id)) CreateAvatar(id, pkt);
                 else UpdateAvatar(id, pkt);
             }
+
+            // 레이블 빌보드 — 항상 카메라 정방향으로 회전
+            var cam = Camera.main;
+            if (cam != null)
+                foreach (var (_, labelTr) in _labels)
+                    if (labelTr != null) labelTr.rotation = cam.transform.rotation;
         }
 
         private void CreateAvatar(ulong id, Net.PlayerStatePacket pkt)
@@ -76,9 +83,8 @@ namespace BloodshedModToolkit.Coop.Renderer
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(go.transform);
             labelGo.transform.localPosition = new Vector3(0f, 1.2f, 0f);
-            // 고해상도 렌더링(fontSize=96) + 스케일 다운(0.0625)으로 선명도 확보
-            // 시각 크기 = 96 * 0.0625 = 6 상당, 해상도는 16배
-            labelGo.transform.localScale = new Vector3(0.0625f, 0.0625f, 0.0625f);
+            // 고해상도 렌더링(fontSize=96) + 스케일 다운(0.03125)으로 선명도 확보
+            labelGo.transform.localScale = new Vector3(0.03125f, 0.03125f, 0.03125f);
             var tm = labelGo.AddComponent<TextMesh>();
             if (tm != null)
             {
@@ -90,6 +96,7 @@ namespace BloodshedModToolkit.Coop.Renderer
 
             _avatars[id] = go;
             _lastPos[id] = go.transform.position;
+            _labels[id]  = labelGo.transform;
             Plugin.Log.LogInfo($"[Renderer] 아바타 생성: {go.name}");
         }
 
@@ -116,7 +123,7 @@ namespace BloodshedModToolkit.Coop.Renderer
         private void DestroyAvatar(ulong id)
         {
             if (_avatars.TryGetValue(id, out var go) && go != null) UnityEngine.Object.Destroy(go);
-            _avatars.Remove(id); _lastPos.Remove(id);
+            _avatars.Remove(id); _lastPos.Remove(id); _labels.Remove(id);
         }
 
         private static string GetName(ulong id)
