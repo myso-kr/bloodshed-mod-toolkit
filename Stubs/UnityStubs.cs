@@ -104,6 +104,11 @@ namespace UnityEngine
         public static bool GetKey(KeyCode key)     => false;
     }
 
+    public static class GUIUtility
+    {
+        public static string systemCopyBuffer { get; set; } = "";
+    }
+
     public enum KeyCode
     {
         None = 0,

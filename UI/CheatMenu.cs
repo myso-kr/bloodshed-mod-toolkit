@@ -433,8 +433,18 @@ namespace BloodshedModToolkit.UI
 
                 GUILayout.Space(4);
                 SectionHeader("JOIN");
+                // GUILayout.TextField 는 이 게임의 IL2CPP 빌드에서 strip 됨 →
+                // 클립보드 붙여넣기 방식으로 대체합니다.
                 GUILayout.Label("로비 ID (Steam Lobby ID):", _stSliderName!);
-                _lobbyIdInput = GUILayout.TextField(_lobbyIdInput);
+                GUILayout.Label(
+                    _lobbyIdInput.Length > 0 ? _lobbyIdInput : "(비어있음)",
+                    _stSliderValue!);
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("클립보드에서 붙여넣기", _stActionBtn!))
+                    _lobbyIdInput = GUIUtility.systemCopyBuffer?.Trim() ?? "";
+                if (_lobbyIdInput.Length > 0 && GUILayout.Button("지우기", _stResetBtn!))
+                    _lobbyIdInput = "";
+                GUILayout.EndHorizontal();
                 if (GUILayout.Button("참가", _stActionBtn!))
                 {
                     if (ulong.TryParse(_lobbyIdInput.Trim(), out var rawId))
