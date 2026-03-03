@@ -17,6 +17,7 @@ namespace BloodshedModToolkit.Coop.Mission
             Instance = this;
             _onSceneLoaded = OnSceneLoaded;
             SceneManager.sceneLoaded += _onSceneLoaded;
+            Plugin.Log.LogInfo("[MissionGate] 초기화 완료 — sceneLoaded 구독");
         }
 
         void OnDestroy()
@@ -29,36 +30,54 @@ namespace BloodshedModToolkit.Coop.Mission
         void Update()
         {
             if (MissionState.Status != MissionStatus.ReadyUp) return;
+            float prev = MissionState.ReadyCountdown;
             MissionState.ReadyCountdown -= Time.deltaTime;
+            // 5초 단위로 카운트다운 로그
+            if ((int)prev != (int)MissionState.ReadyCountdown
+                && (int)MissionState.ReadyCountdown % 5 == 0)
+                Plugin.Log.LogInfo($"[MissionGate] Ready-Up 카운트다운: {(int)MissionState.ReadyCountdown}초");
             if (MissionState.ReadyCountdown <= 0f)
                 Sync.MissionSyncHandler.OnGuestReady();
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            // 씬 전환은 항상 로그 (Co-op 미사용 시에도 개발 중 추적용)
+            Plugin.Log.LogInfo(
+                $"[MissionGate] 씬 로드: '{scene.name}' (idx={scene.buildIndex})" +
+                $" | Enabled={CoopState.IsEnabled} Host={CoopState.IsHost}" +
+                $" Connected={CoopState.IsConnected} Peers={CoopState.Peers.Count}");
+
             if (!CoopState.IsEnabled) return;
 
-            if (CoopState.IsHost && CoopState.IsConnected)
+            if (CoopState.IsHost)
             {
-                // buildIndex 0 = 메인 메뉴/로비 씬 — 미션 씬만 브로드캐스트
-                if (scene.buildIndex <= 0) return;
+                // buildIndex <= 0 = 메인 메뉴/로비 씬 — 미션 씬만 처리
+                if (scene.buildIndex <= 0)
+                {
+                    Plugin.Log.LogInfo("[MissionGate] 메뉴 씬 — MissionStart 생략");
+                    return;
+                }
                 MissionState.GuestReadyMap.Clear();
+                Plugin.Log.LogInfo(
+                    $"[MissionGate] Host 미션 진입: '{scene.name}'" +
+                    $" — 게스트 {CoopState.Peers.Count}명에게 알림");
                 Events.EventBridge.OnMissionStart(scene.name, scene.buildIndex);
                 return;
             }
 
-            if (!CoopState.IsHost)
+            // Guest 경로
+            if (MissionState.Status == MissionStatus.Permitted)
             {
-                if (MissionState.Status == MissionStatus.Permitted)
-                {
-                    MissionState.Status = MissionStatus.Idle;
-                }
-                else
-                {
-                    MissionState.Status            = MissionStatus.WaitingForHost;
-                    MissionState.PendingSceneName  = scene.name;
-                    MissionState.PendingBuildIndex = scene.buildIndex;
-                }
+                MissionState.Status = MissionStatus.Idle;
+                Plugin.Log.LogInfo($"[MissionGate] 허가된 씬 진입 완료 '{scene.name}' — 상태 Idle");
+            }
+            else
+            {
+                MissionState.Status            = MissionStatus.WaitingForHost;
+                MissionState.PendingSceneName  = scene.name;
+                MissionState.PendingBuildIndex = scene.buildIndex;
+                Plugin.Log.LogInfo($"[MissionGate] Guest 독립 씬 진입 — WaitingForHost: '{scene.name}'");
             }
         }
     }

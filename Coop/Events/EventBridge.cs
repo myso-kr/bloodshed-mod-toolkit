@@ -70,9 +70,14 @@ namespace BloodshedModToolkit.Coop.Events
 
         public static void OnMissionStart(string sceneName, int buildIndex)
         {
-            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            if (!CoopState.IsHost) return;
+            if (!CoopState.IsConnected || Net == null)
+            {
+                Plugin.Log.LogInfo($"[EventBridge] MissionStart: '{sceneName}' — 연결된 게스트 없음 (브로드캐스트 생략)");
+                return;
+            }
             Net.BroadcastReliable(MissionStartPacket.Encode(sceneName, buildIndex));
-            Plugin.Log.LogInfo($"[EventBridge] MissionStart 브로드캐스트: {sceneName} (idx={buildIndex})");
+            Plugin.Log.LogInfo($"[EventBridge] MissionStart 브로드캐스트: '{sceneName}' (idx={buildIndex}) → {CoopState.Peers.Count}명");
         }
     }
 }
