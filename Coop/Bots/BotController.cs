@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using BloodshedModToolkit.Coop.Net;
 
@@ -6,7 +7,13 @@ namespace BloodshedModToolkit.Coop.Bots
 {
     public enum BotAiState { Wander, Chase, Attack }
 
-    /// <summary>순수 C# AI 로직 (MonoBehaviour 아님). 장애물 회피는 BotPhysicsBody Whisker에 위임.</summary>
+    /// <summary>
+    /// 순수 C# AI 로직. 이동 실행은 BotPhysicsBody에 위임.
+    ///
+    /// 경로탐색 우선순위:
+    ///   1순위: NavGrid.FindPath (A*) — 항아리·미로 지형 탈출 포함
+    ///   2순위: Reynolds Wander / 직진 Chase (NavGrid 미스캔 시 폴백)
+    /// </summary>
     public class BotController
     {
         public ulong   BotId;
@@ -16,25 +23,37 @@ namespace BloodshedModToolkit.Coop.Bots
         public int     Level = 1;
         public float   Experience = 0f, ExperienceCap = 100f;
 
-        public WeaponClass WeaponClass   = WeaponClass.Melee;
-        public BotAiState  AiState       = BotAiState.Wander;
+        public WeaponClass WeaponClass    = WeaponClass.Melee;
+        public BotAiState  AiState        = BotAiState.Wander;
         public Vector3     DesiredMoveDir = Vector3.zero;
-        public bool        ShouldAttack  = false;
+        public bool        ShouldAttack   = false;
         private float      _attackCooldown = 0f;
 
-        // ── Reynolds Wander 상태 ──────────────────────────────────────────────
+        // ── 내비게이션 ────────────────────────────────────────────────────────
         private static readonly System.Random _rng = new();
-        private float   _wanderAngle = 0f;  // 윈더 원 위의 현재 각도 (rad)
-        private float   _heading     = 0f;  // 현재 진행 방위각 (atan2)
-        private Vector3 _lastPos;           // 막힘 감지용 이전 위치
-        private float   _stuckTimer  = 0f;
-        private bool    _isInAttack  = false; // 상태 히스테리시스 플래그
 
-        private const float WanderJitter       = 1.8f; // rad/s — 각도 지터량
-        private const float WanderCircleDist   = 2.5f; // 전방 원 중심 투영 거리 (m)
-        private const float WanderCircleRadius = 1.5f; // 윈더 원 반경 (m)
-        private const float WanderLeashRadius  = 7f;   // 플레이어 이탈 한계 (m)
-        private const float FormationDeadzone  = 0.8f; // 이 이내면 정지 (m)
+        // A* 경로 추종 상태
+        private List<Vector3>? _path;
+        private int     _pathIdx;
+        private Vector3 _pathTarget;        // 마지막 경로 계산 목표 위치
+        private float   _wanderPathTimer = 0f; // Wander 목표 갱신 타이머
+
+        // Reynolds Wander 폴백 상태
+        private float   _wanderAngle = 0f;
+        private float   _heading     = 0f;
+
+        // 막힘 감지
+        private Vector3 _lastPos;
+        private float   _stuckTimer  = 0f;
+        private bool    _isInAttack  = false; // 히스테리시스 플래그
+
+        private const float WanderPathInterval  = 4f;   // Wander 목표 갱신 주기 (초)
+        private const float WanderJitter        = 1.8f; // Reynolds wander 각도 지터 (rad/s)
+        private const float WanderCircleDist    = 2.5f;
+        private const float WanderCircleRadius  = 1.5f;
+        private const float WanderLeashRadius   = 7f;   // 플레이어 이탈 한계 (m)
+        private const float FormationDeadzone   = 0.8f;
+        private const float WaypointReachRadius = 1.5f; // 웨이포인트 도달 반경 (m)
 
         // ── WeaponClass별 전투 파라미터 ───────────────────────────────────────
         private float AttackRange => WeaponClass switch {
@@ -45,7 +64,6 @@ namespace BloodshedModToolkit.Coop.Bots
             _                    => 4.0f,
         };
         // 감지 반경: 공격 사거리 × 2.5 + 4m, 상한 22m
-        // Melee≈9m / Pistol≈22m / Rifle·Launcher=22m (비례 상한)
         private float ChaseRange => Math.Min(AttackRange * 2.5f + 4f, 22f);
         private float AttackCooldownVal => WeaponClass switch {
             WeaponClass.Melee    => 0.8f,
@@ -61,7 +79,6 @@ namespace BloodshedModToolkit.Coop.Bots
             BotId    = BotState.BotSteamIds[index];
             Position = spawnPos;
             _lastPos = spawnPos;
-            // 봇별 등간격 초기 방향 — 사주경계 분산
             int total = Math.Max(1, BotState.Count);
             _heading     = (float)(2.0 * Math.PI * index / total);
             _wanderAngle = _heading;
@@ -73,15 +90,14 @@ namespace BloodshedModToolkit.Coop.Bots
             if (_attackCooldown > 0f) _attackCooldown -= dt;
 
             // ── 상태 전환 (히스테리시스 밴드) ─────────────────────────────
-            // AttackRange 진입 → Attack, 이탈 후에도 ×1.6 이내면 Attack 유지
             if (enemyDist <= AttackRange)
             {
-                AiState = BotAiState.Attack;
+                AiState     = BotAiState.Attack;
                 _isInAttack = true;
             }
             else if (_isInAttack && enemyDist <= AttackRange * 1.6f)
             {
-                AiState = BotAiState.Attack; // 히스테리시스 존
+                AiState = BotAiState.Attack; // 히스테리시스 존: 빠른 진동 방지
             }
             else
             {
@@ -96,13 +112,16 @@ namespace BloodshedModToolkit.Coop.Bots
                 case BotAiState.Attack: DoAttack();               break;
             }
 
-            // ── 막힘 감지: 0.8초 내 0.35m 미만 이동 → 90° 방향 전환 ──────
+            // ── 막힘 감지: 0.8초 이내 0.35m 미만 이동 → 경로 무효화 ──────
             _stuckTimer += dt;
             if (_stuckTimer >= 0.8f)
             {
                 float sx = Position.x - _lastPos.x, sz = Position.z - _lastPos.z;
                 if (AiState != BotAiState.Attack && sx * sx + sz * sz < 0.12f)
+                {
+                    _path        = null; // A* 재계획 강제
                     _wanderAngle += (float)Math.PI * 0.5f * (_rng.NextDouble() > 0.5 ? 1 : -1);
+                }
                 _lastPos    = Position;
                 _stuckTimer = 0f;
             }
@@ -112,27 +131,62 @@ namespace BloodshedModToolkit.Coop.Bots
             if (dx * dx + dz * dz > (WanderLeashRadius * 3f) * (WanderLeashRadius * 3f))
             {
                 Position     = centerPos;
+                _path        = null;
                 _heading     = (float)(2.0 * Math.PI * BotIndex / Math.Max(1, BotState.Count));
                 _wanderAngle = _heading;
             }
         }
 
-        // ── Reynolds Wander ─────────────────────────────────────────────────
-        // 전방 투영 원 위의 목표점을 매 틱 조금씩 이동 → 자연스러운 랜덤 순찰
+        // ── Chase: A* 경로 → 직진 폴백 ──────────────────────────────────────
+        private void DoChase(Vector3 enemyPos)
+        {
+            // 적이 3m 이상 이동했거나 경로가 없으면 재계획
+            float ex = enemyPos.x - _pathTarget.x, ez = enemyPos.z - _pathTarget.z;
+            if (_path == null || ex * ex + ez * ez > 9f)
+            {
+                _path       = NavGrid.FindPath(Position, enemyPos);
+                _pathIdx    = 0;
+                _pathTarget = enemyPos;
+            }
+
+            if (FollowPath()) return;
+
+            // 폴백: 직진 (NavGrid 미스캔 또는 경로 없음)
+            var diff = new Vector3(enemyPos.x - Position.x, 0f, enemyPos.z - Position.z);
+            float len = (float)Math.Sqrt(diff.x * diff.x + diff.z * diff.z);
+            if (len > 0.01f) { DesiredMoveDir = new Vector3(diff.x / len, 0f, diff.z / len); UpdateHeading(); }
+            else DesiredMoveDir = Vector3.zero;
+        }
+
+        // ── Wander: A* 랜덤 목표 → Reynolds Wander 폴백 ────────────────────
         private void DoWander(float dt, Vector3 centerPos)
         {
+            _wanderPathTimer -= dt;
+            bool pathDone = _path == null || _pathIdx >= _path.Count;
+
+            if (pathDone || _wanderPathTimer <= 0f)
+            {
+                var dest = NavGrid.GetRandomWalkableNear(centerPos, WanderLeashRadius);
+                if (dest.HasValue)
+                {
+                    _path            = NavGrid.FindPath(Position, dest.Value);
+                    _pathIdx         = 0;
+                    _pathTarget      = dest.Value;
+                    _wanderPathTimer = WanderPathInterval;
+                }
+            }
+
+            if (FollowPath()) return;
+
+            // 폴백: Reynolds Wander (NavGrid 미스캔 시)
             _wanderAngle += (float)(_rng.NextDouble() * 2.0 - 1.0) * WanderJitter * dt;
 
-            // 현재 heading 방향으로 WanderCircleDist만큼 투영한 원 중심
             float fwdX = (float)Math.Cos(_heading) * WanderCircleDist;
             float fwdZ = (float)Math.Sin(_heading) * WanderCircleDist;
+            float wx   = Position.x + fwdX + (float)Math.Cos(_wanderAngle) * WanderCircleRadius;
+            float wz   = Position.z + fwdZ + (float)Math.Sin(_wanderAngle) * WanderCircleRadius;
 
-            // 원 위의 목표 점
-            float wx = Position.x + fwdX + (float)Math.Cos(_wanderAngle) * WanderCircleRadius;
-            float wz = Position.z + fwdZ + (float)Math.Sin(_wanderAngle) * WanderCircleRadius;
-
-            // Leash 초과 시 플레이어 방향으로 목표 당김
-            float pdx = wx - centerPos.x, pdz = wz - centerPos.z;
+            float pdx   = wx - centerPos.x, pdz = wz - centerPos.z;
             float pdist = (float)Math.Sqrt(pdx * pdx + pdz * pdz);
             if (pdist > WanderLeashRadius)
             {
@@ -142,31 +196,10 @@ namespace BloodshedModToolkit.Coop.Bots
             }
 
             float ddx = wx - Position.x, ddz = wz - Position.z;
-            float len  = (float)Math.Sqrt(ddx * ddx + ddz * ddz);
-            if (len > FormationDeadzone)
-            {
-                DesiredMoveDir = new Vector3(ddx / len, 0f, ddz / len);
-                UpdateHeading();
-            }
-            else
-            {
-                DesiredMoveDir = Vector3.zero;
-            }
-        }
-
-        private void DoChase(Vector3 enemyPos)
-        {
-            var diff  = new Vector3(enemyPos.x - Position.x, 0f, enemyPos.z - Position.z);
-            float len = (float)Math.Sqrt(diff.x * diff.x + diff.z * diff.z);
-            if (len > 0.01f)
-            {
-                DesiredMoveDir = new Vector3(diff.x / len, 0f, diff.z / len);
-                UpdateHeading();
-            }
-            else
-            {
-                DesiredMoveDir = Vector3.zero;
-            }
+            float dlen = (float)Math.Sqrt(ddx * ddx + ddz * ddz);
+            if (dlen > FormationDeadzone)
+            { DesiredMoveDir = new Vector3(ddx / dlen, 0f, ddz / dlen); UpdateHeading(); }
+            else DesiredMoveDir = Vector3.zero;
         }
 
         private void DoAttack()
@@ -175,7 +208,34 @@ namespace BloodshedModToolkit.Coop.Bots
             if (_attackCooldown <= 0f) { ShouldAttack = true; _attackCooldown = AttackCooldownVal; }
         }
 
-        // 이동 방향에서 heading(방위각) 갱신
+        // A* 경로 추종. 다음 웨이포인트 방향으로 이동, 경로 완료 시 false 반환
+        private bool FollowPath()
+        {
+            if (_path == null || _pathIdx >= _path.Count) return false;
+
+            var   wp      = _path[_pathIdx];
+            float dx      = wp.x - Position.x, dz = wp.z - Position.z;
+            float distSq  = dx * dx + dz * dz;
+
+            // 웨이포인트 도달 → 다음으로 진행
+            if (distSq < WaypointReachRadius * WaypointReachRadius)
+            {
+                _pathIdx++;
+                if (_pathIdx >= _path.Count) return false;
+                wp   = _path[_pathIdx];
+                dx   = wp.x - Position.x;
+                dz   = wp.z - Position.z;
+                distSq = dx * dx + dz * dz;
+            }
+
+            float len = (float)Math.Sqrt(distSq);
+            if (len < 0.01f) return false;
+
+            DesiredMoveDir = new Vector3(dx / len, 0f, dz / len);
+            UpdateHeading();
+            return true;
+        }
+
         private void UpdateHeading()
         {
             if (DesiredMoveDir.x != 0f || DesiredMoveDir.z != 0f)

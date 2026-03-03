@@ -14,8 +14,10 @@ namespace BloodshedModToolkit.Coop.Bots
         public static BotManager? Instance { get; private set; }
 
         private readonly List<BotController> _bots = new();
-        private const float TickInterval = 0.05f;  // 20 Hz
+        private const float TickInterval  = 0.05f;  // 20 Hz
+        private const float ScanCooldown  = 30f;    // 재스캔 최소 간격 (초)
         private float _tickTimer;
+        private float _scanCooldown = 0f;
 
         void Awake() { Instance = this; BotState.AssignWeaponClasses(); Plugin.Log.LogInfo("[BotManager] loaded"); }
         void OnDestroy() { RemoveAll(); Instance = null; }
@@ -29,6 +31,14 @@ namespace BloodshedModToolkit.Coop.Bots
 
             // 로컬 플레이어 위치가 아직 0이면 스폰 보류 (메인메뉴 대비)
             if (localPos.x == 0f && localPos.y == 0f && localPos.z == 0f) return;
+
+            // NavGrid 스캔: 최초 or 플레이어 25m 이상 이동 시, 30초 쿨다운
+            if (_scanCooldown > 0f) _scanCooldown -= Time.deltaTime;
+            else if (NavGrid.NeedsRescan(localPos))
+            {
+                NavGrid.Scan(localPos);
+                _scanCooldown = ScanCooldown;
+            }
 
             SyncCount(desired, localPos);
 
