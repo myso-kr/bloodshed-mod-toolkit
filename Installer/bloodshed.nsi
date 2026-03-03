@@ -2,7 +2,7 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.64"
+!define VERSION    "1.0.65"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
 
 Name    "${APPNAME} v${VERSION}"
@@ -23,11 +23,12 @@ Var GamePath
 Var DoInstallBepInEx
 Var DoInstallModDll
 
-Section "" SectionEnd
-
 Page custom MainPage MainPageLeave
 
-; ── .onInit ───────────────────────────────────────────────────────────────────
+Section ""
+SectionEnd
+
+; - .onInit -
 Function .onInit
     SetOutPath $PLUGINSDIR
     File "..\bin\Release\net6.0\BloodshedModToolkit.dll"
@@ -35,56 +36,53 @@ Function .onInit
     Call DetectGamePath
 FunctionEnd
 
-; ── DetectGamePath ────────────────────────────────────────────────────────────
+; - DetectGamePath -
+; NSIS 네이티브 레지스트리 조회로 Bloodshed 설치 경로를 자동 탐지합니다.
+; 1) HKCU Steam SteamPath
+; 2) HKLM Wow6432Node Steam InstallPath
+; 3) 기본 경로 두 곳 순서로 시도합니다.
 Function DetectGamePath
     StrCpy $GamePath ""
 
-    ; Write PowerShell script to temp
-    FileOpen $0 "$TEMP\bmti_detect.ps1" w
-    FileWrite $0 '$steamReg = "HKCU:\SOFTWARE\Valve\Steam"$\n'
-    FileWrite $0 'try { $steamPath = (Get-ItemProperty $steamReg).SteamPath } catch { $steamPath = "" }$\n'
-    FileWrite $0 '$candidates = @()$\n'
-    FileWrite $0 'if ($steamPath) {$\n'
-    FileWrite $0 '    $vdf = Join-Path $steamPath "steamapps\libraryfolders.vdf"$\n'
-    FileWrite $0 '    if (Test-Path $vdf) {$\n'
-    FileWrite $0 '        $lines = Get-Content $vdf$\n'
-    FileWrite $0 '        foreach ($line in $lines) {$\n'
-    FileWrite $0 '            if ($line -match ''\"path\"\s+\"([^\"]+)\"'') {$\n'
-    FileWrite $0 '                $candidates += $Matches[1]$\n'
-    FileWrite $0 '            }$\n'
-    FileWrite $0 '        }$\n'
-    FileWrite $0 '    }$\n'
-    FileWrite $0 '    $candidates += $steamPath$\n'
-    FileWrite $0 '}$\n'
-    FileWrite $0 '$candidates += "C:\Program Files (x86)\Steam"$\n'
-    FileWrite $0 '$candidates += "C:\Program Files\Steam"$\n'
-    FileWrite $0 'foreach ($lib in $candidates) {$\n'
-    FileWrite $0 '    $p = Join-Path $lib "steamapps\common\Bloodshed\Bloodshed.exe"$\n'
-    FileWrite $0 '    if (Test-Path $p) {$\n'
-    FileWrite $0 '        Write-Output (Split-Path (Split-Path $p))$\n'
-    FileWrite $0 '        exit 0$\n'
-    FileWrite $0 '    }$\n'
-    FileWrite $0 '}$\n'
-    FileWrite $0 'Write-Output ""$\n'
-    FileClose $0
+    ; 1. HKCU (일반 Steam 설치)
+    ReadRegStr $0 HKCU "SOFTWARE\Valve\Steam" "SteamPath"
+    ${If} $0 != ""
+        StrCpy $1 "$0\steamapps\common\Bloodshed"
+        IfFileExists "$1\Bloodshed.exe" 0 +3
+            StrCpy $GamePath $1
+            Goto DetectDone
+    ${EndIf}
 
-    nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -File "$TEMP\bmti_detect.ps1"'
-    Pop $0   ; exit code
-    Pop $1   ; stdout
-    Delete "$TEMP\bmti_detect.ps1"
+    ; 2. HKLM Wow6432Node (64비트 OS 32비트 Steam)
+    ReadRegStr $0 HKLM "SOFTWARE\Wow6432Node\Valve\Steam" "InstallPath"
+    ${If} $0 != ""
+        StrCpy $1 "$0\steamapps\common\Bloodshed"
+        IfFileExists "$1\Bloodshed.exe" 0 +3
+            StrCpy $GamePath $1
+            Goto DetectDone
+    ${EndIf}
 
-    ; Trim trailing newline/CR
-    ${StrTrimNewLines} $1 $1
-    StrCpy $GamePath $1
+    ; 3. 기본 경로 폴백
+    StrCpy $1 "C:\Program Files (x86)\Steam\steamapps\common\Bloodshed"
+    IfFileExists "$1\Bloodshed.exe" 0 +3
+        StrCpy $GamePath $1
+        Goto DetectDone
+
+    StrCpy $1 "C:\Program Files\Steam\steamapps\common\Bloodshed"
+    IfFileExists "$1\Bloodshed.exe" 0 +3
+        StrCpy $GamePath $1
+        Goto DetectDone
+
+    DetectDone:
 FunctionEnd
 
-; ── MainPage ──────────────────────────────────────────────────────────────────
+; - MainPage -
 Function MainPage
     nsDialogs::Create 1018
     Pop $0
 
     ; Title
-    ${NSD_CreateLabel} 0 0 100% 12u "${APPNAME} v${VERSION} — Installer"
+    ${NSD_CreateLabel} 0 0 100% 12u "${APPNAME} v${VERSION} - Installer"
     Pop $0
     CreateFont $1 "$(^Font)" 9 700
     SendMessage $0 ${WM_SETFONT} $1 1
@@ -111,7 +109,7 @@ Function MainPage
     Pop $0
 
     ; BepInEx checkbox
-    ${NSD_CreateCheckBox} 0 43u 100% 12u "Install BepInEx 6.x (IL2CPP) — required mod loader"
+    ${NSD_CreateCheckBox} 0 43u 100% 12u "Install BepInEx 6.x (IL2CPP) - required mod loader"
     Pop $hBepInExChk
     ${NSD_SetState} $hBepInExChk ${BST_CHECKED}
 
@@ -144,7 +142,7 @@ Function MainPage
     nsDialogs::Show
 FunctionEnd
 
-; ── BrowseClicked ─────────────────────────────────────────────────────────────
+; - BrowseClicked -
 Function BrowseClicked
     nsDialogs::SelectFolderDialog "Select Bloodshed game folder" "$GamePath"
     Pop $0
@@ -153,17 +151,17 @@ Function BrowseClicked
     ${EndIf}
 FunctionEnd
 
-; ── Macro: update progress bar ────────────────────────────────────────────────
+; - Macro: update progress bar -
 !macro SetProgress val
     SendMessage $hProgress 0x402 ${val} 0
 !macroend
 
-; ── Macro: update status text ─────────────────────────────────────────────────
+; - Macro: update status text -
 !macro SetStatus txt
     SendMessage $hStatus ${WM_SETTEXT} 0 "STR:${txt}"
 !macroend
 
-; ── MainPageLeave (Install clicked) ───────────────────────────────────────────
+; - MainPageLeave (Install clicked) -
 Function MainPageLeave
     ; 1. Collect form values
     ${NSD_GetText}  $hPathText  $GamePath
@@ -189,23 +187,23 @@ Function MainPageLeave
     EnableWindow $hPathText   0
     EnableWindow $hBrowseBtn  0
 
-    ; ── 4. BepInEx ────────────────────────────────────────────────────────────
+    ; - 4. BepInEx -
     ${If} $DoInstallBepInEx == ${BST_CHECKED}
         !insertmacro SetStatus "Checking BepInEx..."
 
         IfFileExists "$GamePath\BepInEx\core\*.*" BepInExAlreadyInstalled 0
 
         !insertmacro SetStatus "Downloading BepInEx..."
-        inetc::get /CAPTION "Downloading BepInEx 6.x (IL2CPP)..." \
-            "${BEPINEX_URL}" "$TEMP\bepinex_bmti.zip" /END
+        nsExec::ExecToStack "powershell -NoProfile -ExecutionPolicy Bypass -Command $\"Invoke-WebRequest -Uri '${BEPINEX_URL}' -OutFile '$TEMP\bepinex_bmti.zip' -UseBasicParsing$\""
         Pop $0
-        ${If} $0 != "OK"
-            MessageBox MB_OK|MB_ICONEXCLAMATION "BepInEx download failed: $0$\nCheck your internet connection and try again."
+        Pop $1
+        ${If} $0 != 0
+            MessageBox MB_OK|MB_ICONEXCLAMATION "BepInEx download failed (exit $0):$\n$1$\nCheck your internet connection and try again."
             Abort
         ${EndIf}
 
         !insertmacro SetStatus "Extracting BepInEx..."
-        nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -LiteralPath \"$TEMP\bepinex_bmti.zip\" -DestinationPath \"$GamePath\" -Force"'
+        nsExec::ExecToStack "powershell -NoProfile -ExecutionPolicy Bypass -Command $\"Expand-Archive -LiteralPath '$TEMP\bepinex_bmti.zip' -DestinationPath '$GamePath' -Force$\""
         Pop $0
         Pop $1
         ${If} $0 != 0
@@ -218,13 +216,13 @@ Function MainPageLeave
         Goto BepInExDone
 
         BepInExAlreadyInstalled:
-        !insertmacro SetStatus "BepInEx already installed — skipped."
+        !insertmacro SetStatus "BepInEx already installed - skipped."
         !insertmacro SetProgress 80
 
         BepInExDone:
     ${EndIf}
 
-    ; ── 5. Mod DLL ────────────────────────────────────────────────────────────
+    ; - 5. Mod DLL -
     ${If} $DoInstallModDll == ${BST_CHECKED}
         !insertmacro SetStatus "Installing mod DLL..."
         CreateDirectory "$GamePath\BepInEx\plugins"
@@ -232,7 +230,7 @@ Function MainPageLeave
         !insertmacro SetProgress 90
     ${EndIf}
 
-    ; ── 6. Done ───────────────────────────────────────────────────────────────
+    ; - 6. Done -
     !insertmacro SetProgress 100
     !insertmacro SetStatus "Installation complete!"
 
