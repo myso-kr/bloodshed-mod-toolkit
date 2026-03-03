@@ -80,7 +80,7 @@ namespace BloodshedModToolkit.Coop.Renderer
             if (tm != null)
             {
                 tm.text     = go.name;
-                tm.fontSize = 24;
+                tm.fontSize = 6;
                 tm.anchor   = TextAnchor.LowerCenter;
                 tm.color    = BotState.IsBot(id) ? BotColor : PeerColor;
             }
