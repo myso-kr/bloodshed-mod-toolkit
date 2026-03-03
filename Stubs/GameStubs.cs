@@ -29,6 +29,7 @@ namespace com8com1.SCFPS
         public float Attraction      { get; set; }
         public int   LevelUpAway     { get; set; }
         public int   revivals        { get; set; }
+        public int   level           { get; set; }
 
         public void SetMoney(float amount)     { }
         public void RestoreHp(float amount)    { }
@@ -36,6 +37,7 @@ namespace com8com1.SCFPS
         public void SetRevivals(int count)     { }
         public void TakeDamage(float damage, GameObject instigator) { }
         public void RecalculateStats()         { }
+        public void LevelUpChecker()           { }
     }
 
     public class ShotAction : MonoBehaviour
@@ -85,7 +87,15 @@ namespace com8com1.SCFPS
     public class SpawnProcessor : MonoBehaviour
     {
         public SpawnProcessor(IntPtr ptr) : base(ptr) { }
+        public int currentWaveIndex { get; set; }
         public int GetMaxEnemyCount() => 0;
+        public void NextWave()            { }
+        public void StartNewWaveGroup()   { }
+    }
+
+    public class EnemyIdentityCard : MonoBehaviour
+    {
+        public EnemyIdentityCard(IntPtr ptr) : base(ptr) { }
     }
 
     public class SpawnDirector : MonoBehaviour

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Steamworks;
+using com8com1.SCFPS;
+using BloodshedModToolkit.Coop.Events;
 
 namespace BloodshedModToolkit.Coop.Net
 {
@@ -48,8 +50,14 @@ namespace BloodshedModToolkit.Coop.Net
             _cbP2PFail       = Callback<P2PSessionConnectFail_t>.Create(onFail);
             _cbJoinRequested = Callback<GameLobbyJoinRequested_t>.Create(onJoin);
 
-            Router.Register(PacketType.Handshake, HandleHandshake);
-            Router.Register(PacketType.Heartbeat, HandleHeartbeat);
+            Router.Register(PacketType.Handshake,     HandleHandshake);
+            Router.Register(PacketType.Heartbeat,     HandleHeartbeat);
+            Router.Register(PacketType.EntitySpawn,   HandleEntitySpawn);
+            Router.Register(PacketType.EntityDespawn, HandleEntityDespawn);
+            Router.Register(PacketType.WaveAdvance,   HandleWaveAdvance);
+            Router.Register(PacketType.XpGained,      HandleXpGained);
+            Router.Register(PacketType.LevelUp,       HandleLevelUp);
+            Router.Register(PacketType.PlayerState,   HandlePlayerState);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -305,6 +313,70 @@ namespace BloodshedModToolkit.Coop.Net
                 CoopState.IsConnected = false;
                 Plugin.Log.LogInfo("[NetManager] 모든 Peer 연결 끊김");
             }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Phase 2 패킷 핸들러
+        // ════════════════════════════════════════════════════════════════════
+        private void HandleEntitySpawn(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = EntitySpawnPacket.Decode(payload);
+            // Phase 4에서 실제 스폰 로직 구현
+            Plugin.Log.LogInfo(
+                $"[NetManager] EntitySpawn: idx={pkt.HostEntityIndex} type={pkt.EnemyTypeId}" +
+                $" @ ({pkt.PosX:F1},{pkt.PosY:F1},{pkt.PosZ:F1})");
+        }
+
+        private void HandleEntityDespawn(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = EntityDespawnPacket.Decode(payload);
+            // Phase 4에서 실제 디스폰 로직 구현
+            Plugin.Log.LogInfo($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex}");
+        }
+
+        private void HandleWaveAdvance(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = WaveAdvancePacket.Decode(payload);
+            var sp  = UnityEngine.Object.FindObjectOfType<SpawnProcessor>();
+            if (sp == null) return;
+
+            sp.currentWaveIndex = pkt.WaveIndex;
+            WaveGroupStartPatch._allowGuestTrigger = true;
+            sp.NextWave();
+            WaveGroupStartPatch._allowGuestTrigger = false;
+            Plugin.Log.LogInfo($"[NetManager] WaveAdvance: wave={pkt.WaveIndex}");
+        }
+
+        private void HandleXpGained(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = XpGainedPacket.Decode(payload);
+            var ps  = UnityEngine.Object.FindObjectOfType<PlayerStats>();
+            if (ps == null) return;
+
+            XpEventPatch._applyingRemoteXp = true;
+            ps.AddXp(pkt.Amount);
+            XpEventPatch._applyingRemoteXp = false;
+        }
+
+        private void HandleLevelUp(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = LevelUpPacket.Decode(payload);
+            // Phase 6에서 레벨업 아이템 선택 동기화 구현
+            Plugin.Log.LogInfo($"[NetManager] LevelUp: level={pkt.NewLevel}");
+        }
+
+        private void HandlePlayerState(CSteamID from, byte[] payload)
+        {
+            var pkt = PlayerStatePacket.Decode(payload);
+            // Phase 5에서 원격 플레이어 아바타 위치 업데이트 구현
+            Plugin.Log.LogDebug(
+                $"[NetManager] PlayerState from {from}: " +
+                $"pos=({pkt.PosX:F1},{pkt.PosY:F1},{pkt.PosZ:F1}) hp={pkt.CurrentHp:F0}");
         }
     }
 }

@@ -15,9 +15,19 @@ namespace UnityEngine
         public static void Destroy(Object obj) { }
     }
 
-    public class Component  : Object { public Component(IntPtr ptr) : base(ptr) { } }
-    public class Behaviour  : Component { public Behaviour(IntPtr ptr) : base(ptr) { } }
-    public class Transform  : Component { public Transform(IntPtr ptr) : base(ptr) { } }
+    public class Component : Object
+    {
+        public Component(IntPtr ptr) : base(ptr) { }
+        public Transform  transform  => null!;
+        public GameObject gameObject => null!;
+        public int GetInstanceID() => 0;
+    }
+    public class Behaviour : Component { public Behaviour(IntPtr ptr) : base(ptr) { } }
+    public class Transform  : Component
+    {
+        public Transform(IntPtr ptr) : base(ptr) { }
+        public Vector3 position { get; set; }
+    }
 
     public class MonoBehaviour : Behaviour
     {
@@ -161,8 +171,18 @@ namespace UnityEngine
         public static void DrawTexture(Rect position, Texture2D image) { }
     }
 
+    public static class Random
+    {
+        public static int   Range(int   min, int   max) => min;
+        public static float Range(float min, float max) => min;
+    }
+
     public static class GUILayout
     {
+        public static void BeginVertical(params GUILayoutOption[] options) { }
+        public static void BeginVertical(string style, params GUILayoutOption[] options) { }
+        public static void BeginVertical(GUIStyle style, params GUILayoutOption[] options) { }
+        public static void EndVertical() { }
         public static bool Toggle(bool value, string text) => value;
         public static bool Toggle(bool value, string text, GUIStyle style) => value;
         public static bool Button(string text) => false;
