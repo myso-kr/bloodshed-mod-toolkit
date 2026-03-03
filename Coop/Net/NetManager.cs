@@ -127,10 +127,18 @@ namespace BloodshedModToolkit.Coop.Net
         public void LeaveLobby()
         {
             if (!CoopState.IsEnabled) return;
-            foreach (var peer in CoopState.Peers)
-                SteamNetworking.CloseP2PSessionWithUser(peer);
-            if (CoopState.LobbyId != CSteamID.Nil)
-                SteamMatchmaking.LeaveLobby(CoopState.LobbyId);
+            // 게임 종료 시 Steam API가 먼저 해제될 수 있으므로 예외 보호
+            try
+            {
+                foreach (var peer in CoopState.Peers)
+                    SteamNetworking.CloseP2PSessionWithUser(peer);
+                if (CoopState.LobbyId != CSteamID.Nil)
+                    SteamMatchmaking.LeaveLobby(CoopState.LobbyId);
+            }
+            catch (System.Exception e)
+            {
+                Plugin.Log.LogWarning($"[NetManager] LeaveLobby Steam 예외 (종료 중?): {e.Message}");
+            }
             CoopState.Reset();
             PlayerSyncHandler.Reset();
             _lastHeartbeat.Clear();
