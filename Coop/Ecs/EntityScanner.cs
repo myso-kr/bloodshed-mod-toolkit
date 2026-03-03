@@ -14,6 +14,9 @@ namespace BloodshedModToolkit.Coop.Ecs
     {
         public EntityScanner(IntPtr ptr) : base(ptr) { }
 
+        // ── 싱글톤 ────────────────────────────────────────────────────────────
+        public static EntityScanner? Instance { get; private set; }
+
         // ── 설정 ─────────────────────────────────────────────────────────────
         private const float ScanInterval  = 0.05f;  // 20 Hz
         private const int   MaxPerPacket  = 60;     // 60 × 18B = 1080B (MTU 안전)
@@ -39,6 +42,8 @@ namespace BloodshedModToolkit.Coop.Ecs
         // ════════════════════════════════════════════════════════════════════
         // 생명주기
         // ════════════════════════════════════════════════════════════════════
+        void Awake() => Instance = this;
+
         void Start()
         {
             TryInitEcs();
@@ -48,7 +53,12 @@ namespace BloodshedModToolkit.Coop.Ecs
         {
             if (_ecsReady)
                 _enemyQuery.Dispose();
+            Instance = null;
         }
+
+        /// <summary>현재 스냅샷 읽기 전용 뷰 (FullSnapshot 전송용).</summary>
+        public IReadOnlyDictionary<uint, EnemySnapshot> GetCurrentSnapshot()
+            => _lastSnapshot;
 
         void LateUpdate()
         {
