@@ -559,11 +559,7 @@ namespace BloodshedModToolkit.UI
             {
                 GUILayout.BeginHorizontal();
 
-                // 이름 + 상태 표시
-                string suffix = f.IsPlayingBloodshed ? " [Bloodshed]"
-                              : f.IsInGame           ? " [게임중]"
-                              : "";
-                GUILayout.Label($"  {f.Name}{suffix}", _stSliderName!);
+                GUILayout.Label($"  {f.Name}", _stSliderName!);
 
                 // 참가 버튼 — 친구가 Bloodshed 로비에 있고 우리가 미연결 상태일 때
                 if (!CoopState.IsEnabled && f.LobbyId.IsValid() &&
