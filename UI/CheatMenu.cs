@@ -9,6 +9,8 @@ using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Sync;
 using BloodshedModToolkit.Coop.Friends;
+using BloodshedModToolkit.Coop.Bots;
+using BloodshedModToolkit.Coop.Renderer;
 using BloodshedModToolkit.UI.Overlay;
 using BloodshedModToolkit.UI.Overlay.Panels;
 
@@ -19,7 +21,7 @@ namespace BloodshedModToolkit.UI
         public CheatMenu(System.IntPtr ptr) : base(ptr) { }
 
         // ── 탭 / 윈도우 상태 ─────────────────────────────────────────────────────
-        private enum Tab { Cheats, Tweaks, Coop }
+        private enum Tab { Cheats, Tweaks, Coop, Bots }
         private Tab  _activeTab  = Tab.Cheats;
         private bool _visible    = false;
         private Rect _windowRect = new Rect(20, 20, 390, 470);
@@ -28,6 +30,7 @@ namespace BloodshedModToolkit.UI
         private Vector2 _scrollCheats = Vector2.zero;
         private Vector2 _scrollTweaks = Vector2.zero;
         private Vector2 _scrollCoop   = Vector2.zero;
+        private Vector2 _scrollBots   = Vector2.zero;
 
         // ── Co-op UI 상태 ─────────────────────────────────────────────────────────
         private string _lobbyIdInput = "";
@@ -227,16 +230,18 @@ namespace BloodshedModToolkit.UI
                     _activeTab == Tab.Coop ? _stTabActive! : _stTabInactive!,
                     GUILayout.Height(26)))
                 _activeTab = Tab.Coop;
+            if (GUILayout.Button("BOTS",
+                    _activeTab == Tab.Bots ? _stTabActive! : _stTabInactive!,
+                    GUILayout.Height(26)))
+                _activeTab = Tab.Bots;
             GUILayout.EndHorizontal();
 
             GUILayout.Space(3);
 
-            if (_activeTab == Tab.Cheats)
-                DrawCheatsTab(l);
-            else if (_activeTab == Tab.Tweaks)
-                DrawTweaksTab(l);
-            else
-                DrawCoopTab(l);
+            if      (_activeTab == Tab.Cheats) DrawCheatsTab(l);
+            else if (_activeTab == Tab.Tweaks) DrawTweaksTab(l);
+            else if (_activeTab == Tab.Coop)   DrawCoopTab(l);
+            else                               DrawBotsTab();
 
             // 타이틀바 영역만 드래그 허용
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 22));
@@ -458,6 +463,58 @@ namespace BloodshedModToolkit.UI
                 XpShareMode.Split       => l.CoopXpSplitDesc,
                 _                       => l.CoopXpReplicateDesc,
             };
+
+        // ════════════════════════════════════════════════════════════════════════
+        // BOTS 탭
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawBotsTab()
+        {
+            _scrollBots = GUILayout.BeginScrollView(_scrollBots, GUILayout.ExpandHeight(true));
+
+            SectionHeader("BOT PLAYERS");
+            BotState.Enabled = GUILayout.Toggle(BotState.Enabled,
+                BotState.Enabled ? "Bot Players  [ON]" : "Bot Players  [OFF]",
+                BotState.Enabled ? _stToggleOn! : _stToggleOff!);
+
+            if (BotState.Enabled)
+            {
+                GUILayout.Space(4);
+                SectionHeader("COUNT");
+                GUILayout.BeginHorizontal();
+                for (int n = 1; n <= 3; n++)
+                {
+                    bool active = BotState.Count == n;
+                    if (GUILayout.Button(n.ToString(), active ? _stPresetOn! : _stPresetOff!))
+                        BotState.Count = n;
+                }
+                GUILayout.EndHorizontal();
+
+                GUILayout.Space(4);
+                SectionHeader("STATUS");
+                var bots = BotManager.Instance?.GetBots();
+                if (bots == null || bots.Count == 0)
+                    GUILayout.Label("  (게임 시작 후 표시)", _stSliderName!);
+                else
+                    foreach (var bot in bots)
+                    {
+                        int hp = bot.MaxHp > 0 ? (int)(bot.CurrentHp / bot.MaxHp * 100f) : 0;
+                        GUILayout.Label(
+                            $"  \u25cf {BotState.BotNames[bot.BotIndex]}  " +
+                            $"Lv{bot.Level}  HP {hp}%  " +
+                            $"({bot.Position.x:F1}, {bot.Position.y:F1}, {bot.Position.z:F1})",
+                            _stSliderName!);
+                    }
+
+                GUILayout.Space(4);
+                SectionHeader("RENDERER");
+                int avatarCount = PlayerSyncHandler.States.Count;
+                GUILayout.Label($"  추적 중: {avatarCount}명 (봇+피어)", _stSliderName!);
+            }
+            else
+                GUILayout.Label("  봇 활성화 시 캡슐 아바타로 렌더링 파이프라인 테스트", _stSliderName!);
+
+            GUILayout.EndScrollView();
+        }
 
         // ════════════════════════════════════════════════════════════════════════
         // FRIENDS 섹션

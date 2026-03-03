@@ -1,0 +1,70 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using BloodshedModToolkit.Coop.Events;
+using BloodshedModToolkit.Coop.Sync;
+
+namespace BloodshedModToolkit.Coop.Bots
+{
+    public class BotManager : MonoBehaviour
+    {
+        public BotManager(IntPtr ptr) : base(ptr) { }
+        public static BotManager? Instance { get; private set; }
+
+        private readonly List<BotController> _bots = new();
+        private const float TickInterval = 0.05f;  // 20 Hz
+        private float _tickTimer;
+
+        void Awake() { Instance = this; Plugin.Log.LogInfo("[BotManager] loaded"); }
+        void OnDestroy() { RemoveAll(); Instance = null; }
+
+        void Update()
+        {
+            if (!BotState.Enabled) { if (_bots.Count > 0) RemoveAll(); return; }
+
+            int desired = Math.Clamp(BotState.Count, 1, 3);
+            Vector3 localPos = PlayerStateBroadcastPatch.LastKnownLocalPos;
+
+            // 로컬 플레이어 위치가 아직 0이면 스폰 보류 (메인메뉴 대비)
+            if (localPos.x == 0f && localPos.y == 0f && localPos.z == 0f) return;
+
+            SyncCount(desired, localPos);
+
+            _tickTimer += Time.deltaTime;
+            if (_tickTimer < TickInterval) return;
+            _tickTimer -= TickInterval;
+
+            foreach (var bot in _bots)
+            {
+                bot.Tick(TickInterval, localPos);
+                PlayerSyncHandler.OnPlayerState(bot.BotId, bot.ToPacket());
+            }
+        }
+
+        private void SyncCount(int desired, Vector3 localPos)
+        {
+            while (_bots.Count < desired)
+            {
+                int idx = _bots.Count;
+                var spawn = new Vector3(localPos.x + (idx - 1) * 2f, localPos.y, localPos.z);
+                _bots.Add(new BotController(idx, spawn));
+                Plugin.Log.LogInfo($"[BotManager] 봇 추가: {BotState.BotNames[idx]}");
+            }
+            while (_bots.Count > desired)
+            {
+                var removed = _bots[_bots.Count - 1];
+                _bots.RemoveAt(_bots.Count - 1);
+                PlayerSyncHandler.RemoveBot(removed.BotId);
+                Plugin.Log.LogInfo($"[BotManager] 봇 제거: {BotState.BotNames[removed.BotIndex]}");
+            }
+        }
+
+        private void RemoveAll()
+        {
+            foreach (var bot in _bots) PlayerSyncHandler.RemoveBot(bot.BotId);
+            _bots.Clear();
+        }
+
+        public IReadOnlyList<BotController> GetBots() => _bots;
+    }
+}

@@ -4,6 +4,8 @@ using BepInEx.Logging;
 using HarmonyLib;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Ecs;
+using BloodshedModToolkit.Coop.Bots;
+using BloodshedModToolkit.Coop.Renderer;
 
 namespace BloodshedModToolkit
 {
@@ -36,6 +38,10 @@ namespace BloodshedModToolkit
             // Co-op 상태 동기화 적용기 (Phase 5)
             AddComponent<StateApplicator>();
 
+            // Phase 8 — AI 봇 + 아바타 렌더러 (검증용)
+            AddComponent<BotManager>();
+            AddComponent<RemotePlayerRenderer>();
+
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
     }
@@ -44,6 +50,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.71";
+        public const string PLUGIN_VERSION = "1.0.72";
     }
 }

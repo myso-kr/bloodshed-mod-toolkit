@@ -25,5 +25,8 @@ namespace BloodshedModToolkit.Coop.Sync
 
         /// <summary>세션 종료 시 초기화.</summary>
         public static void Reset() => _states.Clear();
+
+        /// <summary>봇 제거 시 상태 정리. BotManager에서 호출.</summary>
+        public static void RemoveBot(ulong botId) => _states.Remove(botId);
     }
 }

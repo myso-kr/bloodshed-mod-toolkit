@@ -9,7 +9,8 @@ namespace UnityEngine
     public class Object : Il2CppObjectBase
     {
         public Object(IntPtr ptr) : base(ptr) { }
-        public bool isActiveAndEnabled => false;
+        public bool   isActiveAndEnabled => false;
+        public string name { get; set; } = "";
         public static T?   FindObjectOfType<T>()  where T : Object => null!;
         public static T[]? FindObjectsOfType<T>() where T : Object => null;
         public static void Destroy(Object obj) { }
@@ -27,7 +28,11 @@ namespace UnityEngine
     public class Transform  : Component
     {
         public Transform(IntPtr ptr) : base(ptr) { }
-        public Vector3 position { get; set; }
+        public Vector3    position      { get; set; }
+        public Vector3    localPosition { get; set; }
+        public Vector3    localScale    { get; set; }
+        public Quaternion rotation      { get; set; }
+        public void SetParent(Transform parent) { }
     }
 
     public class MonoBehaviour : Behaviour
@@ -50,7 +55,11 @@ namespace UnityEngine
     public class GameObject : Object
     {
         public GameObject(IntPtr ptr) : base(ptr) { }
+        public GameObject(string name) : base(IntPtr.Zero) { }
+        public Transform transform => null!;
         public T? GetComponent<T>() where T : Component => null!;
+        public T? AddComponent<T>() where T : Component => null!;
+        public static GameObject CreatePrimitive(PrimitiveType type) => null!;
     }
 
     public struct Vector2
@@ -63,7 +72,9 @@ namespace UnityEngine
     public struct Vector3
     {
         public float x, y, z;
+        public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
         public Vector3 normalized => this;
+        public static Vector3 zero => new Vector3(0f, 0f, 0f);
     }
 
     public struct Rect
@@ -216,6 +227,49 @@ namespace UnityEngine
     {
         public static int   Range(int   min, int   max) => min;
         public static float Range(float min, float max) => min;
+    }
+
+    // ── PrimitiveType / TextAlignment ──────────────────────────────────────────
+    public enum PrimitiveType { Sphere=0, Capsule=1, Cylinder=2, Cube=3, Plane=4, Quad=5 }
+    public enum TextAlignment  { Left=0, Center=1, Right=2 }
+
+    // ── Quaternion ─────────────────────────────────────────────────────────────
+    public struct Quaternion
+    {
+        public float x, y, z, w;
+        public static Quaternion identity => new Quaternion { w = 1f };
+        public static Quaternion LookRotation(Vector3 forward) => identity;
+    }
+
+    // ── Material / MeshRenderer / Collider ─────────────────────────────────────
+    public class Material
+    {
+        public Color color { get; set; }
+    }
+    public class Renderer : Component
+    {
+        public Renderer(IntPtr ptr) : base(ptr) { }
+        public Material material { get; set; } = new Material();
+    }
+    public class MeshRenderer : Renderer
+    {
+        public MeshRenderer(IntPtr ptr) : base(ptr) { }
+    }
+    public class Collider : Component
+    {
+        public Collider(IntPtr ptr) : base(ptr) { }
+        public bool enabled { get; set; }
+    }
+
+    // ── TextMesh ────────────────────────────────────────────────────────────────
+    public class TextMesh : Component
+    {
+        public TextMesh(IntPtr ptr) : base(ptr) { }
+        public string        text      { get; set; } = "";
+        public int           fontSize  { get; set; }
+        public TextAlignment alignment { get; set; }
+        public TextAnchor    anchor    { get; set; }
+        public Color         color     { get; set; }
     }
 
     public static class GUILayout
