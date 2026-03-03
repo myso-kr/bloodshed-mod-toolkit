@@ -523,17 +523,8 @@ namespace BloodshedModToolkit.UI
                             GUILayout.Label($"({MissionState.PendingSceneName})", _stSliderName!);
                             break;
                         case MissionStatus.VoteRequested:
-                        {
-                            int cd = (int)MissionState.VoteCountdown;
-                            GUILayout.Label(
-                                CoopState.DebugGuestMode
-                                    ? $"[ Debug ] 씬: {MissionState.PendingSceneName}  ({cd}초 후 자동 수락)"
-                                    : $"호스트가 게임 시작을 제안했습니다! ({cd}초)",
-                                _stSliderName!);
-                            if (GUILayout.Button("ACCEPT", _stActionBtn!))
-                                MissionSyncHandler.OnGuestVoteResponse(true);
+                            GUILayout.Label("투표 진행 중 — 화면 중앙 모달 참조", _stSliderName!);
                             break;
-                        }
                         case MissionStatus.VoteAccepted:
                             GUILayout.Label("동의 완료 — 호스트 게임 시작 대기 중", _stSliderName!);
                             break;
