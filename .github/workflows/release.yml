@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # v1.2.3 형식 태그에서 트리거
+
+env:
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: windows-latest
+    permissions:
+      contents: write   # GitHub Release 생성 권한
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Extract version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Download BepInEx 6.x
+        shell: pwsh
+        run: |
+          $releases = Invoke-RestMethod "https://api.github.com/repos/BepInEx/BepInEx/releases"
+          $release  = $releases | Where-Object { $_.tag_name -like "v6*" } | Select-Object -First 1
+          $asset    = $release.assets | Where-Object { $_.name -match "win[._-]x64" } | Select-Object -First 1
+          Write-Host "Downloading: $($asset.name)"
+          Invoke-WebRequest $asset.browser_download_url -OutFile bepinex.zip
+          Expand-Archive bepinex.zip -DestinationPath bepinex-dl
+          $path = (Resolve-Path "bepinex-dl\BepInEx").Path
+          echo "BEPINEX_PATH=$path" >> $env:GITHUB_ENV
+
+      # 릴리스 빌드는 GAME_LIBS_B64 시크릿이 반드시 필요합니다.
+      # 설정 방법: BepInEx/interop/ 폴더를 zip으로 압축 후 base64 인코딩
+      #   PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes("interop.zip"))
+      - name: Install game interop DLLs
+        shell: pwsh
+        env:
+          GAME_LIBS_B64: ${{ secrets.GAME_LIBS_B64 }}
+        run: |
+          if (-not $env:GAME_LIBS_B64) {
+            Write-Error "GAME_LIBS_B64 secret is required for release builds. See README for setup instructions."
+            exit 1
+          }
+          $bytes = [Convert]::FromBase64String($env:GAME_LIBS_B64)
+          [IO.File]::WriteAllBytes("game_interop.zip", $bytes)
+          $interopPath = "$env:BEPINEX_PATH\interop"
+          New-Item -ItemType Directory -Force -Path $interopPath | Out-Null
+          Expand-Archive game_interop.zip -DestinationPath $interopPath -Force
+          Write-Host "Installed $((Get-ChildItem $interopPath -Filter *.dll).Count) interop DLLs"
+
+      - name: Build
+        shell: pwsh
+        run: |
+          dotnet build BloodshedModToolkit.csproj -c Release `
+            /p:BepInExPath="$env:BEPINEX_PATH" `
+            --no-incremental
+
+      # 배포 패키지 생성: BepInEx/plugins/ 구조로 zip
+      - name: Package release zip
+        id: package
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $zipName = "BloodshedModToolkit_v$version.zip"
+
+          $staging = "release-staging\BepInEx\plugins"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "bin\Release\net6.0\BloodshedModToolkit.dll" $staging
+          Copy-Item "README.md" "release-staging\"
+
+          Compress-Archive -Path "release-staging\*" -DestinationPath $zipName
+          Write-Host "Created package: $zipName"
+          echo "zip_name=$zipName" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          ZIP=${{ steps.package.outputs.zip_name }}
+
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "$ZIP" \
+            "bin/Release/net6.0/BloodshedModToolkit.dll#BloodshedModToolkit.dll" \
+            --title "Bloodshed Cheat Mod v$VERSION" \
+            --generate-notes

@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      로컬 BepInEx 설치 경로를 아래에 입력하세요.
+      Set the path to your local BepInEx installation below.
+    -->
+    <BepInExPath>C:\Program Files (x86)\Steam\steamapps\common\Bloodshed\BepInEx</BepInExPath>
+  </PropertyGroup>
+</Project>

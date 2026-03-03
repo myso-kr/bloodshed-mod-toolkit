@@ -1,0 +1,19 @@
+# Build outputs
+bin/
+obj/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# Local build config (contains absolute game path — do not commit)
+Directory.Build.props
+
+# Game interop DLLs (copyrighted — cannot be redistributed)
+libs/game/
+
+# Inspector tool output (development only)
+Inspector/bin/
+Inspector/obj/
