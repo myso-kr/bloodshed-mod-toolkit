@@ -58,10 +58,16 @@ namespace UnityEngine
 
     public class Coroutine { }
 
+    public enum FilterMode { Bilinear = 0, Point = 1, Trilinear = 2 }
+
     public class Texture2D : Object
     {
         public Texture2D(IntPtr ptr) : base(ptr) { }
+        public Texture2D(int width, int height) : base(IntPtr.Zero) { }
         public static Texture2D whiteTexture => null!;
+        public FilterMode filterMode { get; set; }
+        public void SetPixels(Color[] colors) { }
+        public void Apply(bool updateMipmaps) { }
     }
 
     public class GameObject : Object
@@ -159,9 +165,10 @@ namespace UnityEngine
 
     public static class Input
     {
-        public static bool GetKeyDown(KeyCode key) => false;
-        public static bool GetKey(KeyCode key)     => false;
-        public static string compositionString => "";
+        public static bool   GetKeyDown(KeyCode key)   => false;
+        public static bool   GetKey(KeyCode key)       => false;
+        public static string compositionString         => "";
+        public static string inputString               => "";
         public static IMECompositionMode imeCompositionMode { get; set; }
     }
 
@@ -310,6 +317,7 @@ namespace UnityEngine
         public Color color { get; set; }
         public Shader? shader { get; set; }
         public void SetColor(string name, Color value) { }
+        public void SetTexture(string name, Texture2D texture) { }
     }
     public class Renderer : Component
     {

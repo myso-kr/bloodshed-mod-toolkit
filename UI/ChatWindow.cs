@@ -14,6 +14,7 @@ namespace BloodshedModToolkit.UI
         private struct ChatEntry { public string Sender; public string Text; public float Time; }
         private readonly List<ChatEntry> _messages = new(32);
         private string _inputText = "";
+        private bool _skipFrame;   // T키 누른 프레임의 inputString 무시
         private const int MaxMessages = 30;
         private const float FadeAfter = 5f;
         private const float WinW = 420f;
@@ -25,11 +26,44 @@ namespace BloodshedModToolkit.UI
 
         void Update()
         {
+            // ── 채팅창 열기 ─────────────────────────────────────────────────
             if (!IsTyping && Input.GetKeyDown(KeyCode.T))
             {
                 IsTyping = true;
                 _inputText = "";
+                _skipFrame = true;
                 Input.imeCompositionMode = IMECompositionMode.On;
+                return;
+            }
+
+            if (!IsTyping) return;
+
+            // ── T 누른 프레임은 inputString 건너뜀 ────────────────────────
+            if (_skipFrame) { _skipFrame = false; return; }
+
+            // ── 취소 / 전송 ────────────────────────────────────────────────
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                CancelChat();
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            {
+                // IME 조합 중이면 Enter를 조합 확정으로 처리 (전송 보류)
+                if (string.IsNullOrEmpty(Input.compositionString))
+                {
+                    SendChat();
+                    return;
+                }
+            }
+
+            // ── 문자 누적 (inputString = 이 프레임에 확정된 문자들) ────────
+            foreach (char c in Input.inputString)
+            {
+                if (c == '\b')           { if (_inputText.Length > 0) _inputText = _inputText[..^1]; }
+                else if (c == '\r' || c == '\n' || c == '\u001b') { /* 무시 */ }
+                else                     { _inputText += c; }
             }
         }
 
@@ -50,8 +84,7 @@ namespace BloodshedModToolkit.UI
             int visibleCount = 0;
             for (int i = start; i < _messages.Count; i++)
             {
-                float age = now - _messages[i].Time;
-                if (!IsTyping && age > FadeAfter) continue;
+                if (!IsTyping && now - _messages[i].Time > FadeAfter) continue;
                 visibleCount++;
             }
             if (visibleCount == 0 && !IsTyping) return;
@@ -81,29 +114,13 @@ namespace BloodshedModToolkit.UI
             GUI.DrawTexture(new Rect(x, y, WinW, InputH), Texture2D.whiteTexture);
             GUI.color = Color.white;
 
-            GUI.Label(new Rect(x + 4f, y + 4f, 16f, InputH - 4f), ">");
+            // IME 조합 중이면 [조합중] 표시, 아니면 커서(_) 표시
+            string comp = Input.compositionString;
+            string display = string.IsNullOrEmpty(comp)
+                ? _inputText + "_"
+                : _inputText + "[" + comp + "]_";
 
-            GUI.SetNextControlName("ChatInput");
-            _inputText = GUI.TextField(new Rect(x + 20f, y + 2f, WinW - 24f, InputH - 4f), _inputText);
-            GUI.FocusControl("ChatInput");
-
-            Event ev = Event.current;
-            if (ev.type == EventType.KeyDown)
-            {
-                if (ev.keyCode == KeyCode.Return || ev.keyCode == KeyCode.KeypadEnter)
-                {
-                    if (string.IsNullOrEmpty(Input.compositionString))
-                    {
-                        SendChat();
-                        ev.Use();
-                    }
-                }
-                else if (ev.keyCode == KeyCode.Escape)
-                {
-                    CancelChat();
-                    ev.Use();
-                }
-            }
+            GUI.Label(new Rect(x + 4f, y + 4f, WinW - 8f, InputH - 4f), "> " + display);
         }
 
         private void SendChat()
