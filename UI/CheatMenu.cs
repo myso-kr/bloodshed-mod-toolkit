@@ -558,14 +558,29 @@ namespace BloodshedModToolkit.UI
             foreach (var f in FriendListCache.Entries)
             {
                 GUILayout.BeginHorizontal();
-                string suffix = f.IsInGame ? " [게임중]" : "";
+
+                // 이름 + 상태 표시
+                string suffix = f.IsPlayingBloodshed ? " [Bloodshed]"
+                              : f.IsInGame           ? " [게임중]"
+                              : "";
                 GUILayout.Label($"  {f.Name}{suffix}", _stSliderName!);
+
+                // 참가 버튼 — 친구가 Bloodshed 로비에 있고 우리가 미연결 상태일 때
+                if (!CoopState.IsEnabled && f.LobbyId.IsValid() &&
+                    GUILayout.Button("참가", _stActionBtn!, GUILayout.Width(44)))
+                {
+                    NetManager.Instance?.JoinLobby(f.LobbyId);
+                    Plugin.Log.LogInfo($"[Friends] {f.Name} 의 로비에 참가");
+                }
+
+                // 초대 버튼 — 우리가 로비를 열었을 때
                 if (CoopState.IsEnabled &&
                     GUILayout.Button("초대", _stActionBtn!, GUILayout.Width(44)))
                 {
                     SteamMatchmaking.InviteUserToLobby(CoopState.LobbyId, f.SteamId);
                     Plugin.Log.LogInfo($"[Friends] {f.Name} 초대 전송");
                 }
+
                 GUILayout.EndHorizontal();
             }
         }

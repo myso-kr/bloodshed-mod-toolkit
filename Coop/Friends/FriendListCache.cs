@@ -12,7 +12,9 @@ namespace BloodshedModToolkit.Coop.Friends
     {
         public CSteamID SteamId;
         public string   Name;
-        public bool     IsInGame;   // 현재 어떤 게임이든 플레이 중
+        public bool     IsInGame;           // 어떤 게임이든 플레이 중
+        public bool     IsPlayingBloodshed; // 이 게임(Bloodshed) 실행 중
+        public CSteamID LobbyId;            // 유효하면 참가 가능한 로비 존재
     }
 
     public static class FriendListCache
@@ -35,6 +37,9 @@ namespace BloodshedModToolkit.Coop.Friends
         {
             _entries.Clear();
 
+            // 현재 게임 AppID (하위 24비트 비교용)
+            uint myAppId = SteamUtils.GetAppID().m_AppId;
+
             int count = SteamFriends.GetFriendCount(EFriendFlags.k_EFriendFlagImmediate);
             for (int i = 0; i < count; i++)
             {
@@ -46,18 +51,28 @@ namespace BloodshedModToolkit.Coop.Friends
                     state == EPersonaState.k_EPersonaStateInvisible)
                     continue;
 
-                bool inGame = SteamFriends.GetFriendGamePlayed(id, out _);
+                bool inGame = SteamFriends.GetFriendGamePlayed(id, out var gameInfo);
+
+                // CGameID 하위 24비트 = AppID (Steam 스펙)
+                bool isBloodshed = inGame &&
+                    (gameInfo.m_gameID.m_GameID & 0xFFFFFF) == myAppId;
+
+                CSteamID lobbyId = isBloodshed ? gameInfo.m_steamIDLobby : CSteamID.Nil;
 
                 _entries.Add(new FriendEntry
                 {
-                    SteamId  = id,
-                    Name     = SteamFriends.GetFriendPersonaName(id),
-                    IsInGame = inGame,
+                    SteamId           = id,
+                    Name              = SteamFriends.GetFriendPersonaName(id),
+                    IsInGame          = inGame,
+                    IsPlayingBloodshed = isBloodshed,
+                    LobbyId           = lobbyId,
                 });
             }
 
             LastRefreshTime = Time.time;
-            Plugin.Log.LogInfo($"[FriendListCache] 새로고침 완료 — 온라인 {_entries.Count}명");
+            Plugin.Log.LogInfo(
+                $"[FriendListCache] 새로고침 완료 — 온라인 {_entries.Count}명, " +
+                $"Bloodshed 플레이 중 {_entries.FindAll(e => e.IsPlayingBloodshed).Count}명");
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Steamworks
     }
 
     public struct SteamAPICall_t { public ulong m_SteamAPICall; }
+    public struct AppId_t        { public uint  m_AppId; }
 
     public enum ELobbyType
     {
@@ -127,6 +128,11 @@ namespace Steamworks
     public static class SteamUser
     {
         public static CSteamID GetSteamID() => CSteamID.Nil;
+    }
+
+    public static class SteamUtils
+    {
+        public static AppId_t GetAppID() => default;
     }
 
     public static class SteamFriends
