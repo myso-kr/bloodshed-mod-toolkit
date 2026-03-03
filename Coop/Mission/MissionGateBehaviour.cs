@@ -29,15 +29,26 @@ namespace BloodshedModToolkit.Coop.Mission
 
         void Update()
         {
-            if (MissionState.Status != MissionStatus.ReadyUp) return;
-            float prev = MissionState.ReadyCountdown;
-            MissionState.ReadyCountdown -= Time.deltaTime;
-            // 5초 단위로 카운트다운 로그
-            if ((int)prev != (int)MissionState.ReadyCountdown
-                && (int)MissionState.ReadyCountdown % 5 == 0)
-                Plugin.Log.LogInfo($"[MissionGate] Ready-Up 카운트다운: {(int)MissionState.ReadyCountdown}초");
-            if (MissionState.ReadyCountdown <= 0f)
-                Sync.MissionSyncHandler.OnGuestReady();
+            if (MissionState.Status == MissionStatus.ReadyUp)
+            {
+                float prev = MissionState.ReadyCountdown;
+                MissionState.ReadyCountdown -= Time.deltaTime;
+                if ((int)prev != (int)MissionState.ReadyCountdown
+                    && (int)MissionState.ReadyCountdown % 5 == 0)
+                    Plugin.Log.LogInfo($"[MissionGate] Ready-Up 카운트다운: {(int)MissionState.ReadyCountdown}초");
+                if (MissionState.ReadyCountdown <= 0f)
+                    Sync.MissionSyncHandler.OnGuestReady();
+            }
+
+            if (MissionState.Status == MissionStatus.VoteRequested)
+            {
+                MissionState.VoteCountdown -= Time.deltaTime;
+                if (MissionState.VoteCountdown <= 0f)
+                {
+                    Plugin.Log.LogInfo("[MissionGate] 투표 카운트다운 만료 → 자동 수락");
+                    Sync.MissionSyncHandler.OnGuestVoteResponse(true);
+                }
+            }
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -80,6 +91,7 @@ namespace BloodshedModToolkit.Coop.Mission
                     else
                     {
                         // 투표 미완료 상태에서 씬 진입 → 투표 UI 활성화 + 웨이브 차단
+                        MissionState.VoteCountdown = 30f;
                         MissionState.Status = MissionStatus.VoteRequested;
                         Plugin.Log.LogInfo(
                             $"[MissionGate] Debug 모드 — 씬 진입 감지, 투표 UI 활성: '{scene.name}'");

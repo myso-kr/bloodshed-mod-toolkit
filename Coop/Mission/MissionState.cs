@@ -18,6 +18,7 @@ namespace BloodshedModToolkit.Coop.Mission
         public static string        PendingSceneName  { get; set; } = "";
         public static int           PendingBuildIndex { get; set; } = -1;
         public static float         ReadyCountdown    { get; set; } = 30f;
+        public static float         VoteCountdown     { get; set; } = 30f;
 
         // Host: 게스트별 준비 상태 (ulong = SteamID)
         public static Dictionary<ulong, bool> GuestReadyMap { get; } = new();
@@ -37,6 +38,7 @@ namespace BloodshedModToolkit.Coop.Mission
             PendingSceneName     = "";
             PendingBuildIndex    = -1;
             ReadyCountdown       = 30f;
+            VoteCountdown        = 30f;
             HostCurrentScene     = "";
             HostCurrentBuildIndex = -1;
             GuestReadyMap.Clear();

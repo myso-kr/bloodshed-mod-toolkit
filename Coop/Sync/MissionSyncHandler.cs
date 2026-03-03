@@ -81,24 +81,27 @@ namespace BloodshedModToolkit.Coop.Sync
         // Guest에서 호출 — VoteStart 패킷 수신 시
         public static void OnVoteStart()
         {
+            MissionState.VoteCountdown = 30f;
             MissionState.Status = MissionStatus.VoteRequested;
-            Plugin.Log.LogInfo("[Vote] 호스트 게임 시작 투표 수신");
+            Plugin.Log.LogInfo("[Vote] 호스트 게임 시작 투표 수신 — 30초 자동 수락");
         }
 
-        // Guest에서 호출 — ACCEPT / REJECT 버튼 클릭 시
+        // Guest에서 호출 — ACCEPT 버튼 클릭 or 30초 자동 수락
         public static void OnGuestVoteResponse(bool accepted)
         {
+            if (!accepted) return;  // Reject 제거 — 항상 수락
+
             // Debug 게스트 모드: 네트워크 전송 없이 로컬 상태만 전환
             if (CoopState.DebugGuestMode)
             {
-                MissionState.Status = accepted ? MissionStatus.Permitted : MissionStatus.Idle;
-                Plugin.Log.LogInfo($"[Vote] Debug 모드 {(accepted ? "ACCEPT → Permitted (웨이브 해제)" : "REJECT → Idle")}");
+                MissionState.Status = MissionStatus.Permitted;
+                Plugin.Log.LogInfo("[Vote] Debug 모드 ACCEPT → Permitted (웨이브 해제)");
                 return;
             }
 
-            MissionState.Status = accepted ? MissionStatus.VoteAccepted : MissionStatus.Idle;
-            Events.EventBridge.OnVoteAccept(accepted);
-            Plugin.Log.LogInfo($"[Vote] 응답 전송: {(accepted ? "수락" : "거부")}");
+            MissionState.Status = MissionStatus.VoteAccepted;
+            Events.EventBridge.OnVoteAccept(true);
+            Plugin.Log.LogInfo("[Vote] 수락 전송");
         }
 
         // Host에서 호출 — VoteAccept 패킷 수신 시
