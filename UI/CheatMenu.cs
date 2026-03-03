@@ -462,6 +462,30 @@ namespace BloodshedModToolkit.UI
 
                 if (CoopState.IsHost)
                 {
+                    // 투표 상태
+                    if (MissionState.HostVoteActive)
+                    {
+                        int accepted = 0;
+                        foreach (var v in MissionState.VoteAcceptMap.Values) if (v) accepted++;
+                        GUILayout.Label($"투표 진행 중... {accepted} / {CoopState.Peers.Count} 동의", _stSliderName!);
+                    }
+                    else
+                    {
+                        // 전원 동의 여부 확인
+                        bool allAccepted = CoopState.Peers.Count > 0
+                            && MissionState.VoteAcceptMap.Count >= CoopState.Peers.Count;
+                        if (allAccepted)
+                            foreach (var v in MissionState.VoteAcceptMap.Values)
+                                if (!v) { allAccepted = false; break; }
+
+                        if (allAccepted)
+                            GUILayout.Label("[ 전원 동의 ] 게임을 시작하세요!", _stSliderName!);
+
+                        if (GUILayout.Button("VOTE: START GAME", _stActionBtn!))
+                            MissionSyncHandler.OnHostVoteStart();
+                    }
+
+                    // 게스트 READY UP 카운트 (기존)
                     int ready = 0;
                     foreach (var v in MissionState.GuestReadyMap.Values) if (v) ready++;
                     GUILayout.Label($"GUESTS READY: {ready} / {CoopState.Peers.Count}", _stSliderName!);
@@ -471,11 +495,21 @@ namespace BloodshedModToolkit.UI
                     switch (MissionState.Status)
                     {
                         case MissionStatus.Idle:
-                            GUILayout.Label("대기 중 — 호스트가 미션을 시작하면 알림", _stSliderName!);
+                            GUILayout.Label("대기 중 — 호스트가 투표를 시작하면 알림", _stSliderName!);
                             break;
                         case MissionStatus.WaitingForHost:
                             GUILayout.Label("씬 로드 완료 — 호스트 신호 대기 중", _stSliderName!);
                             GUILayout.Label($"({MissionState.PendingSceneName})", _stSliderName!);
+                            break;
+                        case MissionStatus.VoteRequested:
+                            GUILayout.Label("호스트가 게임 시작을 제안했습니다!", _stSliderName!);
+                            if (GUILayout.Button("ACCEPT", _stActionBtn!))
+                                MissionSyncHandler.OnGuestVoteResponse(true);
+                            if (GUILayout.Button("REJECT", _stResetBtn!))
+                                MissionSyncHandler.OnGuestVoteResponse(false);
+                            break;
+                        case MissionStatus.VoteAccepted:
+                            GUILayout.Label("동의 완료 — 호스트 게임 시작 대기 중", _stSliderName!);
                             break;
                         case MissionStatus.ReadyUp:
                             GUILayout.Label("호스트가 미션을 시작했습니다!", _stSliderName!);

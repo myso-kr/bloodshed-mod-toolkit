@@ -29,6 +29,10 @@ namespace BloodshedModToolkit.Coop.Net
 
         // Phase 10 — 인게임 채팅
         ChatMessage   = 0x80,   // 양방향: 채팅 메시지
+
+        // Phase 11 — 투표 기반 게임 시작
+        VoteStart     = 0x72,   // Host → Guest: 게임 시작 투표 요청
+        VoteAccept    = 0x73,   // Guest → Host: 투표 응답 (수락=true / 거부=false)
     }
 
     // ── 직렬화 헬퍼 ──────────────────────────────────────────────────────────
@@ -327,6 +331,26 @@ namespace BloodshedModToolkit.Coop.Net
             using var ms = new System.IO.MemoryStream(payload);
             using var br = new System.IO.BinaryReader(ms, System.Text.Encoding.UTF8);
             return (br.ReadString(), br.ReadString());
+        }
+    }
+
+    // VoteStart — Host → Guest (Phase 11)
+    public static class VoteStartPacket
+    {
+        public static byte[] Encode()
+            => Packet.Encode(PacketType.VoteStart, _ => { });
+    }
+
+    // VoteAccept — Guest → Host (Phase 11)
+    public static class VoteAcceptPacket
+    {
+        public static byte[] Encode(bool accepted)
+            => Packet.Encode(PacketType.VoteAccept, w => w.Write(accepted));
+
+        public static bool Decode(byte[] payload)
+        {
+            using var br = new BinaryReader(new MemoryStream(payload));
+            return br.ReadBoolean();
         }
     }
 

@@ -2,7 +2,15 @@ using System.Collections.Generic;
 
 namespace BloodshedModToolkit.Coop.Mission
 {
-    public enum MissionStatus { Idle, WaitingForHost, ReadyUp, Permitted }
+    public enum MissionStatus
+    {
+        Idle,
+        WaitingForHost,
+        ReadyUp,
+        Permitted,
+        VoteRequested,  // Phase 11: Host가 투표 요청, Guest 응답 대기 중
+        VoteAccepted,   // Phase 11: Guest가 수락 완료, Host 게임 시작 대기 중
+    }
 
     public static class MissionState
     {
@@ -18,6 +26,11 @@ namespace BloodshedModToolkit.Coop.Mission
         public static string HostCurrentScene      { get; set; } = "";
         public static int    HostCurrentBuildIndex { get; set; } = -1;
 
+        // Phase 11: Host 투표 상태
+        public static bool HostVoteActive { get; set; }
+        // key=SteamID, value=true(수락)/false(거부). 미응답은 키 없음.
+        public static Dictionary<ulong, bool> VoteAcceptMap { get; } = new();
+
         public static void Reset()
         {
             Status               = MissionStatus.Idle;
@@ -27,6 +40,8 @@ namespace BloodshedModToolkit.Coop.Mission
             HostCurrentScene     = "";
             HostCurrentBuildIndex = -1;
             GuestReadyMap.Clear();
+            HostVoteActive = false;
+            VoteAcceptMap.Clear();
         }
     }
 }

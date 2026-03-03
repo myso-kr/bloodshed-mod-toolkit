@@ -83,6 +83,8 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.MissionStart,   HandleMissionStart);
             Router.Register(PacketType.PlayerReady,    HandlePlayerReady);
             Router.Register(PacketType.ChatMessage,    HandleChatMessage);
+            Router.Register(PacketType.VoteStart,      HandleVoteStart);
+            Router.Register(PacketType.VoteAccept,     HandleVoteAccept);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -649,6 +651,19 @@ namespace BloodshedModToolkit.Coop.Net
         {
             var (senderName, message) = ChatMessagePacket.Decode(payload);
             UI.ChatWindow.Instance?.AddMessage(senderName, message);
+        }
+
+        private void HandleVoteStart(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;  // Guest만 수신
+            Sync.MissionSyncHandler.OnVoteStart();
+        }
+
+        private void HandleVoteAccept(CSteamID from, byte[] payload)
+        {
+            if (!CoopState.IsHost) return;  // Host만 처리
+            bool accepted = VoteAcceptPacket.Decode(payload);
+            Sync.MissionSyncHandler.OnVoteAccept((ulong)from, accepted);
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)

@@ -75,6 +75,22 @@ namespace BloodshedModToolkit.Coop.Events
             Net.BroadcastReliable(ChatMessagePacket.Encode(senderName, message));
         }
 
+        /// <summary>Host → 전체 게스트: 게임 시작 투표 요청.</summary>
+        public static void OnVoteStart()
+        {
+            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(VoteStartPacket.Encode());
+            Plugin.Log.LogInfo($"[EventBridge] VoteStart 브로드캐스트 → {CoopState.Peers.Count}명");
+        }
+
+        /// <summary>Guest → Host: 투표 응답 (수락/거부).</summary>
+        public static void OnVoteAccept(bool accepted)
+        {
+            if (CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            foreach (var peer in CoopState.Peers)
+                Net.SendReliable(peer, VoteAcceptPacket.Encode(accepted));
+        }
+
         public static void OnMissionStart(string sceneName, int buildIndex)
         {
             if (!CoopState.IsHost) return;

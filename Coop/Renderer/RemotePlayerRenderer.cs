@@ -62,43 +62,35 @@ namespace BloodshedModToolkit.Coop.Renderer
 
         private void CreateAvatar(ulong id, Net.PlayerStatePacket pkt)
         {
-            // 봇: 빈 root (아바타 빌더가 자식 프리미티브 구성), 피어: 캡슐 (기존 유지)
-            var go = BotState.IsBot(id)
-                ? new GameObject(GetName(id))
-                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = GetName(id);
-            if (!BotState.IsBot(id))
-                go.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
-            go.transform.position   = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
+            bool isBot = BotState.IsBot(id);
+            var  color = isBot ? BotColor : PeerColor;
 
-            // URP 호환 material 적용
-            var mr = go.GetComponent<MeshRenderer>();
-            if (mr != null)
-            {
-                var mat = ResolveUrpMaterial(BotState.IsBot(id) ? BotColor : PeerColor);
-                if (mat != null) mr.material = mat;
-            }
+            // 봇·피어 모두 빈 root (절차적 아바타 빌더가 자식 구성)
+            var go = new GameObject(GetName(id));
+            go.transform.position = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
 
-            // 콜라이더 비활성화 (게임 물리 충돌 방지)
-            var col = go.GetComponent<Collider>();
-            if (col != null) col.enabled = false;
-
-            // 봇 전용: 아바타 빌더 + BotPhysicsBody
-            if (BotState.IsBot(id))
+            // 무기 클래스 (봇: 배정값, 피어: Melee 기본)
+            var wc = WeaponClass.Melee;
+            if (isBot)
             {
                 int botIdx = 0;
                 for (int i = 0; i < BotState.BotSteamIds.Length; i++)
                     if (BotState.BotSteamIds[i] == id) { botIdx = i; break; }
-                var wc = BotState.BotWeaponClasses[botIdx];
+                wc = BotState.BotWeaponClasses[botIdx];
+            }
 
-                var anim = go.AddComponent<BotAvatarAnimator>();
-                if (anim != null)
-                {
-                    anim.Init(id);
-                    anim.WeaponClass = wc;
-                    BotAvatarBuilder.BuildProcedural(go, BotColor, anim, wc);
-                }
+            // 절차적 아바타 + 애니메이터 (봇·피어 공통)
+            var anim = go.AddComponent<BotAvatarAnimator>();
+            if (anim != null)
+            {
+                anim.Init(id);
+                anim.WeaponClass = wc;
+                BotAvatarBuilder.BuildProcedural(go, color, anim, wc);
+            }
 
+            // BotPhysicsBody: 봇 전용 (피어는 패킷으로 위치 제어)
+            if (isBot)
+            {
                 var pb = go.AddComponent<BotPhysicsBody>();
                 if (pb != null) pb.Init(id);
             }
@@ -115,7 +107,7 @@ namespace BloodshedModToolkit.Coop.Renderer
                 tm.text     = go.name;
                 tm.fontSize = 96;
                 tm.anchor   = TextAnchor.LowerCenter;
-                tm.color    = BotState.IsBot(id) ? BotColor : PeerColor;
+                tm.color    = color;
             }
 
             _avatars[id] = go;
@@ -151,17 +143,19 @@ namespace BloodshedModToolkit.Coop.Renderer
             }
             _lastPos[id] = newPos;
 
-            // 봇 애니메이터에 이동속도 공급
-            if (hasPrev && BotState.IsBot(id) &&
-                BotAvatarAnimator.Instances.TryGetValue(id, out var avatarAnim))
+            // 애니메이터에 이동속도 공급 (봇·피어 공통)
+            if (hasPrev && BotAvatarAnimator.Instances.TryGetValue(id, out var avatarAnim))
             {
                 float dx = newPos.x - prev.x, dz = newPos.z - prev.z;
                 float speed = Time.deltaTime > 0f
                     ? (float)Math.Sqrt(dx*dx + dz*dz) / Time.deltaTime : 0f;
                 avatarAnim.SetMoveSpeed(speed);
 
+                // 봇: BotPhysicsBody 접지 상태 반영 / 피어: 항상 접지 가정
                 if (BotPhysicsBody.Instances.TryGetValue(id, out var pb2))
                     avatarAnim.SetGrounded(pb2.IsGrounded);
+                else
+                    avatarAnim.SetGrounded(true);
             }
         }
 
