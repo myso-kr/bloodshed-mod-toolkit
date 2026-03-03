@@ -185,6 +185,8 @@ namespace BloodshedModToolkit.Coop.Net
                 {
                     var data = new byte[read];
                     Buffer.BlockCopy(_recvBuf, 0, data, 0, (int)read);
+                    if (CoopState.Peers.Contains(from))
+                        _lastHeartbeat[from] = Time.time;
                     Router.Dispatch(from, data);
                 }
             }
@@ -345,6 +347,7 @@ namespace BloodshedModToolkit.Coop.Net
             CoopState.Peers.Remove(peer);
             _lastHeartbeat.Remove(peer);
             SteamNetworking.CloseP2PSessionWithUser(peer);
+            PlayerSyncHandler.RemoveBot((ulong)peer);
 
             if (CoopState.Peers.Count == 0)
             {
@@ -386,8 +389,8 @@ namespace BloodshedModToolkit.Coop.Net
 
             sp.currentWaveIndex = pkt.WaveIndex;
             WaveGroupStartPatch._allowGuestTrigger = true;
-            sp.NextWave();
-            WaveGroupStartPatch._allowGuestTrigger = false;
+            try   { sp.NextWave(); }
+            finally { WaveGroupStartPatch._allowGuestTrigger = false; }
             Plugin.Log.LogInfo($"[NetManager] WaveAdvance: wave={pkt.WaveIndex}");
         }
 
@@ -399,8 +402,8 @@ namespace BloodshedModToolkit.Coop.Net
             if (ps == null) return;
 
             XpEventPatch._applyingRemoteXp = true;
-            ps.AddXp(pkt.Amount);
-            XpEventPatch._applyingRemoteXp = false;
+            try   { ps.AddXp(pkt.Amount); }
+            finally { XpEventPatch._applyingRemoteXp = false; }
         }
 
         private void HandleLevelUp(CSteamID from, byte[] payload)

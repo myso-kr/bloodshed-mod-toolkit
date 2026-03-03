@@ -21,6 +21,7 @@ namespace BloodshedModToolkit.Coop.Bots
         void Update()
         {
             if (!BotState.Enabled) { if (_bots.Count > 0) RemoveAll(); return; }
+            if (!CoopState.IsConnected) { if (_bots.Count > 0) RemoveAll(); return; }
 
             int desired = Math.Clamp(BotState.Count, 1, 3);
             Vector3 localPos = PlayerStateBroadcastPatch.LastKnownLocalPos;

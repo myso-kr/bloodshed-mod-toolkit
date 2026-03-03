@@ -37,8 +37,8 @@ namespace BloodshedModToolkit.Coop.Sync
 
             // SetLevel 중 AddXp 후킹이 재귀 브로드캐스트 하지 않도록 플래그 설정
             XpEventPatch._applyingRemoteXp = true;
-            ps.SetLevel(newLevel);
-            XpEventPatch._applyingRemoteXp = false;
+            try   { ps.SetLevel(newLevel); }
+            finally { XpEventPatch._applyingRemoteXp = false; }
 
             ps.RecalculateStats();
             Plugin.Log.LogInfo($"[XpSyncHandler] 레벨 동기화: {ps.level} → {newLevel}");

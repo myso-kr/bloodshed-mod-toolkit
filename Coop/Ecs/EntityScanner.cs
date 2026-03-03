@@ -149,7 +149,7 @@ namespace BloodshedModToolkit.Coop.Ecs
                 catch (Exception ex)
                 {
                     Plugin.Log.LogWarning($"[EntityScanner] ECS 스캔 오류: {ex.Message}");
-                    _ecsReady = false;
+                    // _ecsReady는 false로 설정하지 않음 — 다음 프레임에 자동 재시도
                 }
             }
 
