@@ -1,6 +1,6 @@
-# Bloodshed 作弊模组
+# Bloodshed Mod Toolkit
 
-> 为 **Bloodshed**（Steam，Windows）添加游戏内作弊菜单的 BepInEx 6.x IL2CPP 插件。
+> 涵盖功能开关、平衡调整与性能优化的 **Bloodshed**（Steam，Windows）BepInEx 6.x IL2CPP 综合 Mod 工具包。
 
 [![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
@@ -12,12 +12,12 @@
 
 ## 功能
 
-点击屏幕右上角的 **★ Cheat Mod** 悬浮层即可打开/关闭菜单。
+点击屏幕右上角的 **★ Mod Toolkit** 悬浮层即可打开/关闭 Mod 菜单。
 菜单会**自动适配游戏当前语言**（支持 19 种语言）。
 
 ### 开关
 
-| 作弊 | 说明 |
+| 功能 | 说明 |
 |------|------|
 | 无敌模式 | 玩家不受任何伤害 |
 | 无限宝石 | 宝石始终不低于 999,999 |
@@ -63,7 +63,7 @@
    - 启动游戏一次以生成互操作程序集，然后退出。
 3. 解压发布包，其中包含预构建的 `BepInEx/plugins/` 目录结构。
    将其合并到 Bloodshed 游戏目录中即可。
-4. 启动 Bloodshed，右上角出现 **★ Cheat Mod** 悬浮层则说明安装成功。
+4. 启动 Bloodshed，右上角出现 **★ Mod Toolkit** 悬浮层则说明安装成功。
 
 ### 方式 B — 手动放置 DLL
 
@@ -79,12 +79,12 @@ Bloodshed/BepInEx/plugins/BloodshedModToolkit.dll
 
 | 操作 | 效果 |
 |------|------|
-| 点击右上角 **★ Cheat Mod** | 打开/关闭作弊菜单 |
-| 点击菜单中的开关 | 启用/禁用对应作弊 |
+| 点击右上角 **★ Mod Toolkit** | 打开/关闭 Mod 菜单 |
+| 点击菜单中的开关 | 启用/禁用对应功能 |
 | 拖动 **速度** 滑块 | 调整移动速度倍率 |
-| 点击 **关闭所有作弊** | 一键禁用所有作弊 |
+| 点击 **关闭所有作弊** | 一键重置所有功能 |
 
-> 悬浮层始终可见，当前激活的作弊会以绿色列出。
+> 悬浮层始终可见，当前激活的功能会以绿色列出。
 
 ---
 

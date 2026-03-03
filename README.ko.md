@@ -1,6 +1,6 @@
-# Bloodshed 치트 모드
+# Bloodshed Mod Toolkit
 
-> **Bloodshed** (Steam, Windows)에 인게임 치트 메뉴를 추가하는 BepInEx 6.x IL2CPP 플러그인.
+> **Bloodshed** (Steam, Windows)에 치트·밸런스 조정·성능 트윅을 아우르는 BepInEx 6.x IL2CPP 종합 모드 툴킷.
 
 [![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
@@ -12,12 +12,12 @@
 
 ## 기능
 
-화면 **우측 상단 ★ Cheat Mod** 오버레이를 클릭하면 메뉴를 열고 닫을 수 있습니다.
+화면 **우측 상단 ★ Mod Toolkit** 오버레이를 클릭하면 메뉴를 열고 닫을 수 있습니다.
 메뉴는 **게임 내 언어 설정을 자동으로 반영**합니다 (19개 언어 지원).
 
 ### 토글
 
-| 치트 | 설명 |
+| 기능 | 설명 |
 |------|------|
 | 무적 모드 | 플레이어가 피해를 입지 않습니다 |
 | 무한 젬 | 젬이 999,999 아래로 내려가지 않습니다 |
@@ -63,7 +63,7 @@
    - 게임을 한 번 실행해 인터롭 어셈블리를 생성한 후 종료합니다.
 3. 릴리스 ZIP을 압축 해제합니다. 내부에 `BepInEx/plugins/` 구조가 포함되어 있습니다.
    Bloodshed 게임 폴더에 병합하면 됩니다.
-4. Bloodshed를 실행합니다. 우측 상단에 **★ Cheat Mod** 오버레이가 표시되면 설치 성공입니다.
+4. Bloodshed를 실행합니다. 우측 상단에 **★ Mod Toolkit** 오버레이가 표시되면 설치 성공입니다.
 
 ### 방법 B — DLL 수동 배치
 
@@ -79,12 +79,12 @@ Bloodshed/BepInEx/plugins/BloodshedModToolkit.dll
 
 | 동작 | 결과 |
 |------|------|
-| 우측 상단 **★ Cheat Mod** 클릭 | 치트 메뉴 열기/닫기 |
-| 메뉴 내 토글 클릭 | 해당 치트 활성화/비활성화 |
+| 우측 상단 **★ Mod Toolkit** 클릭 | 모드 메뉴 열기/닫기 |
+| 메뉴 내 토글 클릭 | 해당 기능 활성화/비활성화 |
 | **속도** 슬라이더 조절 | 이동속도 배율 변경 |
-| **모든 치트 OFF** 클릭 | 모든 치트 한 번에 비활성화 |
+| **모든 치트 OFF** 클릭 | 모든 기능 한 번에 초기화 |
 
-> 오버레이는 항상 표시되며, 현재 활성화된 치트 목록을 초록색으로 나열합니다.
+> 오버레이는 항상 표시되며, 현재 활성화된 기능 목록을 초록색으로 나열합니다.
 
 ---
 

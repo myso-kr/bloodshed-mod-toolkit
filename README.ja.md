@@ -1,6 +1,6 @@
-# Bloodshed チートMod
+# Bloodshed Mod Toolkit
 
-> **Bloodshed** (Steam, Windows) にインゲーム チートメニューを追加する BepInEx 6.x IL2CPP プラグイン。
+> **Bloodshed** (Steam, Windows) にチート・バランス調整・パフォーマンスチューニングを網羅する BepInEx 6.x IL2CPP 総合Modツールキット。
 
 [![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
@@ -12,7 +12,7 @@
 
 ## 機能
 
-画面右上の **★ Cheat Mod** オーバーレイをクリックするとメニューが開きます。
+画面右上の **★ Mod Toolkit** オーバーレイをクリックするとModメニューが開きます。
 メニューは**ゲーム内の言語設定に自動で対応**します（19言語サポート）。
 
 ### トグル
@@ -63,7 +63,7 @@
    - ゲームを一度起動してインターロップアセンブリを生成後、終了します。
 3. リリース zip を展開します。内部に `BepInEx/plugins/` 構成が含まれています。
    Bloodshed ゲームフォルダにマージしてください。
-4. Bloodshed を起動します。右上に **★ Cheat Mod** オーバーレイが表示されれば成功です。
+4. Bloodshed を起動します。右上に **★ Mod Toolkit** オーバーレイが表示されれば成功です。
 
 ### 方法B — DLL を手動で配置
 
@@ -79,12 +79,12 @@ Bloodshed/BepInEx/plugins/BloodshedModToolkit.dll
 
 | 操作 | 結果 |
 |------|------|
-| 右上の **★ Cheat Mod** をクリック | チートメニューの開閉 |
-| メニュー内のトグルをクリック | チートの有効化/無効化 |
+| 右上の **★ Mod Toolkit** をクリック | Modメニューの開閉 |
+| メニュー内のトグルをクリック | 機能の有効化/無効化 |
 | **Speed** スライダーをドラッグ | 移動速度倍率の調整 |
-| **全チートOFF** をクリック | すべてのチートを一括無効化 |
+| **全チートOFF** をクリック | すべての機能を一括リセット |
 
-> オーバーレイは常に表示され、現在有効なチートが緑色でリスト表示されます。
+> オーバーレイは常に表示され、現在有効な機能が緑色でリスト表示されます。
 
 ---
 

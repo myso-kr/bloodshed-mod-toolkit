@@ -1,6 +1,6 @@
-# Bloodshed Cheat Mod
+# Bloodshed Mod Toolkit
 
-> A BepInEx 6.x IL2CPP plugin that adds an in-game cheat menu to **Bloodshed** (Steam, Windows).
+> A comprehensive BepInEx 6.x IL2CPP mod toolkit for **Bloodshed** (Steam, Windows) — in-game feature toggles, balance tweaks, and performance tuning.
 
 [![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
@@ -12,12 +12,12 @@
 
 ## Features
 
-Click the **★ Cheat Mod** overlay in the top-right corner of the screen to toggle the menu.
+Click the **★ Mod Toolkit** overlay in the top-right corner of the screen to toggle the menu.
 The menu automatically adapts to the **game's current language** (19 languages supported).
 
 ### Toggles
 
-| Cheat | Description |
+| Feature | Description |
 |-------|-------------|
 | God Mode | Player receives no damage |
 | Infinite Gems | Gems never drop below 999,999 |
@@ -63,7 +63,7 @@ The menu automatically adapts to the **game's current language** (19 languages s
    - Launch the game once (a black console window should appear), then quit — this generates the interop assemblies.
 3. Extract the release zip. It contains a pre-built `BepInEx/plugins/` structure.
    Merge it into your Bloodshed game folder.
-4. Launch Bloodshed. You should see the **★ Cheat Mod** overlay in the top-right corner.
+4. Launch Bloodshed. You should see the **★ Mod Toolkit** overlay in the top-right corner.
 
 ### Option B — Manual DLL placement
 
@@ -79,12 +79,12 @@ Bloodshed/BepInEx/plugins/BloodshedModToolkit.dll
 
 | Action | Result |
 |--------|--------|
-| Click **★ Cheat Mod** overlay (top-right) | Toggle the cheat menu open/closed |
-| Click any toggle | Enable / disable that cheat |
+| Click **★ Mod Toolkit** overlay (top-right) | Toggle the cheat menu open/closed |
+| Click any toggle | Enable / disable that feature |
 | Drag the **Speed** slider | Adjust movement speed multiplier |
-| Click **All Cheats OFF** | Disable every active cheat at once |
+| Click **Reset All** | Disable every active feature at once |
 
-> The overlay always shows currently active cheats listed in green.
+> The overlay always shows currently active features listed in green.
 
 ---
 
@@ -125,7 +125,7 @@ Without `GAME_LIBS_B64`, the build step is skipped and a warning is shown.
 
 ## Technical Notes
 
-| Cheat | Hook |
+| Feature | Hook |
 |-------|------|
 | God Mode | `Health.Damage` Prefix — skips damage for the player |
 | Speed Hack | `Q3PlayerController.Accelerate` Prefix — multiplies `targetSpeed` and `accel` |
