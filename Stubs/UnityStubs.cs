@@ -84,6 +84,33 @@ namespace UnityEngine
         }
         public static Color green => new Color(0f, 1f, 0f);
         public static Color white => new Color(1f, 1f, 1f);
+        public static Color Lerp(Color a, Color b, float t)
+        {
+            t = t < 0f ? 0f : t > 1f ? 1f : t;
+            return new Color(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t,
+                             a.b + (b.b - a.b) * t, a.a + (b.a - a.a) * t);
+        }
+    }
+
+    public static class Mathf
+    {
+        public static float Min(float a, float b)         => a < b ? a : b;
+        public static float Max(float a, float b)         => a > b ? a : b;
+        public static float Max(float a, float b, float c) => Max(Max(a, b), c);
+        public static float Clamp01(float v)              => v < 0f ? 0f : v > 1f ? 1f : v;
+        public static float Clamp(float v, float min, float max)
+            => v < min ? min : v > max ? max : v;
+        public static float Lerp(float a, float b, float t) => a + (b - a) * Clamp01(t);
+        public static float Abs(float v)  => v < 0f ? -v : v;
+        public static int   Abs(int v)    => v < 0 ? -v : v;
+        public static int   RoundToInt(float v) => (int)System.Math.Round(v);
+    }
+
+    public enum TextAnchor
+    {
+        UpperLeft = 0, UpperCenter, UpperRight,
+        MiddleLeft, MiddleCenter, MiddleRight,
+        LowerLeft, LowerCenter, LowerRight,
     }
 
     public static class Screen
@@ -134,9 +161,10 @@ namespace UnityEngine
     {
         public GUIStyle() { }
         public GUIStyle(GUIStyle other) { }
-        public int       fontSize  { get; set; }
-        public FontStyle fontStyle { get; set; }
-        public bool      wordWrap  { get; set; }
+        public int        fontSize  { get; set; }
+        public FontStyle  fontStyle { get; set; }
+        public bool       wordWrap  { get; set; }
+        public TextAnchor alignment { get; set; }
         public GUIStyleState normal { get; } = new GUIStyleState();
         public GUIStyleState hover  { get; } = new GUIStyleState();
         public static GUIStyle none => new GUIStyle();

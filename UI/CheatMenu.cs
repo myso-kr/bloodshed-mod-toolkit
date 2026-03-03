@@ -9,6 +9,7 @@ using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Sync;
 using BloodshedModToolkit.Coop.Friends;
+using BloodshedModToolkit.Combat;
 
 namespace BloodshedModToolkit.UI
 {
@@ -26,6 +27,10 @@ namespace BloodshedModToolkit.UI
         private Vector2 _scrollCheats = Vector2.zero;
         private Vector2 _scrollTweaks = Vector2.zero;
         private Vector2 _scrollCoop   = Vector2.zero;
+
+        // ── DPS 오버레이 ─────────────────────────────────────────────────────────
+        private const int DpsH = 76;   // 패널 높이 (px)
+        private float _statusOverlayBottom;   // DrawStatusOverlay 에서 갱신
 
         // ── Co-op UI 상태 ─────────────────────────────────────────────────────────
         private string _lobbyIdInput = "";
@@ -78,6 +83,9 @@ namespace BloodshedModToolkit.UI
         private GUIStyle? _stPresetOff;      // 비활성 프리셋 버튼 (회색)
         private GUIStyle? _stOverlayTitle;   // 오버레이 제목
         private GUIStyle? _stOverlayItem;    // 오버레이 항목
+        private GUIStyle? _stDpsLabel;       // DPS 소제목
+        private GUIStyle? _stDpsNumber;      // DPS 큰 숫자
+        private GUIStyle? _stDpsSub;         // DPS 보조 정보
 
         private void EnsureStyles()
         {
@@ -137,6 +145,20 @@ namespace BloodshedModToolkit.UI
             _stPresetOff = new GUIStyle(GUI.skin.button) { fontSize = 11 };
             _stPresetOff.normal.textColor = new Color(0.65f, 0.65f, 0.65f);
             _stPresetOff.hover.textColor  = Color.white;
+
+            // ── DPS 미터 — textColor는 흰색으로 두고 GUI.color 로 동적 착색 ────
+            _stDpsLabel = new GUIStyle(GUI.skin.label)
+                { fontSize = 10, fontStyle = FontStyle.Bold, wordWrap = false };
+            _stDpsLabel.normal.textColor = Color.white;
+
+            _stDpsNumber = new GUIStyle(GUI.skin.label)
+                { fontSize = 22, fontStyle = FontStyle.Bold, wordWrap = false };
+            _stDpsNumber.normal.textColor = Color.white;
+            _stDpsNumber.alignment        = TextAnchor.MiddleRight;
+
+            _stDpsSub = new GUIStyle(GUI.skin.label)
+                { fontSize = 10, wordWrap = false };
+            _stDpsSub.normal.textColor = Color.white;
         }
 
         // ════════════════════════════════════════════════════════════════════════
@@ -146,6 +168,7 @@ namespace BloodshedModToolkit.UI
         {
             ApplyCheats();
             TickRefreshTimers();
+            DpsTracker.Tick();
         }
 
         /// <summary>
@@ -196,7 +219,8 @@ namespace BloodshedModToolkit.UI
         void OnGUI()
         {
             EnsureStyles();
-            DrawStatusOverlay();
+            DrawStatusOverlay();   // _statusOverlayBottom 갱신
+            DrawDpsOverlay();
 
             if (_visible)
                 _windowRect = GUI.Window(0, _windowRect,
@@ -223,6 +247,8 @@ namespace BloodshedModToolkit.UI
             GUI.color = new Color(0f, 0f, 0f, 0.68f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = prev;
+
+            _statusOverlayBottom = panelY + panelH;   // DPS 오버레이 위치 기준점
 
             if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
                 _visible = !_visible;
@@ -579,6 +605,104 @@ namespace BloodshedModToolkit.UI
 
                 GUILayout.EndHorizontal();
             }
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // DPS 오버레이
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawDpsOverlay()
+        {
+            // ── 페이드 알파 계산 ─────────────────────────────────────────────
+            float sinceHit = DpsTracker.TimeSinceHit;
+            float alpha;
+            if (DpsTracker.IsActive)
+                alpha = Mathf.Clamp01(sinceHit < 0.3f ? sinceHit / 0.3f : 1f); // 0.3초 페이드인
+            else
+            {
+                float t = (sinceHit - DpsTracker.CombatGap) / 1.5f;
+                alpha = Mathf.Clamp01(1f - t);                                  // 1.5초 페이드아웃
+            }
+            if (alpha < 0.02f) return;
+
+            float px = Screen.width - OW - OM;
+            float py = _statusOverlayBottom + 4f;
+
+            var saved = GUI.color;
+
+            // ── 배경 ─────────────────────────────────────────────────────────
+            GUI.color = new Color(0f, 0f, 0f, 0.72f * alpha);
+            GUI.DrawTexture(new Rect(px, py, OW, DpsH), Texture2D.whiteTexture);
+
+            float cx = px + OM;
+            float cw = OW - OM * 2;
+            float cy = py + OM;
+
+            float dps     = DpsTracker.CurrentDps;
+            float peak    = Mathf.Max(DpsTracker.ValidPeakDps, dps, 1f);
+            Color dpsCol  = DpsColor(dps);
+
+            // 히트 직후 0.12초간 흰색으로 플래시
+            float flash   = Mathf.Clamp01(1f - sinceHit / 0.12f);
+            Color numCol  = Color.Lerp(dpsCol, Color.white, flash * 0.65f);
+
+            // ── Row 1: 레이블 "◈ DPS" ────────────────────────────────────────
+            GUI.color = new Color(1f, 0.72f, 0f, alpha);
+            GUI.Label(new Rect(cx, cy, cw, 12), "\u25c8  DPS", _stDpsLabel!);
+            cy += 14f;
+
+            // ── Row 2: DPS 숫자 (22pt, 우측 정렬, 동적 색상) ─────────────────
+            GUI.color = new Color(numCol.r, numCol.g, numCol.b, alpha);
+            GUI.Label(new Rect(cx, cy, cw, 24), FormatDps(dps), _stDpsNumber!);
+            cy += 26f;
+
+            // ── Row 3: 게이지 바 ─────────────────────────────────────────────
+            // 배경
+            GUI.color = new Color(0.18f, 0.18f, 0.18f, 0.9f * alpha);
+            GUI.DrawTexture(new Rect(cx, cy, cw, 5), Texture2D.whiteTexture);
+            // 채움
+            float ratio = dps / peak;
+            if (ratio > 0.005f)
+            {
+                GUI.color = new Color(dpsCol.r, dpsCol.g, dpsCol.b, alpha);
+                GUI.DrawTexture(
+                    new Rect(cx, cy, cw * Mathf.Clamp01(ratio), 5),
+                    Texture2D.whiteTexture);
+            }
+            cy += 7f;
+
+            // ── Row 4: 피크 / 히트 수 / 누적 피해 ────────────────────────────
+            float pk    = DpsTracker.ValidPeakDps;
+            string sub  = pk > 0f
+                ? $"\u25b2{FormatDps(pk)}   \u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}"
+                : $"\u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}";
+            GUI.color = new Color(0.58f, 0.58f, 0.58f, alpha);
+            GUI.Label(new Rect(cx, cy, cw, 12), sub, _stDpsSub!);
+
+            GUI.color = saved;
+        }
+
+        /// <summary>DPS 크기에 따른 색상. gray → lime → yellow → orange → red.</summary>
+        private static Color DpsColor(float dps)
+        {
+            if (dps <  200f) return new Color(0.55f, 0.55f, 0.55f);  // 회색
+            if (dps < 1000f) return new Color(0.32f, 1.00f, 0.28f);  // 라임
+            if (dps < 3000f) return new Color(1.00f, 0.86f, 0.08f);  // 노랑
+            if (dps < 7000f) return new Color(1.00f, 0.42f, 0.05f);  // 주황
+            return                  new Color(1.00f, 0.16f, 0.16f);  // 빨강
+        }
+
+        private static string FormatDps(float v)
+        {
+            if (v <  1000f) return ((int)v).ToString();
+            if (v < 10000f) return (v / 1000f).ToString("F1") + "K";
+            return           ((int)(v / 1000f)).ToString() + "K";
+        }
+
+        private static string FormatTotal(float v)
+        {
+            if (v <    1000f) return ((int)v).ToString();
+            if (v < 1000000f) return (v / 1000f).ToString("F1") + "K";
+            return             (v / 1000000f).ToString("F1") + "M";
         }
 
         // ════════════════════════════════════════════════════════════════════════
