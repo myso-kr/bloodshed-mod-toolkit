@@ -97,15 +97,33 @@ namespace UnityEngine
     {
         public float x, y, z;
         public Vector3(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
-        public Vector3 normalized => this;
-        public static Vector3 zero => new Vector3(0f, 0f, 0f);
+        public float   sqrMagnitude => x * x + y * y + z * z;
+        public float   magnitude    => (float)Math.Sqrt(sqrMagnitude);
+        public Vector3 normalized   => this;
+        public static Vector3 zero  => new Vector3(0f, 0f, 0f);
+        public static float   Distance(Vector3 a, Vector3 b) => (a - b).magnitude;
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
     }
 
+    public struct RaycastHit
+    {
+        public Vector3 point;
+        public Vector3 normal;
+        public float   distance;
+    }
+
     public static class Physics
     {
-        public static bool Raycast(Vector3 origin, Vector3 direction, float maxDistance = float.PositiveInfinity) => false;
+        public static bool Raycast(Vector3 origin, Vector3 direction,
+            float maxDistance = float.PositiveInfinity) => false;
+
+        public static bool Raycast(Vector3 origin, Vector3 direction,
+            out RaycastHit hitInfo,
+            float maxDistance = float.PositiveInfinity)
+        { hitInfo = default; return false; }
+
+        public static bool Linecast(Vector3 start, Vector3 end) => false;
     }
 
     public struct Rect
@@ -136,6 +154,8 @@ namespace UnityEngine
 
     public static class Mathf
     {
+        public const float Rad2Deg = 57.29578f;
+        public const float Deg2Rad = 0.01745329f;
         public static float Min(float a, float b)         => a < b ? a : b;
         public static float Max(float a, float b)         => a > b ? a : b;
         public static float Max(float a, float b, float c) => Max(Max(a, b), c);
