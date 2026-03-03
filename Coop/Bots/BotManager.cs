@@ -67,7 +67,8 @@ namespace BloodshedModToolkit.Coop.Bots
             while (_bots.Count < desired)
             {
                 int idx = _bots.Count;
-                var spawn = new Vector3(localPos.x + (idx - 1) * 2f, localPos.y, localPos.z);
+                // Y + 1.5f: CharacterController(center=0)는 중력으로 바닥까지 낙하 → 지면 착지 보장
+                var spawn = new Vector3(localPos.x + (idx - 1) * 2f, localPos.y + 1.5f, localPos.z);
                 _bots.Add(new BotController(idx, spawn));
                 Plugin.Log.LogInfo($"[BotManager] 봇 추가: {BotState.BotNames[idx]}");
             }

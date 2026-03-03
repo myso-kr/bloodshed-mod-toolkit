@@ -46,7 +46,7 @@ namespace BloodshedModToolkit.Coop.Bots
             {
                 _cc.height     = 1.8f;
                 _cc.radius     = 0.25f;
-                _cc.center     = new Vector3(0f, 0.9f, 0f);
+                _cc.center     = new Vector3(0f, 0f, 0f);  // 기하 중심 = 물리 중심 → 아바타 Y 묻힘 방지
                 _cc.stepOffset = 0.3f;
                 _cc.slopeLimit = 45f;
             }
@@ -109,15 +109,23 @@ namespace BloodshedModToolkit.Coop.Bots
             foreach (var h in all)
             {
                 if (h == null || h.isPlayer || h.currentHealth <= 0f) continue;
-                var ep = h.gameObject.transform.position;
+                var go = h.gameObject;
+                if (go == null) continue;
+                var tr = go.transform;
+                if (tr == null) continue;
+                var ep = tr.position;
                 float dx = ep.x - myPos.x, dy = ep.y - myPos.y, dz = ep.z - myPos.z;
                 float dist = (float)Math.Sqrt(dx*dx + dy*dy + dz*dz);
                 if (dist < bestDist) { bestDist = dist; best = h; bestPos = ep; }
             }
 
+            // 상태 변화 시 로그
+            bool changed = (best == null) != (NearestEnemy == null);
             NearestEnemy     = best;
             NearestEnemyPos  = bestPos;
             NearestEnemyDist = best != null ? bestDist : float.MaxValue;
+            if (changed)
+                Plugin.Log.LogInfo($"[BotPhysicsBody {_botId:X8}] 적 감지 → {(best != null ? $"{bestDist:F1}m" : "없음")} (전체 Health {all.Length}개)");
         }
     }
 }

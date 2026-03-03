@@ -21,23 +21,22 @@ namespace BloodshedModToolkit.Coop.Bots
         public bool       ShouldAttack  = false;
         private float     _attackCooldown = 0f;
 
-        private Vector3 _targetPos;
-        private float   _wanderTimer;
-        private const float WanderRadius   = 8f;
-        private const float WanderInterval = 3f;
-        private const float AttackRange    = 4f;
-        private const float ChaseRange     = 12f;
-        private const float AttackCooldown = 1.5f;
-
-        private static readonly System.Random s_rng = new();
+        private float _sectorScanAngle = 0f;
+        private const float WanderRadius      = 5f;
+        private const float ScanRotateSpeed   = 0.25f; // rad/s — ~25초 한 바퀴
+        private const float AttackRange       = 4f;
+        private const float ChaseRange        = 12f;
+        private const float AttackCooldown    = 1.5f;
+        private const float FormationDeadzone = 0.8f;  // m — 이 이내면 정지
 
         public BotController(int index, Vector3 spawnPos)
         {
-            BotIndex   = index;
-            BotId      = BotState.BotSteamIds[index];
-            Position   = spawnPos;
-            _targetPos = spawnPos;
-            _wanderTimer = WanderInterval; // 즉시 첫 목표 선정
+            BotIndex = index;
+            BotId    = BotState.BotSteamIds[index];
+            Position = spawnPos;
+            // 각 봇의 초기 각도를 등간격으로 분산 (사주경계 시작 포메이션)
+            int total = Math.Max(1, BotState.Count);
+            _sectorScanAngle = (float)(2.0 * Math.PI * index / total);
         }
 
         public void Tick(float dt, Vector3 centerPos, Vector3 enemyPos, float enemyDist)
@@ -60,26 +59,26 @@ namespace BloodshedModToolkit.Coop.Bots
             // 플레이어에서 3× 반경 이탈 시 리셋
             float dx = Position.x - centerPos.x, dz = Position.z - centerPos.z;
             if (dx*dx + dz*dz > (WanderRadius*3f)*(WanderRadius*3f))
-                Position = _targetPos = centerPos;
+            {
+                Position = centerPos;
+                _sectorScanAngle = (float)(2.0 * Math.PI * BotIndex / Math.Max(1, BotState.Count));
+            }
         }
 
         private void DoWander(float dt, Vector3 centerPos)
         {
-            _wanderTimer += dt;
-            if (_wanderTimer >= WanderInterval)
-            {
-                _wanderTimer = 0f;
-                float angle  = (float)(s_rng.NextDouble() * Math.PI * 2.0);
-                float radius = (float)(s_rng.NextDouble() * WanderRadius);
-                _targetPos = new Vector3(
-                    centerPos.x + (float)Math.Cos(angle) * radius,
-                    centerPos.y,
-                    centerPos.z + (float)Math.Sin(angle) * radius);
-            }
-            var diff  = new Vector3(_targetPos.x - Position.x, 0f, _targetPos.z - Position.z);
-            float len = (float)Math.Sqrt(diff.x*diff.x + diff.z*diff.z);
-            DesiredMoveDir = len > 0.01f
-                ? new Vector3(diff.x / len, 0f, diff.z / len) : Vector3.zero;
+            // 사주경계 포메이션: 봇 인덱스에 따른 등간격 방위각으로 플레이어 주위를 천천히 순찰
+            _sectorScanAngle += ScanRotateSpeed * dt;
+
+            float angle   = _sectorScanAngle;
+            float targetX = centerPos.x + (float)Math.Cos(angle) * WanderRadius;
+            float targetZ = centerPos.z + (float)Math.Sin(angle) * WanderRadius;
+
+            float dx  = targetX - Position.x;
+            float dz  = targetZ - Position.z;
+            float len = (float)Math.Sqrt(dx*dx + dz*dz);
+            DesiredMoveDir = len > FormationDeadzone
+                ? new Vector3(dx / len, 0f, dz / len) : Vector3.zero;
         }
 
         private void DoChase(Vector3 enemyPos)
