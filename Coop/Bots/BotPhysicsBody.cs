@@ -34,7 +34,11 @@ namespace BloodshedModToolkit.Coop.Bots
         public Vector3  NearestEnemyPos  { get; private set; }
         public float    NearestEnemyDist { get; private set; } = float.MaxValue;
 
-        public Vector3 position => transform.position;
+        public Vector3 position    => transform.position;
+        public bool    IsGrounded  => _cc != null && _cc.isGrounded;
+        public float   CurrentSpeed =>
+            (float)Math.Sqrt(_desiredMoveDir.x * _desiredMoveDir.x
+                           + _desiredMoveDir.z * _desiredMoveDir.z) * MoveSpeed;
 
         public void Init(ulong botId)
         {

@@ -14,6 +14,8 @@ namespace UnityEngine
         public static T?   FindObjectOfType<T>()  where T : Object => null!;
         public static T[]? FindObjectsOfType<T>() where T : Object => null;
         public static void Destroy(Object obj) { }
+        public static T    Instantiate<T>(T original)                    where T : Object => original;
+        public static T    Instantiate<T>(T original, Transform parent)  where T : Object => original;
     }
 
     public class Component : Object
@@ -21,17 +23,27 @@ namespace UnityEngine
         public Component(IntPtr ptr) : base(ptr) { }
         public Transform  transform  => null!;
         public GameObject gameObject => null!;
+        public Transform? parent     => null;
         public int GetInstanceID() => 0;
-        public T? GetComponent<T>() where T : Component => null!;
+        public T?   GetComponent<T>()                           where T : Component => null!;
+        public T?   GetComponentInChildren<T>()                 where T : Component => null!;
+        public T[]  GetComponentsInChildren<T>()                where T : Component => Array.Empty<T>();
+        public T[]  GetComponentsInChildren<T>(bool includeInactive) where T : Component => Array.Empty<T>();
     }
-    public class Behaviour : Component { public Behaviour(IntPtr ptr) : base(ptr) { } }
+    public class Behaviour : Component
+    {
+        public Behaviour(IntPtr ptr) : base(ptr) { }
+        public bool enabled { get; set; }
+    }
     public class Transform  : Component
     {
         public Transform(IntPtr ptr) : base(ptr) { }
-        public Vector3    position      { get; set; }
-        public Vector3    localPosition { get; set; }
-        public Vector3    localScale    { get; set; }
-        public Quaternion rotation      { get; set; }
+        public Vector3    position           { get; set; }
+        public Vector3    localPosition      { get; set; }
+        public Vector3    localScale         { get; set; }
+        public Quaternion rotation           { get; set; }
+        public Quaternion localRotation      { get; set; }
+        public Vector3    localEulerAngles   { get; set; }
         public void SetParent(Transform parent) { }
     }
 
@@ -56,9 +68,15 @@ namespace UnityEngine
     {
         public GameObject(IntPtr ptr) : base(ptr) { }
         public GameObject(string name) : base(IntPtr.Zero) { }
-        public Transform transform => null!;
-        public T? GetComponent<T>() where T : Component => null!;
-        public T? AddComponent<T>() where T : Component => null!;
+        public Transform transform  => null!;
+        public int       layer      { get; set; }
+        public bool      activeSelf { get; }
+        public void SetActive(bool value) { }
+        public T?  GetComponent<T>()                              where T : Component => null!;
+        public T?  GetComponentInChildren<T>()                    where T : Component => null!;
+        public T[] GetComponentsInChildren<T>()                   where T : Component => Array.Empty<T>();
+        public T[] GetComponentsInChildren<T>(bool includeInactive) where T : Component => Array.Empty<T>();
+        public T?  AddComponent<T>()                              where T : Component => null!;
         public static GameObject CreatePrimitive(PrimitiveType type) => null!;
     }
 
@@ -137,10 +155,14 @@ namespace UnityEngine
         public static float timeScale { get; set; }
     }
 
+    public enum IMECompositionMode { Auto = 0, On = 1, Off = 2 }
+
     public static class Input
     {
         public static bool GetKeyDown(KeyCode key) => false;
         public static bool GetKey(KeyCode key)     => false;
+        public static string compositionString => "";
+        public static IMECompositionMode imeCompositionMode { get; set; }
     }
 
     public static class GUIUtility
@@ -157,6 +179,7 @@ namespace UnityEngine
         A = 97, B, C, D, E, F, G, H, I, J, K, L, M,
         N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
         Delete = 127,
+        KeypadEnter = 271,
         Insert = 277,
         F1 = 282, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
     }
@@ -221,6 +244,24 @@ namespace UnityEngine
         public static void Label(Rect position, string text, GUIStyle style) { }
         public static bool Button(Rect position, GUIContent content, GUIStyle style) => false;
         public static void DrawTexture(Rect position, Texture2D image) { }
+        public static string TextField(Rect position, string text) => text;
+        public static void SetNextControlName(string name) { }
+        public static void FocusControl(string name) { }
+    }
+
+    public enum EventType
+    {
+        Used = 0, MouseDown = 1, MouseUp = 2, MouseMove = 3,
+        KeyDown = 4, KeyUp = 5, ScrollWheel = 6, Repaint = 7, Layout = 8
+    }
+
+    public class Event
+    {
+        public static Event current { get; } = new Event();
+        public EventType type     { get; set; }
+        public KeyCode   keyCode  { get; set; }
+        public char      character { get; set; }
+        public void Use() { type = EventType.Used; }
     }
 
     public static class Random
@@ -238,7 +279,11 @@ namespace UnityEngine
     {
         public float x, y, z, w;
         public static Quaternion identity => new Quaternion { w = 1f };
-        public static Quaternion LookRotation(Vector3 forward) => identity;
+        public static Quaternion LookRotation(Vector3 forward)                          => identity;
+        public static Quaternion Euler(float x, float y, float z)                       => identity;
+        public static Quaternion Euler(Vector3 angles)                                  => identity;
+        public static Quaternion Slerp(Quaternion a, Quaternion b, float t)             => identity;
+        public static Quaternion operator *(Quaternion a, Quaternion b)                 => identity;
     }
 
     // ── Camera ──────────────────────────────────────────────────────────────────
@@ -271,11 +316,43 @@ namespace UnityEngine
         public Renderer(IntPtr ptr) : base(ptr) { }
         public Material  material       { get; set; } = new Material();
         public Material? sharedMaterial { get; set; }
+        public bool      enabled        { get; set; }
     }
     public class MeshRenderer : Renderer
     {
         public MeshRenderer(IntPtr ptr) : base(ptr) { }
     }
+
+    public class SkinnedMeshRenderer : Renderer
+    {
+        public SkinnedMeshRenderer(IntPtr ptr) : base(ptr) { }
+    }
+
+    // ── Animator ────────────────────────────────────────────────────────────────
+    public enum AnimatorCullingMode { AlwaysAnimate = 0, CullUpdateTransforms, CullCompletely }
+    public enum AnimatorControllerParameterType { Float = 1, Int = 3, Bool = 4, Trigger = 9 }
+
+    public class AnimatorControllerParameter
+    {
+        public string                          name { get; } = "";
+        public AnimatorControllerParameterType type { get; }
+    }
+
+    public class Animator : Behaviour
+    {
+        public Animator(IntPtr ptr) : base(ptr) { }
+        public bool                      applyRootMotion { get; set; }
+        public AnimatorCullingMode        cullingMode     { get; set; }
+        public bool                       isHuman         { get; }
+        public AnimatorControllerParameter[] parameters  => Array.Empty<AnimatorControllerParameter>();
+        public void  SetFloat(string name,   float value) { }
+        public void  SetBool(string name,    bool  value) { }
+        public void  SetTrigger(string name)              { }
+        public void  SetInteger(string name, int   value) { }
+        public float GetFloat(string name)  => 0f;
+        public bool  GetBool(string name)   => false;
+    }
+
     // ── CharacterController ──────────────────────────────────────────────────────
     public enum CollisionFlags { None = 0, Sides = 1, Above = 2, Below = 4 }
 

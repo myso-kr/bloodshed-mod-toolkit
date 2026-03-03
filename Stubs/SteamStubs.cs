@@ -137,6 +137,7 @@ namespace Steamworks
 
     public static class SteamFriends
     {
+        public static string        GetPersonaName() => "";
         public static string        GetFriendPersonaName(CSteamID steamIDFriend) => "";
         public static int           GetFriendCount(EFriendFlags iFriendFlags) => 0;
         public static CSteamID      GetFriendByIndex(int iFriend, EFriendFlags iFriendFlags) => CSteamID.Nil;

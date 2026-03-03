@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 단일 버전 진실 원천 — Bump-Version.ps1 로만 수정할 것 -->
-    <Version>1.0.92</Version>
+    <Version>1.0.101</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -92,6 +92,10 @@
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
       <HintPath>$(BepInExPath)\interop\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(BepInExPath)\interop\UnityEngine.AnimationModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.Entities">

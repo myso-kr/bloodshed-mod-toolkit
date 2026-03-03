@@ -68,6 +68,13 @@ namespace BloodshedModToolkit.Coop.Events
             Net.BroadcastReliable(DamageRequestPacket.Encode(hostEntityIdx, damage));
         }
 
+        /// <summary>채팅 메시지 — Host/Guest 양방향, 연결된 피어에게 브로드캐스트.</summary>
+        public static void OnChatMessage(string senderName, string message)
+        {
+            if (!CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(ChatMessagePacket.Encode(senderName, message));
+        }
+
         public static void OnMissionStart(string sceneName, int buildIndex)
         {
             if (!CoopState.IsHost) return;

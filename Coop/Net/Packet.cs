@@ -26,6 +26,9 @@ namespace BloodshedModToolkit.Coop.Net
         // Phase 9 — 미션 진입 게이트
         MissionStart  = 0x70,   // Host → Guest: 씬 이름 + 빌드 인덱스
         PlayerReady   = 0x71,   // Guest → Host: 준비 완료
+
+        // Phase 10 — 인게임 채팅
+        ChatMessage   = 0x80,   // 양방향: 채팅 메시지
     }
 
     // ── 직렬화 헬퍼 ──────────────────────────────────────────────────────────
@@ -307,6 +310,24 @@ namespace BloodshedModToolkit.Coop.Net
     {
         public static byte[] Encode()
             => Packet.Encode(PacketType.PlayerReady, _ => { });
+    }
+
+    // ChatMessage — 양방향
+    public static class ChatMessagePacket
+    {
+        public static byte[] Encode(string senderName, string message)
+            => Packet.Encode(PacketType.ChatMessage, w =>
+            {
+                w.Write(senderName);
+                w.Write(message);
+            });
+
+        public static (string senderName, string message) Decode(byte[] payload)
+        {
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms, System.Text.Encoding.UTF8);
+            return (br.ReadString(), br.ReadString());
+        }
     }
 
     // DamageRequest — Guest → Host

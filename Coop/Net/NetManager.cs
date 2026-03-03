@@ -7,6 +7,7 @@ using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Sync;
 using BloodshedModToolkit.Coop.Mission;
+using BloodshedModToolkit.UI;
 
 namespace BloodshedModToolkit.Coop.Net
 {
@@ -68,6 +69,7 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.ItemSelected,   HandleItemSelected);
             Router.Register(PacketType.MissionStart,   HandleMissionStart);
             Router.Register(PacketType.PlayerReady,    HandlePlayerReady);
+            Router.Register(PacketType.ChatMessage,    HandleChatMessage);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -475,6 +477,12 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (!CoopState.IsHost) return;  // Host만 처리
             MissionSyncHandler.OnPlayerReady((ulong)from);
+        }
+
+        private void HandleChatMessage(CSteamID from, byte[] payload)
+        {
+            var (senderName, message) = ChatMessagePacket.Decode(payload);
+            UI.ChatWindow.Instance?.AddMessage(senderName, message);
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)

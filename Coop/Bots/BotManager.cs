@@ -4,6 +4,7 @@ using UnityEngine;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Sync;
+using BloodshedModToolkit.Coop.Renderer;
 
 namespace BloodshedModToolkit.Coop.Bots
 {
@@ -56,6 +57,10 @@ namespace BloodshedModToolkit.Coop.Bots
                     Plugin.Log.LogInfo(
                         $"[Bot] {BotState.BotNames[bot.BotIndex]} → 적 25 dmg");
                     bot.ShouldAttack = false;
+
+                    // ── 공격 모션 ──
+                    if (BotAvatarAnimator.Instances.TryGetValue(bot.BotId, out var anim))
+                        anim.TriggerAttack();
                 }
 
                 PlayerSyncHandler.OnPlayerState(bot.BotId, bot.ToPacket());

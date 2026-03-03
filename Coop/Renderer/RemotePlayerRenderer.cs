@@ -62,7 +62,10 @@ namespace BloodshedModToolkit.Coop.Renderer
 
         private void CreateAvatar(ulong id, Net.PlayerStatePacket pkt)
         {
-            var go  = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            // 봇: 빈 root (아바타 빌더가 자식 프리미티브 구성), 피어: 캡슐 (기존 유지)
+            var go = BotState.IsBot(id)
+                ? new GameObject(GetName(id))
+                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = GetName(id);
             go.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
             go.transform.position   = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
@@ -79,22 +82,17 @@ namespace BloodshedModToolkit.Coop.Renderer
             var col = go.GetComponent<Collider>();
             if (col != null) col.enabled = false;
 
-            // 봇 전용: 무기 비주얼 + BotPhysicsBody
+            // 봇 전용: 아바타 빌더 + BotPhysicsBody
             if (BotState.IsBot(id))
             {
-                var wGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                wGo.name = "WeaponVisual";
-                wGo.transform.SetParent(go.transform);
-                wGo.transform.localPosition = new Vector3(0.35f, 0f, 0.45f);
-                wGo.transform.localScale    = new Vector3(0.08f, 0.08f, 0.55f);
-                var wMr = wGo.GetComponent<MeshRenderer>();
-                if (wMr != null)
+                var anim = go.AddComponent<BotAvatarAnimator>();
+                if (anim != null)
                 {
-                    var wMat = ResolveUrpMaterial(new Color(0.3f, 0.3f, 0.35f));
-                    if (wMat != null) wMr.material = wMat;
+                    anim.Init(id);
+                    if (!BotAvatarBuilder.TryClonePlayerModel(go, anim))
+                        if (!BotAvatarBuilder.TryCloneEnemyModel(go, anim))
+                            BotAvatarBuilder.BuildProcedural(go, BotColor, anim);
                 }
-                var wCol = wGo.GetComponent<Collider>();
-                if (wCol != null) wCol.enabled = false;
 
                 var pb = go.AddComponent<BotPhysicsBody>();
                 if (pb != null) pb.Init(id);
@@ -103,7 +101,7 @@ namespace BloodshedModToolkit.Coop.Renderer
             // 부유 이름 레이블 (TextMesh 자식)
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(go.transform);
-            labelGo.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+            labelGo.transform.localPosition = new Vector3(0f, 1.1f, 0f);
             // 고해상도 렌더링(fontSize=96) + 스케일 다운(0.03125)으로 선명도 확보
             labelGo.transform.localScale = new Vector3(0.03125f, 0.03125f, 0.03125f);
             var tm = labelGo.AddComponent<TextMesh>();
@@ -139,13 +137,27 @@ namespace BloodshedModToolkit.Coop.Renderer
             if (!physicsOwned) go.transform.position = newPos;
 
             // 이동 방향으로 회전 (0.01m 이상 이동 시)
-            if (_lastPos.TryGetValue(id, out var prev))
+            bool hasPrev = _lastPos.TryGetValue(id, out var prev);
+            if (hasPrev)
             {
                 var delta = new Vector3(newPos.x - prev.x, newPos.y - prev.y, newPos.z - prev.z);
                 if (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z > 0.0001f)
                     go.transform.rotation = Quaternion.LookRotation(delta);
             }
             _lastPos[id] = newPos;
+
+            // 봇 애니메이터에 이동속도 공급
+            if (hasPrev && BotState.IsBot(id) &&
+                BotAvatarAnimator.Instances.TryGetValue(id, out var avatarAnim))
+            {
+                float dx = newPos.x - prev.x, dz = newPos.z - prev.z;
+                float speed = Time.deltaTime > 0f
+                    ? (float)Math.Sqrt(dx*dx + dz*dz) / Time.deltaTime : 0f;
+                avatarAnim.SetMoveSpeed(speed);
+
+                if (BotPhysicsBody.Instances.TryGetValue(id, out var pb2))
+                    avatarAnim.SetGrounded(pb2.IsGrounded);
+            }
         }
 
         private void DestroyAvatar(ulong id)
