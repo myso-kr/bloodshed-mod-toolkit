@@ -27,30 +27,6 @@ namespace BloodshedModToolkit.Coop.Mission
             Instance = null;
         }
 
-        void Update()
-        {
-            if (MissionState.Status == MissionStatus.ReadyUp)
-            {
-                float prev = MissionState.ReadyCountdown;
-                MissionState.ReadyCountdown -= Time.deltaTime;
-                if ((int)prev != (int)MissionState.ReadyCountdown
-                    && (int)MissionState.ReadyCountdown % 5 == 0)
-                    Plugin.Log.LogInfo($"[MissionGate] Ready-Up 카운트다운: {(int)MissionState.ReadyCountdown}초");
-                if (MissionState.ReadyCountdown <= 0f)
-                    Sync.MissionSyncHandler.OnGuestReady();
-            }
-
-            if (MissionState.Status == MissionStatus.VoteRequested)
-            {
-                MissionState.VoteCountdown -= Time.deltaTime;
-                if (MissionState.VoteCountdown <= 0f)
-                {
-                    Plugin.Log.LogInfo("[MissionGate] 투표 카운트다운 만료 → 자동 수락");
-                    Sync.MissionSyncHandler.OnGuestVoteResponse(true);
-                }
-            }
-        }
-
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             // 씬 전환은 항상 로그 (Co-op 미사용 시에도 개발 중 추적용)
@@ -78,34 +54,16 @@ namespace BloodshedModToolkit.Coop.Mission
                 // WaveGroupStartPatch(DebugGuestMode 경로)가 웨이브를 차단한다.
                 if (CoopState.DebugGuestMode)
                 {
-                    // MetaGame = 게임 준비 화면 (캐릭터 선택/업그레이드).
-                    // 실제 미션은 이 화면에서 "게임 시작" 클릭 후 로딩→미션 순서로 진입.
-                    // 준비 화면 자체는 투표 대상이 아니므로 통과.
                     if (scene.name == "MetaGame")
                     {
-                        MissionState.Status = MissionStatus.Idle;
                         Plugin.Log.LogInfo("[MissionGate] Debug 모드 — MetaGame(준비화면) 통과");
                         return;
                     }
-
                     MissionState.PendingSceneName  = scene.name;
                     MissionState.PendingBuildIndex = scene.buildIndex;
-
                     if (MissionState.Status == MissionStatus.Permitted)
-                    {
-                        // ACCEPT 후 씬 재진입 완료 → 초기화
                         MissionState.Status = MissionStatus.Idle;
-                        Plugin.Log.LogInfo(
-                            $"[MissionGate] Debug 모드 — 투표 수락 후 씬 완료: '{scene.name}'");
-                    }
-                    else
-                    {
-                        // 실제 미션 씬 진입 → 투표 UI 활성화 + 웨이브 차단
-                        MissionState.VoteCountdown = 30f;
-                        MissionState.Status = MissionStatus.VoteRequested;
-                        Plugin.Log.LogInfo(
-                            $"[MissionGate] Debug 모드 — 미션 씬 감지, 투표 UI 활성: '{scene.name}'");
-                    }
+                    Plugin.Log.LogInfo($"[MissionGate] Debug 모드 — 미션 씬: '{scene.name}'");
                     return;  // MissionStart 브로드캐스트 없음
                 }
 

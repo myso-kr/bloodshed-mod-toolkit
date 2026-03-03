@@ -53,8 +53,6 @@ namespace BloodshedModToolkit
             // Phase 10 — 인게임 채팅
             AddComponent<UI.ChatWindow>();
 
-            // Phase 11 — 투표 모달 (화면 중앙)
-            AddComponent<UI.VoteModal>();
 
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
@@ -64,6 +62,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.116";
+        public const string PLUGIN_VERSION = "1.0.117";
     }
 }

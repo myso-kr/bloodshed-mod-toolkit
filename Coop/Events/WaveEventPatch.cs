@@ -2,7 +2,6 @@ using System;
 using HarmonyLib;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop;
-using BloodshedModToolkit.Coop.Mission;
 
 namespace BloodshedModToolkit.Coop.Events
 {
@@ -27,21 +26,8 @@ namespace BloodshedModToolkit.Coop.Events
 
         static bool Prefix()
         {
-            // Debug 게스트 모드: VoteRequested/VoteAccepted 중에는 웨이브 차단
-            if (CoopState.DebugGuestMode &&
-                MissionState.Status != MissionStatus.Idle &&
-                MissionState.Status != MissionStatus.Permitted)
-                return false;
-
-            // Guest가 연결 중일 때는 Host 명령 없이 자체 실행 차단
             if (!CoopState.IsHost && CoopState.IsConnected && !_allowGuestTrigger)
-            {
-                // Permitted 상태(Guest Ready 완료)일 때만 허용
-                // Idle 포함 나머지 상태(WaitingForHost, ReadyUp)는 차단
-                if (MissionState.Status == MissionStatus.Permitted)
-                    return true;
                 return false;
-            }
             return true;
         }
     }
