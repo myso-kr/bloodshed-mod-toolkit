@@ -228,7 +228,7 @@ namespace BloodshedModToolkit.UI
             float cx = panelX + OM;
             float cy = panelY + OM;
             GUI.Label(new Rect(cx, cy, OW - OM * 2, LH),
-                "\u25c8 Mod Toolkit  " + (_visible ? "\u25b2" : "\u25bc"),
+                $"\u25c8 Mod Toolkit v{MyPluginInfo.PLUGIN_VERSION}  " + (_visible ? "\u25b2" : "\u25bc"),
                 _stOverlayTitle!);
 
             for (int i = 0; i < lines.Count; i++)
