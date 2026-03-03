@@ -27,10 +27,13 @@ if [ ! -f "$BEPINEX_PATH/interop/Assembly-CSharp.dll" ]; then
     exit 0
 fi
 
-# ── 1. 실제 빌드 ─────────────────────────────────────────────────────────────
+# ── 1. 실제 빌드 (순서 중요: 인스톨러가 mod DLL을 임베드하므로 메인 먼저) ────
 echo "[pre-push] 빌드 중..."
-dotnet build "$REPO_ROOT" -c Release \
+dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
     "-p:BepInExPath=$BEPINEX_PATH" \
+    --no-incremental \
+    -v minimal
+dotnet build "$REPO_ROOT/Installer/BloodshedModToolkitInstaller.csproj" -c Release \
     --no-incremental \
     -v minimal
 
