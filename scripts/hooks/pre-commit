@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# pre-commit hook — 스텁 빌드로 컴파일 에러를 커밋 전에 차단합니다.
+# pre-commit hook
+# 1) stub 빌드로 컴파일 에러 차단
+# 2) 빌드 성공 시 patch 버전 자동 증가 → 버전 파일을 커밋에 포함
 # 설치: scripts/Install-Hooks.ps1 실행
 
 set -euo pipefail
@@ -7,6 +9,7 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx}"
 
+# ── 1. 컴파일 검사 ────────────────────────────────────────────────────────────
 echo "[pre-commit] 컴파일 검사 중 (stub 빌드)..."
 
 dotnet build "$REPO_ROOT" -c Release \
@@ -14,6 +17,14 @@ dotnet build "$REPO_ROOT" -c Release \
     "-p:BepInExPath=$BEPINEX_PATH" \
     --no-incremental \
     -v minimal
+
+# ── 2. patch 버전 자동 증가 ──────────────────────────────────────────────────
+echo "[pre-commit] 버전 자동 증가 (patch)..."
+
+pwsh -NonInteractive -File "$REPO_ROOT/scripts/Bump-Version.ps1" -Bump Patch
+
+# 버전 파일을 현재 커밋에 포함
+git add "$REPO_ROOT/BloodshedModToolkit.csproj" "$REPO_ROOT/Plugin.cs"
 
 echo "[pre-commit] OK"
 exit 0
