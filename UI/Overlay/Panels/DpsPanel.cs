@@ -23,6 +23,7 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
         /// <summary>
         /// UIContext 측정 모드로 DrawContent 를 실행하여 패딩 포함 총 높이를 반환합니다.
         /// DrawContent 의 행 높이/간격이 변경되면 이 값도 자동으로 따라갑니다.
+        /// OverlayStyle.EnsureReady() 이후에만 정확한 값 반환 (OverlayManager.Draw 에서 보장).
         /// </summary>
         public float Height
         {
@@ -56,13 +57,14 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
         /// <summary>
         /// 공통 레이아웃 메서드. measure / draw 두 모드에서 동일하게 호출됩니다.
         ///
+        /// 행 높이는 OverlayStyle.XxxLineH (CalcHeight 기반) 로 런타임 폰트 메트릭에서
+        /// 자동 계산됩니다 — 하드코딩 없음, 클리핑 없음.
+        ///
         /// 행 구성:
-        ///   Row 1 — 타이틀 "◈  DPS"       11pt Bold    height=14  gap=2
-        ///   Row 2 — DPS 숫자               22pt Bold    height=30  gap=2
-        ///   Row 3 — 게이지 바              5px          height=5   gap=5
-        ///   Row 4 — 피크 / 히트 수 / 누적  10pt Normal  height=14  gap=0
-        /// Total content = 14+2 + 30+2 + 5+5 + 14 = 72
-        /// Total height  = Padding.Vertical(16) + 72 = 88px
+        ///   Row 1 — 타이틀 "◈  DPS"       11pt Bold    height=TitleLineH   gap=2
+        ///   Row 2 — DPS 숫자               22pt Bold    height=DpsNumLineH  gap=2
+        ///   Row 3 — 게이지 바              5px          height=5            gap=5
+        ///   Row 4 — 피크 / 히트 수 / 누적  10pt Normal  height=SmallLineH   gap=0
         /// </summary>
         private void DrawContent(UIContext ctx, float alpha)
         {
@@ -80,22 +82,22 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
                 : $"\u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}";
 
             ctx
-                // Row 1: ◈ DPS 타이틀
+                // Row 1: ◈ DPS 타이틀 — TitleLineH 로 클리핑 없이 렌더링
                 .Label(new Color(OverlayStyle.Amber.r, OverlayStyle.Amber.g,
                                  OverlayStyle.Amber.b, alpha),
-                       "\u25c8  DPS", OverlayStyle.Title!, height: 14f, gap: 2f)
+                       "\u25c8  DPS", OverlayStyle.Title!, height: OverlayStyle.TitleLineH, gap: 2f)
 
-                // Row 2: DPS 숫자 (22pt Bold, 우측 정렬, 동적 색상)
+                // Row 2: DPS 숫자 (22pt Bold, 우측 정렬) — DpsNumLineH 로 클리핑 없이 렌더링
                 .Label(new Color(numCol.r, numCol.g, numCol.b, alpha),
-                       FormatDps(dps), OverlayStyle.DpsNum!, height: 30f, gap: 2f)
+                       FormatDps(dps), OverlayStyle.DpsNum!, height: OverlayStyle.DpsNumLineH, gap: 2f)
 
-                // Row 3: 게이지 바
+                // Row 3: 게이지 바 (고정 5px)
                 .Bar(dps / peak, dpsCol, alpha, height: 5f, gap: 5f)
 
-                // Row 4: 피크 / 히트 수 / 누적 피해
+                // Row 4: 피크 / 히트 수 / 누적 피해 — SmallLineH 로 클리핑 없이 렌더링
                 .Label(new Color(OverlayStyle.Dim.r, OverlayStyle.Dim.g,
                                  OverlayStyle.Dim.b, alpha),
-                       sub, OverlayStyle.Small!, height: 14f, gap: 0f);
+                       sub, OverlayStyle.Small!, height: OverlayStyle.SmallLineH, gap: 0f);
         }
 
         // ── 헬퍼 ────────────────────────────────────────────────────────────

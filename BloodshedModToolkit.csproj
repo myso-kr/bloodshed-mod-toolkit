@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 단일 버전 진실 원천 — Bump-Version.ps1 로만 수정할 것 -->
-    <Version>1.0.54</Version>
+    <Version>1.0.56</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

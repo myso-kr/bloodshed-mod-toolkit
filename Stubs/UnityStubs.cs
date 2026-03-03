@@ -168,6 +168,13 @@ namespace UnityEngine
         public GUIStyleState normal { get; } = new GUIStyleState();
         public GUIStyleState hover  { get; } = new GUIStyleState();
         public static GUIStyle none => new GUIStyle();
+
+        /// <summary>
+        /// 주어진 콘텐츠를 렌더링하는 데 필요한 최소 높이를 반환합니다.
+        /// 스텁에서는 fontSize × 1.5f 를 반환 (보수적 추정값).
+        /// 런타임에서는 Unity 가 실제 폰트 메트릭으로 계산합니다.
+        /// </summary>
+        public float CalcHeight(GUIContent content, float width) => fontSize * 1.5f;
     }
 
     public class GUISkin

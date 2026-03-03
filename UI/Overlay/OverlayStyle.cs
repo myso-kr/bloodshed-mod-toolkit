@@ -17,6 +17,13 @@ namespace BloodshedModToolkit.UI.Overlay
         public static GUIStyle? Small  { get; private set; }  // 10px Normal — 보조 정보
         public static GUIStyle? DpsNum { get; private set; }  // 22px Bold, 우측정렬 — DPS 숫자
 
+        // ── 런타임 lineHeight 캐시 (CalcHeight 기반) ────────────────────────────
+        /// <summary>각 스타일의 실제 렌더링 행 높이 — EnsureReady() 이후 사용 가능.</summary>
+        public static float TitleLineH  { get; private set; }
+        public static float ItemLineH   { get; private set; }
+        public static float SmallLineH  { get; private set; }
+        public static float DpsNumLineH { get; private set; }
+
         // ── 공통 색상 상수 ─────────────────────────────────────────────────────
         public static readonly Color Amber = new Color(1.00f, 0.72f, 0.00f);
         public static readonly Color Lime  = new Color(0.27f, 1.00f, 0.33f);
@@ -33,6 +40,13 @@ namespace BloodshedModToolkit.UI.Overlay
             Item   = Make(10, FontStyle.Normal);
             Small  = Make(10, FontStyle.Normal);
             DpsNum = Make(22, FontStyle.Bold, TextAnchor.MiddleRight);
+
+            // 런타임 폰트 메트릭으로 실제 행 높이 측정 (클리핑 방지)
+            var probe = new GUIContent("Ag");
+            TitleLineH  = Title!.CalcHeight(probe,  200f);
+            ItemLineH   = Item!.CalcHeight(probe,   200f);
+            SmallLineH  = Small!.CalcHeight(probe,  200f);
+            DpsNumLineH = DpsNum!.CalcHeight(probe, 200f);
         }
 
         private static GUIStyle Make(int size, FontStyle style,
