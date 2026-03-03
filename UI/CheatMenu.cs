@@ -296,10 +296,10 @@ namespace BloodshedModToolkit.UI
             // OVERLAY ────────────────────────────────────────────────────────
             SectionHeader("OVERLAY");
             GUILayout.BeginHorizontal();
-            OverlayPosBtn("숨김",   OverlayPosition.Hidden);
-            OverlayPosBtn("상단좌", OverlayPosition.TopLeft);
-            OverlayPosBtn("상단중", OverlayPosition.TopCenter);
-            OverlayPosBtn("상단우", OverlayPosition.TopRight);
+            OverlayPosBtn(l.OverlayHidden,    OverlayPosition.Hidden);
+            OverlayPosBtn(l.OverlayTopLeft,   OverlayPosition.TopLeft);
+            OverlayPosBtn(l.OverlayTopCenter, OverlayPosition.TopCenter);
+            OverlayPosBtn(l.OverlayTopRight,  OverlayPosition.TopRight);
             GUILayout.EndHorizontal();
 
             GUILayout.EndScrollView();
@@ -486,11 +486,12 @@ namespace BloodshedModToolkit.UI
         // ════════════════════════════════════════════════════════════════════════
         private void DrawBotsTab()
         {
+            var l = L();
             _scrollBots = GUILayout.BeginScrollView(_scrollBots, GUILayout.ExpandHeight(true));
 
             SectionHeader("BOT PLAYERS");
             BotState.Enabled = GUILayout.Toggle(BotState.Enabled,
-                BotState.Enabled ? "Bot Players  [ON]" : "Bot Players  [OFF]",
+                BotState.Enabled ? l.BotPlayersOn : l.BotPlayersOff,
                 BotState.Enabled ? _stToggleOn! : _stToggleOff!);
 
             if (BotState.Enabled)
@@ -510,7 +511,7 @@ namespace BloodshedModToolkit.UI
                 SectionHeader("STATUS");
                 var bots = BotManager.Instance?.GetBots();
                 if (bots == null || bots.Count == 0)
-                    GUILayout.Label("  (게임 시작 후 표시)", _stSliderName!);
+                    GUILayout.Label(l.BotStatusEmpty, _stSliderName!);
                 else
                     foreach (var bot in bots)
                     {
@@ -525,10 +526,10 @@ namespace BloodshedModToolkit.UI
                 GUILayout.Space(4);
                 SectionHeader("RENDERER");
                 int avatarCount = PlayerSyncHandler.States.Count;
-                GUILayout.Label($"  추적 중: {avatarCount}명 (봇+피어)", _stSliderName!);
+                GUILayout.Label(string.Format(l.BotTracking, avatarCount), _stSliderName!);
             }
             else
-                GUILayout.Label("  봇 활성화 시 캡슐 아바타로 렌더링 파이프라인 테스트", _stSliderName!);
+                GUILayout.Label(l.BotDisabledNote, _stSliderName!);
 
             GUILayout.EndScrollView();
         }

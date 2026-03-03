@@ -55,7 +55,7 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
 
             // 단축키 힌트
             ctx.Label(OverlayStyle.Dim,
-                      "[F5] Menu  [F6] Heal  [F7] Lv+",
+                      l.ShortcutHint,
                       OverlayStyle.Item!, lh, gap: 0f);
         }
 

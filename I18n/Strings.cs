@@ -80,6 +80,21 @@ namespace BloodshedModToolkit.I18n
         public string CoopFriendsLoadPrompt  => G(nameof(CoopFriendsLoadPrompt));
         public string CoopFriendsNone        => G(nameof(CoopFriendsNone));
         public string CoopInvite             => G(nameof(CoopInvite));
+
+        // ── 오버레이 위치 ──────────────────────────────────────────────────────────
+        public string OverlayHidden    => G(nameof(OverlayHidden));
+        public string OverlayTopLeft   => G(nameof(OverlayTopLeft));
+        public string OverlayTopCenter => G(nameof(OverlayTopCenter));
+        public string OverlayTopRight  => G(nameof(OverlayTopRight));
+        public string ShortcutHint     => G(nameof(ShortcutHint));
+
+        // ── 봇 탭 ────────────────────────────────────────────────────────────────
+        public string BotPlayersOn    => G(nameof(BotPlayersOn));
+        public string BotPlayersOff   => G(nameof(BotPlayersOff));
+        public string BotStatusEmpty  => G(nameof(BotStatusEmpty));
+        /// <summary>{0} = 추적 수</summary>
+        public string BotTracking     => G(nameof(BotTracking));
+        public string BotDisabledNote => G(nameof(BotDisabledNote));
     }
 
     /// <summary>
