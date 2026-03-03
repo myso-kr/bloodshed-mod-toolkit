@@ -3,6 +3,7 @@ using BepInEx.Unity.IL2CPP;
 using BepInEx.Logging;
 using HarmonyLib;
 using BloodshedModToolkit.Coop.Net;
+using BloodshedModToolkit.Coop.Ecs;
 
 namespace BloodshedModToolkit
 {
@@ -29,6 +30,9 @@ namespace BloodshedModToolkit
             // Co-op 네트워크 레이어
             AddComponent<NetManager>();
 
+            // Co-op ECS 엔티티 스캐너 (Phase 3)
+            AddComponent<EntityScanner>();
+
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
     }
@@ -37,6 +41,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.16";
+        public const string PLUGIN_VERSION = "1.0.18";
     }
 }

@@ -57,7 +57,8 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.WaveAdvance,   HandleWaveAdvance);
             Router.Register(PacketType.XpGained,      HandleXpGained);
             Router.Register(PacketType.LevelUp,       HandleLevelUp);
-            Router.Register(PacketType.PlayerState,   HandlePlayerState);
+            Router.Register(PacketType.PlayerState,    HandlePlayerState);
+            Router.Register(PacketType.StateSnapshot, HandleStateSnapshot);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -377,6 +378,17 @@ namespace BloodshedModToolkit.Coop.Net
             Plugin.Log.LogDebug(
                 $"[NetManager] PlayerState from {from}: " +
                 $"pos=({pkt.PosX:F1},{pkt.PosY:F1},{pkt.PosZ:F1}) hp={pkt.CurrentHp:F0}");
+        }
+
+        private void HandleStateSnapshot(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            // Phase 4+에서 Guest의 엔티티 위치를 실제로 업데이트
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms);
+            uint   tick  = br.ReadUInt32();
+            ushort count = br.ReadUInt16();
+            Plugin.Log.LogDebug($"[NetManager] StateSnapshot tick={tick} count={count}");
         }
     }
 }
