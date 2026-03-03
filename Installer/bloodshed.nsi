@@ -2,7 +2,7 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.67"
+!define VERSION    "1.0.68"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
 
 Name    "${APPNAME} v${VERSION}"
@@ -37,14 +37,12 @@ Function .onInit
 FunctionEnd
 
 ; - DetectGamePath -
-; NSIS 네이티브 레지스트리 조회로 Bloodshed 설치 경로를 자동 탐지합니다.
-; 1) HKCU Steam SteamPath
-; 2) HKLM Wow6432Node Steam InstallPath
-; 3) 기본 경로 두 곳 순서로 시도합니다.
+; Detects the Bloodshed install path via NSIS native registry reads.
+; Priority: 1) HKCU Steam SteamPath  2) HKLM Wow6432Node InstallPath  3) default paths
 Function DetectGamePath
     StrCpy $GamePath ""
 
-    ; 1. HKCU (일반 Steam 설치)
+    ; 1. HKCU (standard Steam install)
     ReadRegStr $0 HKCU "SOFTWARE\Valve\Steam" "SteamPath"
     ${If} $0 != ""
         StrCpy $1 "$0\steamapps\common\Bloodshed"
@@ -53,7 +51,7 @@ Function DetectGamePath
             Goto DetectDone
     ${EndIf}
 
-    ; 2. HKLM Wow6432Node (64비트 OS 32비트 Steam)
+    ; 2. HKLM Wow6432Node (32-bit Steam on 64-bit OS)
     ReadRegStr $0 HKLM "SOFTWARE\Wow6432Node\Valve\Steam" "InstallPath"
     ${If} $0 != ""
         StrCpy $1 "$0\steamapps\common\Bloodshed"
@@ -62,7 +60,7 @@ Function DetectGamePath
             Goto DetectDone
     ${EndIf}
 
-    ; 3. 기본 경로 폴백
+    ; 3. Common fallback paths
     StrCpy $1 "C:\Program Files (x86)\Steam\steamapps\common\Bloodshed"
     IfFileExists "$1\Bloodshed.exe" 0 +3
         StrCpy $GamePath $1
