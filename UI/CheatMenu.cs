@@ -552,10 +552,13 @@ namespace BloodshedModToolkit.UI
             if (ps == null) { Plugin.Log.LogWarning("[ForceLevelUp] PlayerStats 없음"); return; }
             float current = ps.experience;
             float cap     = ps.experienceCap;
-            float needed  = cap - current + 1f;
-            if (needed < 1f) needed = 1f;
-            ps.AddXp(needed);
-            Plugin.Log.LogInfo($"[ForceLevelUp] +{needed:F0} XP");
+            if (current >= cap)
+            {
+                Plugin.Log.LogInfo("[ForceLevelUp] 경험치 이미 최대 — 스킵");
+                return;
+            }
+            ps.AddXp(cap - current + 1f);
+            Plugin.Log.LogInfo($"[ForceLevelUp] +{cap - current + 1f:F0} XP");
         }
     }
 }

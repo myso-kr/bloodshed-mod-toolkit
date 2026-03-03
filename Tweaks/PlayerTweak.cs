@@ -6,8 +6,11 @@ namespace BloodshedModToolkit.Tweaks
     /// <summary>
     /// 플레이어 체력 배율 — RecalculateStats 후 MaxHp에 적용.
     /// RecalculateStats 는 baseStats 기반으로 매번 재계산하므로 Postfix 곱셈이 누적되지 않습니다.
+    /// Priority.High 로 StatMaxerPatch(Normal) 보다 먼저 실행되어 HP 배율을 먼저 적용합니다.
+    /// MaxStats ON 시 StatMaxerPatch 가 이후 99999 로 덮어씁니다 (정상 동작).
     /// </summary>
     [HarmonyPatch(typeof(PlayerStats), "RecalculateStats")]
+    [HarmonyPriority(Priority.High)]
     public static class PlayerHpTweakPatch
     {
         static void Postfix(PlayerStats __instance)

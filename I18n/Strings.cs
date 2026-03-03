@@ -44,6 +44,7 @@ namespace BloodshedModToolkit.I18n
         public string TweakSectionHeader => G(nameof(TweakSectionHeader));
         /// <summary>활성 프리셋 표시. {0} = 프리셋 이름</summary>
         public string TweakActiveLabel   => G(nameof(TweakActiveLabel));
+        public string SpawnNote          => G(nameof(SpawnNote));
         public string TweakMortal        => G(nameof(TweakMortal));
         public string TweakHunter        => G(nameof(TweakHunter));
         public string TweakSlayer        => G(nameof(TweakSlayer));

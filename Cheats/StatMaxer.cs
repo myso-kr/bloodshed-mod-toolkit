@@ -8,7 +8,10 @@ namespace BloodshedModToolkit.Cheats
     /// MaxStats ON 시 스탯 재계산 직후 모든 수치를 최대로 덮어씁니다.
     /// OneShotKill 은 Health.Damage 후킹으로 이전하여 여기서 제거.
     /// </summary>
+    // Priority.Normal (기본값) — PlayerHpTweakPatch(High) 이후 실행됨.
+    // MaxStats ON 시 PlayerHpTweakPatch 의 결과를 99999 로 덮어써 MaxStats 가 우선합니다.
     [HarmonyPatch(typeof(PlayerStats), "RecalculateStats")]
+    [HarmonyPriority(Priority.Normal)]
     public static class StatMaxerPatch
     {
         static void Postfix(PlayerStats __instance)
