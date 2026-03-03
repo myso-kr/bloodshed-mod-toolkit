@@ -104,7 +104,6 @@ if ($existingTag) {
 
 # ── 4. GitHub Release ─────────────────────────────────────────────────────────
 Write-Host "`n[4/4] GitHub Release 업로드..." -ForegroundColor Yellow
-$draftFlag = if ($DraftOnly) { "--draft" } else { "" }
 
 $null = gh release view $tag 2>&1
 if ($LASTEXITCODE -eq 0) {
@@ -112,10 +111,14 @@ if ($LASTEXITCODE -eq 0) {
     gh release upload $tag $zipName "$dll#BloodshedModToolkit.dll" --clobber
     if (-not $DraftOnly) { gh release edit $tag --draft=false }
 } else {
-    gh release create $tag $zipName "$dll#BloodshedModToolkit.dll" `
-        --title "Bloodshed Mod Toolkit v$Version" `
-        --generate-notes `
-        $draftFlag
+    # 빈 문자열이 인자로 전달되지 않도록 배열 splatting 사용
+    $releaseArgs = @(
+        $tag, $zipName, "$dll#BloodshedModToolkit.dll",
+        '--title', "Bloodshed Mod Toolkit v$Version",
+        '--generate-notes'
+    )
+    if ($DraftOnly) { $releaseArgs += '--draft' }
+    gh release create @releaseArgs
 }
 
 Write-Host "`nRelease $tag 완료!" -ForegroundColor Cyan

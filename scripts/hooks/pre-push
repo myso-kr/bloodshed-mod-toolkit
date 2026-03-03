@@ -12,6 +12,14 @@ BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx
 PLUGINS_DIR="$BEPINEX_PATH/plugins"
 DLL="$REPO_ROOT/bin/Release/net6.0/BloodshedModToolkit.dll"
 
+# stdin 에서 push 대상 ref 를 읽어 태그 push 이면 즉시 종료
+# (Publish-Release.ps1 이 git push origin <tag> 를 호출할 때 재귀 트리거 방지)
+while IFS=' ' read -r _local_ref _local_sha remote_ref _remote_sha; do
+    if [[ "$remote_ref" == refs/tags/* ]]; then
+        exit 0
+    fi
+done
+
 # interop DLL 없으면 게임 미실행 상태 — 전체 과정 건너뜀
 if [ ! -f "$BEPINEX_PATH/interop/Assembly-CSharp.dll" ]; then
     echo "[pre-push] ⚠ BepInEx/interop/ 없음 — 게임을 한 번 실행한 뒤 다시 push하세요."
