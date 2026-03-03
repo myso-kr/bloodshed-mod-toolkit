@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# pre-push hook — 실제 interop DLL 로 전체 빌드 후 BepInEx/plugins/ 에 배포합니다.
+# pre-push hook
+# 1) 실제 interop DLL 로 전체 빌드
+# 2) BepInEx/plugins/ 로컬 배포
+# 3) GitHub Release 자동 생성 (Publish-Release.ps1 -SkipBuild)
 # 설치: scripts/Install-Hooks.ps1 실행
 
 set -euo pipefail
@@ -7,33 +10,33 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx}"
 PLUGINS_DIR="$BEPINEX_PATH/plugins"
+DLL="$REPO_ROOT/bin/Release/net6.0/BloodshedModToolkit.dll"
 
-# interop DLL 존재 여부 확인
+# interop DLL 없으면 게임 미실행 상태 — 전체 과정 건너뜀
 if [ ! -f "$BEPINEX_PATH/interop/Assembly-CSharp.dll" ]; then
-    echo "[pre-push] ⚠ BepInEx/interop/ 가 없음 — 게임을 한 번 실행해주세요."
-    echo "[pre-push]   실제 빌드 검증 건너뜀 (stub 빌드는 통과됨)."
+    echo "[pre-push] ⚠ BepInEx/interop/ 없음 — 게임을 한 번 실행한 뒤 다시 push하세요."
+    echo "[pre-push]   로컬 배포 및 GitHub Release 생략."
     exit 0
 fi
 
-echo "[pre-push] 실제 빌드 및 배포 중..."
-
+# ── 1. 실제 빌드 ─────────────────────────────────────────────────────────────
+echo "[pre-push] 빌드 중..."
 dotnet build "$REPO_ROOT" -c Release \
     "-p:BepInExPath=$BEPINEX_PATH" \
     --no-incremental \
-    -v quiet
+    -v minimal
 
-DLL="$REPO_ROOT/bin/Release/net6.0/BloodshedModToolkit.dll"
-
-if [ ! -f "$DLL" ]; then
-    echo "[pre-push] 빌드 결과물을 찾을 수 없습니다: $DLL"
-    exit 1
-fi
-
-# 게임이 실행 중이 아닐 때 자동 배포
+# ── 2. 로컬 배포 ─────────────────────────────────────────────────────────────
 if [ -d "$PLUGINS_DIR" ]; then
     cp "$DLL" "$PLUGINS_DIR/"
-    echo "[pre-push] 배포 완료: $PLUGINS_DIR/BloodshedModToolkit.dll"
+    echo "[pre-push] 로컬 배포: $PLUGINS_DIR/BloodshedModToolkit.dll"
 fi
+
+# ── 3. GitHub Release ────────────────────────────────────────────────────────
+echo "[pre-push] GitHub Release 생성 중..."
+pwsh -NonInteractive -File "$REPO_ROOT/scripts/Publish-Release.ps1" \
+    -SkipBuild \
+    -NoBrowser
 
 echo "[pre-push] OK"
 exit 0
