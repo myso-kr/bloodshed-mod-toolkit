@@ -30,10 +30,11 @@ namespace BloodshedModToolkit.Coop.Events
             // Guest가 연결 중일 때는 Host 명령 없이 자체 실행 차단
             if (!CoopState.IsHost && CoopState.IsConnected && !_allowGuestTrigger)
             {
-                var st = MissionState.Status;
-                if (st == MissionStatus.Permitted || st == MissionStatus.Idle)
-                    return true;  // Permitted이면 허용
-                return false;     // 그 외 차단 유지
+                // Permitted 상태(Guest Ready 완료)일 때만 허용
+                // Idle 포함 나머지 상태(WaitingForHost, ReadyUp)는 차단
+                if (MissionState.Status == MissionStatus.Permitted)
+                    return true;
+                return false;
             }
             return true;
         }

@@ -40,6 +40,8 @@ namespace BloodshedModToolkit.Coop.Mission
 
             if (CoopState.IsHost && CoopState.IsConnected)
             {
+                // buildIndex 0 = 메인 메뉴/로비 씬 — 미션 씬만 브로드캐스트
+                if (scene.buildIndex <= 0) return;
                 MissionState.GuestReadyMap.Clear();
                 Events.EventBridge.OnMissionStart(scene.name, scene.buildIndex);
                 return;
