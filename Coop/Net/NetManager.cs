@@ -204,6 +204,8 @@ namespace BloodshedModToolkit.Coop.Net
         {
             while (SteamNetworking.IsP2PPacketAvailable(out var size, channel))
             {
+                Plugin.Log.LogDebug($"[NetManager] 수신 대기 패킷: ch={channel} size={size}");
+
                 if (size > MaxPacketSize)
                 {
                     Plugin.Log.LogWarning($"[NetManager] 패킷 크기 초과: {size} > {MaxPacketSize}");
@@ -212,8 +214,11 @@ namespace BloodshedModToolkit.Coop.Net
                     continue;
                 }
 
-                if (SteamNetworking.ReadP2PPacket(_recvBuf, size,
-                    out uint read, out CSteamID from, channel))
+                bool ok = SteamNetworking.ReadP2PPacket(_recvBuf, size,
+                    out uint read, out CSteamID from, channel);
+                Plugin.Log.LogDebug($"[NetManager] ReadP2PPacket: ok={ok} read={read} from={from}");
+
+                if (ok && read > 0)
                 {
                     var data = new byte[read];
                     Buffer.BlockCopy(_recvBuf, 0, data, 0, (int)read);
@@ -229,16 +234,52 @@ namespace BloodshedModToolkit.Coop.Net
         // ════════════════════════════════════════════════════════════════════
         private void OnP2PSessionRequest(P2PSessionRequest_t parm)
         {
-            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청 수락: {parm.m_steamIDRemote}");
-            SteamNetworking.AcceptP2PSessionWithUser(parm.m_steamIDRemote);
+            var remote = parm.m_steamIDRemote;
+            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청 수락: {remote}");
+            SteamNetworking.AcceptP2PSessionWithUser(remote);
 
-            // 세션 수락 즉시 Handshake 응답 — PollMessages 타이밍에 의존하지 않고
-            // 상대방이 연결 확인을 바로 받을 수 있도록 보장
             if (!CoopState.IsEnabled) return;
+
+            // Host만 즉시 Handshake 응답 + Peer 등록
+            // Guest가 여기서 응답하면 Host↔Guest 핑퐁 루프가 생기므로 Host만 처리
+            if (!CoopState.IsHost) return;
+            if (!IsLobbyMember(remote)) return;
+
             var myId = SteamUser.GetSteamID();
-            SendReliable(parm.m_steamIDRemote,
-                HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, CoopState.IsHost));
-            Plugin.Log.LogInfo($"[NetManager] Handshake 즉시 응답 → {parm.m_steamIDRemote}");
+            SendReliable(remote, HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
+            Plugin.Log.LogInfo($"[NetManager] [Host] Handshake 즉시 응답 → {remote}");
+
+            // PollMessages를 기다리지 않고 즉시 Peer 등록 + 초기화 패킷 전송
+            // (ReadP2PPacket IL2CPP 마샬링 문제로 PollMessages가 동작하지 않을 수 있음)
+            if (!CoopState.Peers.Contains(remote))
+            {
+                CoopState.Peers.Add(remote);
+                _lastHeartbeat[remote] = Time.time;
+                CoopState.IsConnected = true;
+                Plugin.Log.LogInfo(
+                    $"[NetManager] [Host] Guest 즉시 등록: {SteamFriends.GetFriendPersonaName(remote)} ({remote})");
+            }
+
+            SendFullSnapshotTo(remote);
+            TweakSyncHandler.SendTo(remote);
+
+            var scene = Mission.MissionState.HostCurrentScene;
+            var idx   = Mission.MissionState.HostCurrentBuildIndex;
+            if (!string.IsNullOrEmpty(scene) && idx > 0)
+            {
+                SendReliable(remote, Net.MissionStartPacket.Encode(scene, idx));
+                Plugin.Log.LogInfo($"[NetManager] MissionStart 재전송 → {remote}");
+            }
+        }
+
+        private bool IsLobbyMember(CSteamID steamId)
+        {
+            if (CoopState.LobbyId == CSteamID.Nil) return false;
+            int n = SteamMatchmaking.GetNumLobbyMembers(CoopState.LobbyId);
+            for (int i = 0; i < n; i++)
+                if (SteamMatchmaking.GetLobbyMemberByIndex(CoopState.LobbyId, i) == steamId)
+                    return true;
+            return false;
         }
 
         private void OnP2PConnectFail(P2PSessionConnectFail_t parm)
@@ -395,6 +436,7 @@ namespace BloodshedModToolkit.Coop.Net
             }
 
             // Host이면 응답 Handshake + FullSnapshot + TweakConfig 전송
+            // (OnP2PSessionRequest에서 즉시 처리되지 않은 경우의 fallback)
             if (CoopState.IsHost)
             {
                 var myId = SteamUser.GetSteamID();
@@ -403,14 +445,13 @@ namespace BloodshedModToolkit.Coop.Net
                 SendFullSnapshotTo(from);
                 TweakSyncHandler.SendTo(from);
 
-                // 뒤늦게 접속한 Guest — Host가 이미 미션 씬에 있으면 MissionStart 재전송
                 var scene = Mission.MissionState.HostCurrentScene;
                 var idx   = Mission.MissionState.HostCurrentBuildIndex;
                 if (!string.IsNullOrEmpty(scene) && idx > 0)
                 {
                     SendReliable(from, Net.MissionStartPacket.Encode(scene, idx));
                     Plugin.Log.LogInfo(
-                        $"[NetManager] 뒤늦게 접속한 Guest에게 MissionStart 재전송: '{scene}' → {from}");
+                        $"[NetManager] MissionStart 재전송 (Handshake fallback): '{scene}' → {from}");
                 }
             }
         }
