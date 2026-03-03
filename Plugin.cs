@@ -2,6 +2,7 @@ using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using BepInEx.Logging;
 using HarmonyLib;
+using Il2CppInterop.Runtime.Injection;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Bots;
@@ -39,6 +40,8 @@ namespace BloodshedModToolkit
             AddComponent<StateApplicator>();
 
             // Phase 8 — AI 봇 + 아바타 렌더러 (검증용)
+            // BotPhysicsBody는 런타임에 AddComponent로만 사용되므로 명시적 등록 필요
+            ClassInjector.RegisterTypeInIl2Cpp<BotPhysicsBody>();
             AddComponent<BotManager>();
             AddComponent<RemotePlayerRenderer>();
 
@@ -50,6 +53,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.83";
+        public const string PLUGIN_VERSION = "1.0.84";
     }
 }
