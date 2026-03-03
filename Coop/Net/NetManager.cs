@@ -43,6 +43,12 @@ namespace BloodshedModToolkit.Coop.Net
         private float _retryTimer;
         private const float RetryInterval = 5f;
 
+        // ── Host 로비 멤버 스캔 ──────────────────────────────────────────────
+        // P2PSessionRequest_t.m_steamIDRemote가 IL2CPP 레이아웃 불일치로
+        // 잘못된 SteamID를 반환하므로, 로비 멤버 목록에서 직접 ID를 가져와 처리
+        private float _memberScanTimer;
+        private const float MemberScanInterval = 2f;
+
         // ════════════════════════════════════════════════════════════════════
         // Unity 생명주기
         // ════════════════════════════════════════════════════════════════════
@@ -100,6 +106,18 @@ namespace BloodshedModToolkit.Coop.Net
 
             PollMessages(0);  // 채널 0 — Reliable (이벤트)
             PollMessages(1);  // 채널 1 — Unreliable (위치 스냅샷)
+
+            // Host: 로비 멤버 목록을 주기적으로 스캔 — P2PSessionRequest_t의
+            // SteamID가 IL2CPP 불일치로 잘못될 수 있으므로 이 경로가 실제 연결을 담당
+            if (CoopState.IsHost && CoopState.LobbyId != CSteamID.Nil)
+            {
+                _memberScanTimer += Time.deltaTime;
+                if (_memberScanTimer >= MemberScanInterval)
+                {
+                    _memberScanTimer = 0f;
+                    ScanAndRegisterLobbyMembers();
+                }
+            }
 
             // Guest: 미연결 상태면 주기적으로 Host에게 Handshake 재전송
             if (!CoopState.IsHost && !CoopState.IsConnected && CoopState.LobbyId != CSteamID.Nil)
@@ -234,52 +252,52 @@ namespace BloodshedModToolkit.Coop.Net
         // ════════════════════════════════════════════════════════════════════
         private void OnP2PSessionRequest(P2PSessionRequest_t parm)
         {
-            var remote = parm.m_steamIDRemote;
-            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청 수락: {remote}");
-            SteamNetworking.AcceptP2PSessionWithUser(remote);
-
-            if (!CoopState.IsEnabled) return;
-
-            // Host만 즉시 Handshake 응답 + Peer 등록
-            // Guest가 여기서 응답하면 Host↔Guest 핑퐁 루프가 생기므로 Host만 처리
-            if (!CoopState.IsHost) return;
-            if (!IsLobbyMember(remote)) return;
-
-            var myId = SteamUser.GetSteamID();
-            SendReliable(remote, HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
-            Plugin.Log.LogInfo($"[NetManager] [Host] Handshake 즉시 응답 → {remote}");
-
-            // PollMessages를 기다리지 않고 즉시 Peer 등록 + 초기화 패킷 전송
-            // (ReadP2PPacket IL2CPP 마샬링 문제로 PollMessages가 동작하지 않을 수 있음)
-            if (!CoopState.Peers.Contains(remote))
-            {
-                CoopState.Peers.Add(remote);
-                _lastHeartbeat[remote] = Time.time;
-                CoopState.IsConnected = true;
-                Plugin.Log.LogInfo(
-                    $"[NetManager] [Host] Guest 즉시 등록: {SteamFriends.GetFriendPersonaName(remote)} ({remote})");
-            }
-
-            SendFullSnapshotTo(remote);
-            TweakSyncHandler.SendTo(remote);
-
-            var scene = Mission.MissionState.HostCurrentScene;
-            var idx   = Mission.MissionState.HostCurrentBuildIndex;
-            if (!string.IsNullOrEmpty(scene) && idx > 0)
-            {
-                SendReliable(remote, Net.MissionStartPacket.Encode(scene, idx));
-                Plugin.Log.LogInfo($"[NetManager] MissionStart 재전송 → {remote}");
-            }
+            // P2PSessionRequest_t.m_steamIDRemote가 IL2CPP struct 레이아웃 불일치로
+            // 잘못된 SteamID를 반환할 수 있음. AcceptP2PSessionWithUser는 호출하되,
+            // 실제 Peer 등록은 ScanAndRegisterLobbyMembers()에서 올바른 SteamID로 처리
+            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청 수락: {parm.m_steamIDRemote}");
+            SteamNetworking.AcceptP2PSessionWithUser(parm.m_steamIDRemote);
         }
 
-        private bool IsLobbyMember(CSteamID steamId)
+        /// <summary>
+        /// Host: 로비 멤버 목록에서 직접 SteamID를 가져와 세션 수락 + Peer 등록.
+        /// P2PSessionRequest_t의 SteamID 불일치 문제를 우회.
+        /// </summary>
+        private void ScanAndRegisterLobbyMembers()
         {
-            if (CoopState.LobbyId == CSteamID.Nil) return false;
-            int n = SteamMatchmaking.GetNumLobbyMembers(CoopState.LobbyId);
+            var myId = SteamUser.GetSteamID();
+            int n    = SteamMatchmaking.GetNumLobbyMembers(CoopState.LobbyId);
+
             for (int i = 0; i < n; i++)
-                if (SteamMatchmaking.GetLobbyMemberByIndex(CoopState.LobbyId, i) == steamId)
-                    return true;
-            return false;
+            {
+                var member = SteamMatchmaking.GetLobbyMemberByIndex(CoopState.LobbyId, i);
+                if (member == CSteamID.Nil || member == myId) continue;
+
+                // 세션 명시적 수락 (P2PSessionRequest 콜백보다 신뢰도 높음)
+                SteamNetworking.AcceptP2PSessionWithUser(member);
+
+                if (CoopState.Peers.Contains(member)) continue;
+
+                // 신규 Guest — Peer 등록 + 초기화 패킷 전송
+                CoopState.Peers.Add(member);
+                _lastHeartbeat[member] = Time.time;
+                CoopState.IsConnected  = true;
+                Plugin.Log.LogInfo(
+                    $"[NetManager] [Host] 로비 스캔: Guest 등록 {SteamFriends.GetFriendPersonaName(member)} ({member})");
+
+                SendReliable(member,
+                    HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
+                SendFullSnapshotTo(member);
+                TweakSyncHandler.SendTo(member);
+
+                var scene = Mission.MissionState.HostCurrentScene;
+                var idx   = Mission.MissionState.HostCurrentBuildIndex;
+                if (!string.IsNullOrEmpty(scene) && idx > 0)
+                {
+                    SendReliable(member, Net.MissionStartPacket.Encode(scene, idx));
+                    Plugin.Log.LogInfo($"[NetManager] MissionStart 재전송 → {member}");
+                }
+            }
         }
 
         private void OnP2PConnectFail(P2PSessionConnectFail_t parm)

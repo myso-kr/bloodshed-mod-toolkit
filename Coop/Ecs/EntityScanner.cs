@@ -53,8 +53,16 @@ namespace BloodshedModToolkit.Coop.Ecs
 
         void OnDestroy()
         {
-            if (_ecsReady)
-                _enemyQuery.Dispose();
+            // 게임 종료 시 ECS World가 먼저 해제될 수 있으므로 유효성 확인 후 Dispose
+            if (_ecsReady && _world != null && _world.IsCreated)
+            {
+                try { _enemyQuery.Dispose(); }
+                catch (Exception ex)
+                {
+                    Plugin.Log.LogWarning($"[EntityScanner] Dispose 오류 (무시): {ex.Message}");
+                }
+            }
+            _ecsReady = false;
             Instance = null;
         }
 
