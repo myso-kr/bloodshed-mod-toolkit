@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 버전은 Bump-Version.ps1 로 부모 csproj 와 동기화됨 -->
-    <Version>1.0.53</Version>
+    <Version>1.0.54</Version>
     <OutputType>WinExe</OutputType>
     <!-- net48: Win10/11에 기본 설치 — 런타임 번들 불필요, EXE ~300 KB -->
     <TargetFramework>net48</TargetFramework>
@@ -31,5 +31,15 @@
       <LogicalName>BloodshedModToolkit.dll</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
+  <!--
+    CSC (Roslyn) embeds RT_ICON frames via /win32icon but omits RT_GROUP_ICON.
+    This target injects the missing RT_GROUP_ICON resource after publish so
+    Windows Explorer shows the correct icon.
+  -->
+  <Target Name="InjectGroupIcon" AfterTargets="Publish">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\add-group-icon.ps1&quot; -ExePath &quot;$(PublishDir)BloodshedModToolkitInstaller.exe&quot; -IcoPath &quot;$(MSBuildProjectDirectory)\bloodshed.ico&quot;"
+          WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
 
 </Project>

@@ -7,26 +7,23 @@ using BloodshedModToolkit.Tweaks;
 namespace BloodshedModToolkit.UI.Overlay.Panels
 {
     /// <summary>
-    /// 활성 치트 목록과 Co-op 상태를 표시하는 오버레이 패널.
-    /// 버전 표시 + 클릭하면 메인 메뉴를 토글합니다.
+    /// 활성 치트 목록과 버전을 표시하는 오버레이 패널.
+    /// 클릭하면 메인 메뉴를 토글합니다.
     /// </summary>
     public sealed class StatusPanel : IOverlayPanel
     {
-        public string Id => "status";
+        public string     Id              => "status";
+        public bool       Visible         => true;
+        public EdgeInsets Padding         => EdgeInsets.All(OverlayManager.Margin);
+        public float      BackgroundAlpha => 0.68f;
 
-        // 항상 표시
-        public bool Visible => true;
+        /// <summary>
+        /// 타이틀 1줄 + 활성 치트 N줄 × LineH + 상하 패딩.
+        /// </summary>
+        public float Height =>
+            Padding.Vertical + (1 + CountActiveLines()) * OverlayManager.LineH;
 
-        public float Height
-        {
-            get
-            {
-                int lines = CountActiveLines();
-                return OverlayManager.Margin * 2 + (1 + lines) * OverlayManager.LineH;
-            }
-        }
-
-        // ── 언어 조회 ───────────────────────────────────────────────────────
+        // ── 언어 조회 ───────────────────────────────────────────────────────────
         private GameSettings? _gs;
 
         private GameSettings? GS()
@@ -38,40 +35,26 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
         private LangStrings Lang()
             => Strings.Get(GS()?.languageText ?? LocalizationManager.Language.English);
 
-        // ── IOverlayPanel ───────────────────────────────────────────────────
-        public void Tick() { }   // 상태는 Draw 시점에 직접 읽음
+        // ── IOverlayPanel ───────────────────────────────────────────────────────
+        public void Tick() { }
 
-        public void Draw(Rect rect)
+        public void Draw(UIContext ctx)
         {
-            var saved = GUI.color;
-            OverlayStyle.DrawBg(rect, 0.68f);
-
-            float cx = rect.x + OverlayManager.Margin;
-            float cy = rect.y + OverlayManager.Margin;
-            float cw = rect.width - OverlayManager.Margin * 2;
-
-            // ── 타이틀 줄 ────────────────────────────────────────────────────
+            var   l    = Lang();
+            float lh   = OverlayManager.LineH;
             string arrow = OverlayManager.IsMenuOpen ? "\u25b2" : "\u25bc";
-            GUI.color = OverlayStyle.Amber;
-            GUI.Label(
-                new Rect(cx, cy, cw, OverlayManager.LineH),
-                $"\u25c8 Mod Toolkit v{MyPluginInfo.PLUGIN_VERSION}  {arrow}",
-                OverlayStyle.Title!);
 
-            // ── 활성 치트 항목 ────────────────────────────────────────────────
-            GUI.color = OverlayStyle.Lime;
-            var l = Lang();
+            // 타이틀 행
+            ctx.Label(OverlayStyle.Amber,
+                      $"\u25c8 Mod Toolkit v{MyPluginInfo.PLUGIN_VERSION}  {arrow}",
+                      OverlayStyle.Title!, lh, gap: 0f);
+
+            // 활성 치트 항목
             foreach (var line in BuildLines(l))
-            {
-                cy += OverlayManager.LineH;
-                GUI.Label(new Rect(cx, cy, cw, OverlayManager.LineH),
-                    line, OverlayStyle.Item!);
-            }
-
-            GUI.color = saved;
+                ctx.Label(OverlayStyle.Lime, line, OverlayStyle.Item!, lh, gap: 0f);
         }
 
-        // ── 헬퍼 ───────────────────────────────────────────────────────────
+        // ── 헬퍼 ────────────────────────────────────────────────────────────────
         private static int CountActiveLines()
         {
             int n = 0;
