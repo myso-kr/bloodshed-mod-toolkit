@@ -84,6 +84,7 @@ namespace UnityEngine
     public static class Time
     {
         public static float time      => 0f;
+        public static float deltaTime => 0f;
         public static float timeScale { get; set; }
     }
 
@@ -179,6 +180,7 @@ namespace UnityEngine
         public static void EndScrollView() { }
         public static float HorizontalSlider(float value, float leftValue, float rightValue,
             params GUILayoutOption[] options) => value;
+        public static string TextField(string text, params GUILayoutOption[] options) => text;
         public static GUILayoutOption Width(float width)    => new GUILayoutOption();
         public static GUILayoutOption Height(float height)  => new GUILayoutOption();
         public static GUILayoutOption ExpandHeight(bool expand) => new GUILayoutOption();

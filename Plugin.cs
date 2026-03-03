@@ -2,6 +2,7 @@ using BepInEx;
 using BepInEx.Unity.IL2CPP;
 using BepInEx.Logging;
 using HarmonyLib;
+using BloodshedModToolkit.Coop.Net;
 
 namespace BloodshedModToolkit
 {
@@ -25,6 +26,9 @@ namespace BloodshedModToolkit
             // IMGUI 치트 메뉴를 MonoBehaviour로 씬에 추가
             AddComponent<UI.CheatMenu>();
 
+            // Co-op 네트워크 레이어
+            AddComponent<NetManager>();
+
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
     }
@@ -33,6 +37,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.9";
+        public const string PLUGIN_VERSION = "1.0.10";
     }
 }

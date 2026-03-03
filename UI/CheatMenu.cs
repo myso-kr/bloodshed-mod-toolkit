@@ -1,9 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Steamworks;
 using com8com1.SCFPS;
 using Enemies.EnemyAi;
 using BloodshedModToolkit.I18n;
 using BloodshedModToolkit.Tweaks;
+using BloodshedModToolkit.Coop;
+using BloodshedModToolkit.Coop.Net;
 
 namespace BloodshedModToolkit.UI
 {
@@ -12,7 +15,7 @@ namespace BloodshedModToolkit.UI
         public CheatMenu(System.IntPtr ptr) : base(ptr) { }
 
         // ── 탭 / 윈도우 상태 ─────────────────────────────────────────────────────
-        private enum Tab { Cheats, Tweaks }
+        private enum Tab { Cheats, Tweaks, Coop }
         private Tab  _activeTab  = Tab.Cheats;
         private bool _visible    = false;
         private Rect _windowRect = new Rect(20, 20, 390, 470);
@@ -20,6 +23,17 @@ namespace BloodshedModToolkit.UI
         // ── 스크롤 ────────────────────────────────────────────────────────────────
         private Vector2 _scrollCheats = Vector2.zero;
         private Vector2 _scrollTweaks = Vector2.zero;
+        private Vector2 _scrollCoop   = Vector2.zero;
+
+        // ── Co-op UI 상태 ─────────────────────────────────────────────────────────
+        private string _lobbyIdInput = "";
+
+        // ── 슬라이더 디바운스 타이머 (Time.time 기준 예약 시각, 0 = 예약 없음) ──────
+        // 드래그 중 매 OnGUI 이벤트마다 RefreshEnemySpeeds/RecalculateStats 를 반복
+        // 호출하는 성능 문제를 방지합니다. 마지막 변경 후 kRefreshDelay 초 뒤에 실행.
+        private const float kRefreshDelay = 0.25f;
+        private float _hpRefreshAt     = 0f;
+        private float _eSpeedRefreshAt = 0f;
 
         // ── 컴포넌트 캐시 ─────────────────────────────────────────────────────────
         private PlayerStats?    _ps;
@@ -126,7 +140,30 @@ namespace BloodshedModToolkit.UI
         // ════════════════════════════════════════════════════════════════════════
         // Update
         // ════════════════════════════════════════════════════════════════════════
-        void Update() => ApplyCheats();
+        void Update()
+        {
+            ApplyCheats();
+            TickRefreshTimers();
+        }
+
+        /// <summary>
+        /// 슬라이더 디바운스 타이머 처리.
+        /// OnGUI 드래그 중 반복 예약되지만 Time.time 기준으로 딱 한 번만 실행됩니다.
+        /// </summary>
+        private void TickRefreshTimers()
+        {
+            float now = Time.time;
+            if (_hpRefreshAt > 0f && now >= _hpRefreshAt)
+            {
+                _hpRefreshAt = 0f;
+                PS()?.RecalculateStats();
+            }
+            if (_eSpeedRefreshAt > 0f && now >= _eSpeedRefreshAt)
+            {
+                _eSpeedRefreshAt = 0f;
+                RefreshEnemySpeeds();
+            }
+        }
 
         private void ApplyCheats()
         {
@@ -254,14 +291,20 @@ namespace BloodshedModToolkit.UI
                     _activeTab == Tab.Tweaks ? _stTabActive! : _stTabInactive!,
                     GUILayout.Height(26)))
                 _activeTab = Tab.Tweaks;
+            if (GUILayout.Button("CO-OP",
+                    _activeTab == Tab.Coop ? _stTabActive! : _stTabInactive!,
+                    GUILayout.Height(26)))
+                _activeTab = Tab.Coop;
             GUILayout.EndHorizontal();
 
             GUILayout.Space(3);
 
             if (_activeTab == Tab.Cheats)
                 DrawCheatsTab(l);
-            else
+            else if (_activeTab == Tab.Tweaks)
                 DrawTweaksTab(l);
+            else
+                DrawCoopTab();
 
             // 타이틀바 영역만 드래그 허용
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 22));
@@ -344,7 +387,7 @@ namespace BloodshedModToolkit.UI
             SectionHeader("PLAYER");
             float prevHpMult = c.PlayerHpMult;
             c.PlayerHpMult    = SliderRow("HP",    c.PlayerHpMult,    0.10f, 4.00f);
-            if (c.PlayerHpMult != prevHpMult) PS()?.RecalculateStats();
+            if (c.PlayerHpMult != prevHpMult) _hpRefreshAt = Time.time + kRefreshDelay;
             c.PlayerSpeedMult = SliderRow("Speed", c.PlayerSpeedMult, 0.50f, 3.00f);
 
             // WEAPON ────────────────────────────────────────────────────────────
@@ -358,14 +401,73 @@ namespace BloodshedModToolkit.UI
             c.EnemyHpMult     = SliderRow("HP",     c.EnemyHpMult,     0.25f, 5.00f);
             float prevESpd = c.EnemySpeedMult;
             c.EnemySpeedMult  = SliderRow("Speed",  c.EnemySpeedMult,  0.25f, 3.00f);
-            if (c.EnemySpeedMult != prevESpd) RefreshEnemySpeeds();
+            if (c.EnemySpeedMult != prevESpd) _eSpeedRefreshAt = Time.time + kRefreshDelay;
             c.EnemyDamageMult = SliderRow("Damage", c.EnemyDamageMult, 0.25f, 5.00f);
 
             // SPAWN ─────────────────────────────────────────────────────────────
             SectionHeader("SPAWN");
             c.SpawnCountMult = SliderRow("Count", c.SpawnCountMult, 0.25f, 4.00f);
+            GUILayout.Label(l.SpawnNote, _stSection!);
 
             GUILayout.Space(4);
+            GUILayout.EndScrollView();
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // CO-OP 탭
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawCoopTab()
+        {
+            _scrollCoop = GUILayout.BeginScrollView(_scrollCoop, GUILayout.ExpandHeight(true));
+
+            if (!CoopState.IsEnabled)
+            {
+                // ── 연결 안됨 ────────────────────────────────────────────────
+                SectionHeader("STATUS");
+                GUILayout.Label("\u25c6 상태: 연결 안됨", _stSliderName!);
+
+                GUILayout.Space(4);
+                SectionHeader("HOST");
+                if (GUILayout.Button("방 만들기 (최대 4인)", _stActionBtn!))
+                    NetManager.Instance?.CreateLobby(4);
+
+                GUILayout.Space(4);
+                SectionHeader("JOIN");
+                GUILayout.Label("로비 ID (Steam Lobby ID):", _stSliderName!);
+                _lobbyIdInput = GUILayout.TextField(_lobbyIdInput);
+                if (GUILayout.Button("참가", _stActionBtn!))
+                {
+                    if (ulong.TryParse(_lobbyIdInput.Trim(), out var rawId))
+                        NetManager.Instance?.JoinLobby(new CSteamID(rawId));
+                    else
+                        Plugin.Log.LogWarning("[CoopTab] 유효하지 않은 로비 ID");
+                }
+            }
+            else
+            {
+                // ── 연결됨 ───────────────────────────────────────────────────
+                SectionHeader("STATUS");
+                string connText = CoopState.IsConnected ? "\u25cf 연결됨" : "\u25cb 대기 중";
+                string roleText = CoopState.IsHost ? "HOST" : "GUEST";
+                GUILayout.Label($"\u25c6 상태: {connText}  [{roleText}]", _stSliderName!);
+                GUILayout.Label($"\u25c6 Lobby ID: {CoopState.LobbyId}", _stSliderName!);
+
+                SectionHeader("PEERS");
+                var myId   = SteamUser.GetSteamID();
+                var myName = SteamFriends.GetFriendPersonaName(myId);
+                GUILayout.Label($"  \u2605 {myName} ({roleText})", _stSliderName!);
+
+                foreach (var peer in CoopState.Peers)
+                {
+                    var peerName = SteamFriends.GetFriendPersonaName(peer);
+                    GUILayout.Label($"  \u25cf {peerName}", _stSliderName!);
+                }
+
+                GUILayout.Space(6);
+                if (GUILayout.Button("로비 떠나기", _stResetBtn!))
+                    NetManager.Instance?.LeaveLobby();
+            }
+
             GUILayout.EndScrollView();
         }
 

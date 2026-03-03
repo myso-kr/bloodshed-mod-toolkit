@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 단일 버전 진실 원천 — Bump-Version.ps1 로만 수정할 것 -->
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -58,6 +58,10 @@
 
   <!-- 로컬 전용: 게임 실행 후 BepInEx/interop/ 에 자동 생성되는 DLL -->
   <ItemGroup Condition="'$(UseStubs)' != 'true'">
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>$(BepInExPath)\interop\com.rlabrecque.steamworks.net.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Il2Cppmscorlib">
       <HintPath>$(BepInExPath)\interop\Il2Cppmscorlib.dll</HintPath>
       <Private>false</Private>
