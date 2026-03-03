@@ -85,9 +85,34 @@ namespace BloodshedModToolkit.Coop.Ecs
             // ── MB HP 업데이트 ─────────────────────────────────────────────
             if (snap.Hp == 65535) return;   // 미정 값은 건너뜀
             if (!EntityRegistry.HostToLocal.TryGetLocal(hostIdx, out int localId)) return;
-            if (!EntityRegistry.LocalHealth.TryGetValue(localId, out var health)) return;
+
+            var health = FindHealthById(localId);
             if (health != null)
                 health.currentHealth = snap.Hp;
+        }
+
+        /// <summary>
+        /// localId(GetInstanceID) 로 Health 컴포넌트를 찾아 LocalHealth 캐시에 등록.
+        /// EnemyIdentityCard.gameObject 가 interop에서 노출되지 않으므로
+        /// FindObjectsOfType 으로 탐색 후 lazy-init 캐시를 채웁니다.
+        /// </summary>
+        private static com8com1.SCFPS.Health? FindHealthById(int localId)
+        {
+            if (EntityRegistry.LocalHealth.TryGetValue(localId, out var cached) && cached != null)
+                return cached;
+
+            var all = UnityEngine.Object.FindObjectsOfType<com8com1.SCFPS.Health>();
+            if (all == null) return null;
+
+            foreach (var h in all)
+            {
+                if (h.GetInstanceID() == localId)
+                {
+                    EntityRegistry.LocalHealth[localId] = h;
+                    return h;
+                }
+            }
+            return null;
         }
 
         // ════════════════════════════════════════════════════════════════════

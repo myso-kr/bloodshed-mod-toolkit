@@ -31,7 +31,8 @@ namespace BloodshedModToolkit.Coop.Events
 
             if (CoopState.IsHost)
             {
-                // Host: 신규 스폰을 Guest에게 브로드캐스트 + Health 캐시
+                // Host: 신규 스폰을 Guest에게 브로드캐스트
+                // Health 캐시는 StateApplicator / HandleDamageRequest 에서 lazy-init 처리
                 for (int i = all.Length - newCount; i < all.Length; i++)
                 {
                     var card    = all[i];
@@ -42,19 +43,12 @@ namespace BloodshedModToolkit.Coop.Events
                         typeId:        0,
                         x: 0f, y: 0f, z: 0f,
                         seed: (uint)UnityEngine.Random.Range(0, int.MaxValue));
-
-                    // Phase 5: Health 캐시 (HandleDamageRequest용)
-                    var go = card.gameObject;
-                    if (go != null)
-                    {
-                        var health = go.GetComponent<Health>();
-                        if (health != null) EntityRegistry.LocalHealth[localId] = health;
-                    }
                 }
             }
             else
             {
-                // Guest: PendingHostIds 큐에서 순서대로 매핑 + Health 캐시
+                // Guest: PendingHostIds 큐에서 순서대로 매핑
+                // Health 캐시는 StateApplicator.ApplyEntry 에서 lazy-init 처리
                 for (int i = all.Length - newCount; i < all.Length; i++)
                 {
                     if (!EntityRegistry.PendingHostIds.TryDequeue(out uint hostId))
@@ -62,14 +56,6 @@ namespace BloodshedModToolkit.Coop.Events
 
                     int localId = all[i].GetInstanceID();
                     EntityRegistry.HostToLocal.Register(hostId, localId);
-
-                    // Phase 5: Health 캐시 (StateApplicator HP 업데이트용)
-                    var go = all[i].gameObject;
-                    if (go != null)
-                    {
-                        var health = go.GetComponent<Health>();
-                        if (health != null) EntityRegistry.LocalHealth[localId] = health;
-                    }
 
                     Plugin.Log.LogDebug(
                         $"[IDMapper] Host[{hostId}] ↔ Local[{localId}]");

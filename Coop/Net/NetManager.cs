@@ -455,19 +455,38 @@ namespace BloodshedModToolkit.Coop.Net
             if (!CoopState.IsHost) return;
             var pkt = DamageRequestPacket.Decode(payload);
 
-            // Host 측: hostIdx == GetInstanceID() (uint → int 변환으로 로컬 ID와 일치)
+            // Host 측: hostIdx == GetInstanceID() (uint → int)
             int localId = (int)pkt.HostEntityIndex;
-            if (!EntityRegistry.LocalHealth.TryGetValue(localId, out var health) || health == null)
-            {
-                Plugin.Log.LogDebug(
-                    $"[NetManager] DamageRequest Health 없음: idx={pkt.HostEntityIndex}");
-                return;
-            }
-            if (health.isPlayer) return;
+            var health  = FindHealthById(localId);
+            if (health == null || health.isPlayer) return;
 
             health.Damage(pkt.Damage, null!, 0f, 0f, default, default, true);
             Plugin.Log.LogDebug(
                 $"[NetManager] DamageRequest 적용: idx={pkt.HostEntityIndex} dmg={pkt.Damage:F1}");
+        }
+
+        /// <summary>
+        /// localId(GetInstanceID) 로 Health 컴포넌트를 찾아 LocalHealth 캐시에 등록.
+        /// EnemyIdentityCard.gameObject 가 interop에서 노출되지 않으므로
+        /// FindObjectsOfType 으로 탐색 후 lazy-init 캐시를 채웁니다.
+        /// </summary>
+        private static Health? FindHealthById(int localId)
+        {
+            if (EntityRegistry.LocalHealth.TryGetValue(localId, out var cached) && cached != null)
+                return cached;
+
+            var all = UnityEngine.Object.FindObjectsOfType<Health>();
+            if (all == null) return null;
+
+            foreach (var h in all)
+            {
+                if (h.GetInstanceID() == localId)
+                {
+                    EntityRegistry.LocalHealth[localId] = h;
+                    return h;
+                }
+            }
+            return null;
         }
 
         private void HandleFullSnapshot(CSteamID from, byte[] payload)
