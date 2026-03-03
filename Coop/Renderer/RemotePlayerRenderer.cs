@@ -76,8 +76,9 @@ namespace BloodshedModToolkit.Coop.Renderer
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(go.transform);
             labelGo.transform.localPosition = new Vector3(0f, 1.2f, 0f);
-            // 고해상도 렌더링(fontSize=96) + 스케일 다운(0.25)으로 선명도 확보
-            labelGo.transform.localScale = new Vector3(0.25f, 0.25f, 0.25f);
+            // 고해상도 렌더링(fontSize=96) + 스케일 다운(0.0625)으로 선명도 확보
+            // 시각 크기 = 96 * 0.0625 = 6 상당, 해상도는 16배
+            labelGo.transform.localScale = new Vector3(0.0625f, 0.0625f, 0.0625f);
             var tm = labelGo.AddComponent<TextMesh>();
             if (tm != null)
             {
