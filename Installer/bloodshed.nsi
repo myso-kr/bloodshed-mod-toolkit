@@ -2,7 +2,7 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.69"
+!define VERSION    "1.0.70"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
 
 Name    "${APPNAME} v${VERSION}"

@@ -78,8 +78,8 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
 
             float  pk  = DpsTracker.ValidPeakDps;
             string sub = pk > 0f
-                ? $"\u25b2{FormatDps(pk)}   \u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}"
-                : $"\u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}";
+                ? $"\u25b2pk {FormatDps(pk)}   {DpsTracker.HitCount} hits   tot {FormatTotal(DpsTracker.TotalDamage)}"
+                : $"{DpsTracker.HitCount} hits   total {FormatTotal(DpsTracker.TotalDamage)}";
 
             ctx
                 // Row 1: ◈ DPS 타이틀 — TitleLineH 로 클리핑 없이 렌더링
