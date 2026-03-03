@@ -33,9 +33,16 @@ dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
     "-p:BepInExPath=$BEPINEX_PATH" \
     --no-incremental \
     -v minimal
-dotnet build "$REPO_ROOT/Installer/BloodshedModToolkitInstaller.csproj" -c Release \
-    --no-incremental \
-    -v minimal
+makensis_path=""
+for p in "C:/Program Files (x86)/NSIS/makensis.exe" "C:/Program Files/NSIS/makensis.exe"; do
+    if [ -f "$p" ]; then makensis_path="$p"; break; fi
+done
+if [ -n "$makensis_path" ]; then
+    mkdir -p "$REPO_ROOT/Installer/publish"
+    "$makensis_path" "$REPO_ROOT/Installer/bloodshed.nsi"
+else
+    echo "[pre-push] ⚠ NSIS not found — installer build skipped. Install: https://nsis.sourceforge.io/"
+fi
 
 # ── 2. 로컬 배포 ─────────────────────────────────────────────────────────────
 if [ -d "$PLUGINS_DIR" ]; then

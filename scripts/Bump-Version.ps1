@@ -32,10 +32,10 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$root             = Split-Path $PSScriptRoot -Parent
-$csproj           = Join-Path $root "BloodshedModToolkit.csproj"
-$installerCsproj  = Join-Path $root "Installer\BloodshedModToolkitInstaller.csproj"
-$pluginCs         = Join-Path $root "Plugin.cs"
+$root         = Split-Path $PSScriptRoot -Parent
+$csproj       = Join-Path $root "BloodshedModToolkit.csproj"
+$installerNsi = Join-Path $root "Installer\bloodshed.nsi"
+$pluginCs     = Join-Path $root "Plugin.cs"
 
 # ── 현재 버전 읽기 ────────────────────────────────────────────────────────────
 $xml = [xml](Get-Content $csproj -Encoding UTF8)
@@ -76,10 +76,12 @@ $csprojContent = $csprojContent -replace $versionPattern, $versionReplacement
 [System.IO.File]::WriteAllText($csproj, $csprojContent, $utf8NoBom)
 Write-Host "  BloodshedModToolkit.csproj <Version> 업데이트" -ForegroundColor Green
 
-$installerContent = Get-Content $installerCsproj -Raw -Encoding UTF8
-$installerContent = $installerContent -replace $versionPattern, $versionReplacement
-[System.IO.File]::WriteAllText($installerCsproj, $installerContent, $utf8NoBom)
-Write-Host "  Installer/BloodshedModToolkitInstaller.csproj <Version> 업데이트" -ForegroundColor Green
+$nsiContent = Get-Content $installerNsi -Raw -Encoding UTF8
+$nsiContent = $nsiContent -replace `
+    '(!define VERSION\s+")[^"]*(")',
+    "`${1}$next`$2"
+[System.IO.File]::WriteAllText($installerNsi, $nsiContent, $utf8NoBom)
+Write-Host "  Installer/bloodshed.nsi !define VERSION 업데이트" -ForegroundColor Green
 
 # ── Plugin.cs 업데이트 ────────────────────────────────────────────────────────
 $pluginContent = Get-Content $pluginCs -Raw -Encoding UTF8
@@ -92,17 +94,16 @@ Write-Host "  Plugin.cs PLUGIN_VERSION 업데이트" -ForegroundColor Green
 # ── 검증 ──────────────────────────────────────────────────────────────────────
 $verifyXml = [xml](Get-Content $csproj -Encoding UTF8)
 $verifyVer = ($verifyXml.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
-$verifyInstallerXml = [xml](Get-Content $installerCsproj -Encoding UTF8)
-$verifyInstallerVer = ($verifyInstallerXml.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+$verifyNsiVer = (Select-String -Path $installerNsi -Pattern '!define VERSION\s+"([^"]+)"').Matches[0].Groups[1].Value
 $verifyPlugin = (Select-String -Path $pluginCs -Pattern 'PLUGIN_VERSION\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
 
-if ($verifyVer -ne $next -or $verifyPlugin -ne $next -or $verifyInstallerVer -ne $next) {
-    throw "검증 실패: csproj=$verifyVer installer=$verifyInstallerVer Plugin.cs=$verifyPlugin (기대값: $next)"
+if ($verifyVer -ne $next -or $verifyPlugin -ne $next -or $verifyNsiVer -ne $next) {
+    throw "검증 실패: csproj=$verifyVer installer.nsi=$verifyNsiVer Plugin.cs=$verifyPlugin (기대값: $next)"
 }
 
 Write-Host ""
 Write-Host "버전 $next 준비 완료." -ForegroundColor Cyan
 Write-Host "다음 단계:" -ForegroundColor White
-Write-Host "  git add BloodshedModToolkit.csproj Installer/BloodshedModToolkitInstaller.csproj Plugin.cs" -ForegroundColor DarkGray
+Write-Host "  git add BloodshedModToolkit.csproj Installer/bloodshed.nsi Plugin.cs" -ForegroundColor DarkGray
 Write-Host "  git commit -m `"chore: bump version to $next`"" -ForegroundColor DarkGray
 Write-Host "  .\scripts\Publish-Release.ps1" -ForegroundColor DarkGray

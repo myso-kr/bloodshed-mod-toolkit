@@ -79,9 +79,14 @@ if ($SkipBuild) {
 
 # ── 2. 인스톨러 빌드 ──────────────────────────────────────────────────────────
 Write-Host "`n[2/5] 인스톨러 빌드 중..." -ForegroundColor Yellow
+$makensis = @('C:\Program Files (x86)\NSIS\makensis.exe',
+              'C:\Program Files\NSIS\makensis.exe') |
+            Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $makensis) { throw "NSIS not found. Install: https://nsis.sourceforge.io/" }
 Push-Location "Installer"
 try {
-    dotnet publish -c Release -o publish
+    if (-not (Test-Path "publish")) { New-Item -ItemType Directory "publish" | Out-Null }
+    & $makensis bloodshed.nsi
     if ($LASTEXITCODE -ne 0) { throw "인스톨러 빌드 실패" }
 } finally {
     Pop-Location
