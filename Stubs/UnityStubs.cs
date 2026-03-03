@@ -41,6 +41,13 @@ namespace UnityEngine
         public T? GetComponent<T>() where T : Component => null!;
     }
 
+    public struct Vector2
+    {
+        public float x, y;
+        public Vector2(float x, float y) { this.x = x; this.y = y; }
+        public static Vector2 zero => new Vector2(0f, 0f);
+    }
+
     public struct Vector3
     {
         public float x, y, z;
@@ -145,6 +152,7 @@ namespace UnityEngine
         public static Rect Window(int id, Rect clientRect, WindowFunction func, string text)
             => clientRect;
         public static void DragWindow() { }
+        public static void DragWindow(Rect position) { }
         public static void Label(Rect position, string text) { }
         public static void Label(Rect position, string text, GUIStyle style) { }
         public static bool Button(Rect position, GUIContent content, GUIStyle style) => false;
@@ -158,15 +166,20 @@ namespace UnityEngine
         public static bool Button(string text) => false;
         public static bool Button(string text, GUIStyle style) => false;
         public static bool Button(string text, params GUILayoutOption[] options) => false;
+        public static bool Button(string text, GUIStyle style, params GUILayoutOption[] options) => false;
         public static void Label(string text) { }
         public static void Label(string text, params GUILayoutOption[] options) { }
+        public static void Label(string text, GUIStyle style, params GUILayoutOption[] options) { }
         public static void Space(float pixels) { }
         public static void FlexibleSpace() { }
         public static void BeginHorizontal(params GUILayoutOption[] options) { }
         public static void EndHorizontal() { }
+        public static Vector2 BeginScrollView(Vector2 scrollPosition, params GUILayoutOption[] options) => scrollPosition;
+        public static void EndScrollView() { }
         public static float HorizontalSlider(float value, float leftValue, float rightValue,
             params GUILayoutOption[] options) => value;
-        public static GUILayoutOption Width(float width)   => new GUILayoutOption();
-        public static GUILayoutOption Height(float height) => new GUILayoutOption();
+        public static GUILayoutOption Width(float width)    => new GUILayoutOption();
+        public static GUILayoutOption Height(float height)  => new GUILayoutOption();
+        public static GUILayoutOption ExpandHeight(bool expand) => new GUILayoutOption();
     }
 }

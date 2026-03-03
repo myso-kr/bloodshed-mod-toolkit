@@ -12,7 +12,7 @@ BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx
 # ── 1. 컴파일 검사 ────────────────────────────────────────────────────────────
 echo "[pre-commit] 컴파일 검사 중 (stub 빌드)..."
 
-dotnet build "$REPO_ROOT" -c Release \
+dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
     "-p:UseStubs=true" \
     "-p:BepInExPath=$BEPINEX_PATH" \
     --no-incremental \
@@ -24,7 +24,9 @@ echo "[pre-commit] 버전 자동 증가 (patch)..."
 pwsh -NonInteractive -File "$REPO_ROOT/scripts/Bump-Version.ps1" -Bump Patch
 
 # 버전 파일을 현재 커밋에 포함
-git add "$REPO_ROOT/BloodshedModToolkit.csproj" "$REPO_ROOT/Plugin.cs"
+git add "$REPO_ROOT/BloodshedModToolkit.csproj" \
+        "$REPO_ROOT/Installer/BloodshedModToolkitInstaller.csproj" \
+        "$REPO_ROOT/Plugin.cs"
 
 echo "[pre-commit] OK"
 exit 0

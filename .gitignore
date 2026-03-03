@@ -17,3 +17,10 @@ libs/game/
 # Inspector tool output (development only)
 Inspector/bin/
 Inspector/obj/
+
+# Release artifacts (generated locally by Publish-Release.ps1 — uploaded to GitHub, not committed)
+*.zip
+release-staging/
+
+# Installer publish output
+Installer/publish/

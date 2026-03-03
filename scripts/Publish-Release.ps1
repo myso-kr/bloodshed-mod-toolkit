@@ -60,24 +60,40 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
     throw "gh CLI 가 설치되어 있지 않습니다. https://cli.github.com 에서 설치하세요."
 }
 
-$dll = "bin\Release\net6.0\BloodshedModToolkit.dll"
+$dll         = "bin\Release\net6.0\BloodshedModToolkit.dll"
+$installerExe = "Installer\publish\BloodshedModToolkitInstaller.exe"
 
 # ── 1. 빌드 ───────────────────────────────────────────────────────────────────
 if ($SkipBuild) {
-    Write-Host "`n[1/4] 빌드 생략 (-SkipBuild)" -ForegroundColor DarkGray
+    Write-Host "`n[1/5] 빌드 생략 (-SkipBuild)" -ForegroundColor DarkGray
     if (-not (Test-Path $dll)) { throw "DLL 없음: $dll  (-SkipBuild 사용 전 빌드 필요)" }
 } else {
     if (-not (Test-Path "$BepInExPath\core\BepInEx.Core.dll")) {
         throw "BepInEx 코어를 찾을 수 없습니다: $BepInExPath"
     }
-    Write-Host "`n[1/4] 빌드 중..." -ForegroundColor Yellow
+    Write-Host "`n[1/5] 빌드 중..." -ForegroundColor Yellow
     dotnet build -c Release "-p:BepInExPath=$BepInExPath" --no-incremental
     if ($LASTEXITCODE -ne 0) { throw "빌드 실패" }
     Write-Host "  완료: $dll" -ForegroundColor Green
 }
 
-# ── 2. zip 패키지 ─────────────────────────────────────────────────────────────
-Write-Host "`n[2/4] 패키지 생성 중..." -ForegroundColor Yellow
+# ── 2. 인스톨러 빌드 ──────────────────────────────────────────────────────────
+Write-Host "`n[2/5] 인스톨러 빌드 중..." -ForegroundColor Yellow
+Push-Location "Installer"
+try {
+    dotnet publish -c Release -r win-x64 --self-contained `
+        -p:PublishSingleFile=true `
+        -p:IncludeNativeLibrariesForSelfExtract=true `
+        -p:EnableCompressionInSingleFile=true `
+        -o publish
+    if ($LASTEXITCODE -ne 0) { throw "인스톨러 빌드 실패" }
+} finally {
+    Pop-Location
+}
+Write-Host "  완료: $installerExe" -ForegroundColor Green
+
+# ── 3. zip 패키지 ─────────────────────────────────────────────────────────────
+Write-Host "`n[3/5] 패키지 생성 중..." -ForegroundColor Yellow
 $zipName    = "BloodshedModToolkit_$tag.zip"
 $stagingDir = "release-staging"
 
@@ -91,8 +107,8 @@ Compress-Archive -Path "$stagingDir\*" -DestinationPath $zipName -Force
 Remove-Item $stagingDir -Recurse -Force
 Write-Host "  완료: $zipName" -ForegroundColor Green
 
-# ── 3. git 태그 ───────────────────────────────────────────────────────────────
-Write-Host "`n[3/4] git 태그..." -ForegroundColor Yellow
+# ── 4. git 태그 ───────────────────────────────────────────────────────────────
+Write-Host "`n[4/5] git 태그..." -ForegroundColor Yellow
 $existingTag = git tag -l $tag
 if ($existingTag) {
     Write-Host "  태그 $tag 이미 존재, 건너뜀" -ForegroundColor DarkYellow
@@ -102,18 +118,20 @@ if ($existingTag) {
     Write-Host "  $tag push 완료" -ForegroundColor Green
 }
 
-# ── 4. GitHub Release ─────────────────────────────────────────────────────────
-Write-Host "`n[4/4] GitHub Release 업로드..." -ForegroundColor Yellow
+# ── 5. GitHub Release ─────────────────────────────────────────────────────────
+Write-Host "`n[5/5] GitHub Release 업로드..." -ForegroundColor Yellow
 
 $null = gh release view $tag 2>&1
 if ($LASTEXITCODE -eq 0) {
     Write-Host "  기존 릴리즈에 파일 추가..." -ForegroundColor DarkYellow
-    gh release upload $tag $zipName "$dll#BloodshedModToolkit.dll" --clobber
+    gh release upload $tag $zipName "$dll#BloodshedModToolkit.dll" `
+        "$installerExe#BloodshedModToolkitInstaller.exe" --clobber
     if (-not $DraftOnly) { gh release edit $tag --draft=false }
 } else {
     # 빈 문자열이 인자로 전달되지 않도록 배열 splatting 사용
     $releaseArgs = @(
         $tag, $zipName, "$dll#BloodshedModToolkit.dll",
+        "$installerExe#BloodshedModToolkitInstaller.exe",
         '--title', "Bloodshed Mod Toolkit v$Version",
         '--generate-notes'
     )

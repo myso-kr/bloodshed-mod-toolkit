@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 버전은 Bump-Version.ps1 로 부모 csproj 와 동기화됨 -->
+    <Version>1.0.7</Version>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>BloodshedModToolkitInstaller</AssemblyName>
+    <RootNamespace>BloodshedModToolkitInstaller</RootNamespace>
+    <AssemblyTitle>Bloodshed Mod Toolkit Installer</AssemblyTitle>
+    <AssemblyVersion>$(Version).0</AssemblyVersion>
+    <FileVersion>$(Version).0</FileVersion>
+
+    <!-- Single-file publish settings -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <!-- Embed the mod DLL built from the parent project -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\bin\Release\net6.0\BloodshedModToolkit.dll">
+      <LogicalName>BloodshedModToolkit.dll</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

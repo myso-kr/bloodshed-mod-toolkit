@@ -8,12 +8,19 @@ namespace BloodshedModToolkit.UI
 {
     public class CheatMenu : MonoBehaviour
     {
-        private bool _visible    = false;
-        private Rect _windowRect = new Rect(20, 20, 360, 760);
-
         public CheatMenu(System.IntPtr ptr) : base(ptr) { }
 
-        // ── 캐시 ─────────────────────────────────────────────────────────────────
+        // ── 탭 / 윈도우 상태 ─────────────────────────────────────────────────────
+        private enum Tab { Cheats, Tweaks }
+        private Tab  _activeTab  = Tab.Cheats;
+        private bool _visible    = false;
+        private Rect _windowRect = new Rect(20, 20, 390, 470);
+
+        // ── 스크롤 ────────────────────────────────────────────────────────────────
+        private Vector2 _scrollCheats = Vector2.zero;
+        private Vector2 _scrollTweaks = Vector2.zero;
+
+        // ── 컴포넌트 캐시 ─────────────────────────────────────────────────────────
         private PlayerStats?    _ps;
         private PersistentData? _pd;
         private GameSettings?   _gs;
@@ -23,23 +30,101 @@ namespace BloodshedModToolkit.UI
             if (_ps != null && _ps.isActiveAndEnabled) return _ps;
             return _ps = FindObjectOfType<PlayerStats>();
         }
-
         private PersistentData? PD()
         {
             if (_pd != null && _pd.isActiveAndEnabled) return _pd;
             return _pd = FindObjectOfType<PersistentData>();
         }
-
         private GameSettings? GS()
         {
             if (_gs != null && _gs.isActiveAndEnabled) return _gs;
             return _gs = FindObjectOfType<GameSettings>();
         }
-
         private LangStrings L()
             => Strings.Get(GS()?.languageText ?? LocalizationManager.Language.English);
 
-        // ── Update ────────────────────────────────────────────────────────────────
+        // ════════════════════════════════════════════════════════════════════════
+        // GUIStyle 캐시 — OnGUI 내부에서 최초 1회만 초기화
+        // ════════════════════════════════════════════════════════════════════════
+        private bool _stylesReady = false;
+
+        private GUIStyle? _stTabActive;      // 활성 탭 버튼
+        private GUIStyle? _stTabInactive;    // 비활성 탭 버튼
+        private GUIStyle? _stSection;        // 섹션 헤더 레이블
+        private GUIStyle? _stToggleOn;       // 켜진 토글
+        private GUIStyle? _stToggleOff;      // 꺼진 토글
+        private GUIStyle? _stSliderName;     // 슬라이더 항목명
+        private GUIStyle? _stSliderValue;    // 슬라이더 수치 (시안)
+        private GUIStyle? _stActionBtn;      // 액션 버튼 (주황)
+        private GUIStyle? _stResetBtn;       // 초기화 버튼 (빨강)
+        private GUIStyle? _stPresetOn;       // 활성 프리셋 버튼 (초록)
+        private GUIStyle? _stPresetOff;      // 비활성 프리셋 버튼 (회색)
+        private GUIStyle? _stOverlayTitle;   // 오버레이 제목
+        private GUIStyle? _stOverlayItem;    // 오버레이 항목
+
+        private void EnsureStyles()
+        {
+            if (_stylesReady) return;
+            _stylesReady = true;
+
+            // ── 오버레이 ──────────────────────────────────────────────────────────
+            _stOverlayTitle = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Bold, wordWrap = false };
+            _stOverlayTitle.normal.textColor = new Color(1f, 0.72f, 0f);
+
+            _stOverlayItem = new GUIStyle(GUI.skin.label) { fontSize = 10, wordWrap = false };
+            _stOverlayItem.normal.textColor = new Color(0.27f, 1f, 0.33f);
+
+            // ── 탭 ───────────────────────────────────────────────────────────────
+            _stTabActive = new GUIStyle(GUI.skin.button) { fontSize = 12, fontStyle = FontStyle.Bold };
+            _stTabActive.normal.textColor = Color.white;
+            _stTabActive.hover.textColor  = Color.white;
+
+            _stTabInactive = new GUIStyle(GUI.skin.button) { fontSize = 12 };
+            _stTabInactive.normal.textColor = new Color(0.52f, 0.52f, 0.52f);
+            _stTabInactive.hover.textColor  = new Color(0.82f, 0.82f, 0.82f);
+
+            // ── 섹션 헤더 ────────────────────────────────────────────────────────
+            _stSection = new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Bold, wordWrap = false };
+            _stSection.normal.textColor = new Color(1f, 0.72f, 0f);
+
+            // ── 토글 ─────────────────────────────────────────────────────────────
+            _stToggleOn = new GUIStyle(GUI.skin.toggle) { fontSize = 11 };
+            _stToggleOn.normal.textColor = new Color(0.27f, 1f, 0.33f);
+            _stToggleOn.hover.textColor  = new Color(0.27f, 1f, 0.33f);
+
+            _stToggleOff = new GUIStyle(GUI.skin.toggle) { fontSize = 11 };
+            _stToggleOff.normal.textColor = new Color(0.72f, 0.72f, 0.72f);
+            _stToggleOff.hover.textColor  = Color.white;
+
+            // ── 슬라이더 ─────────────────────────────────────────────────────────
+            _stSliderName = new GUIStyle(GUI.skin.label) { fontSize = 11, wordWrap = false };
+            _stSliderName.normal.textColor = new Color(0.85f, 0.85f, 0.85f);
+
+            _stSliderValue = new GUIStyle(GUI.skin.label) { fontSize = 11, fontStyle = FontStyle.Bold, wordWrap = false };
+            _stSliderValue.normal.textColor = new Color(0.4f, 0.9f, 1f);
+
+            // ── 버튼 ─────────────────────────────────────────────────────────────
+            _stActionBtn = new GUIStyle(GUI.skin.button) { fontSize = 11 };
+            _stActionBtn.normal.textColor = new Color(1f, 0.55f, 0f);
+            _stActionBtn.hover.textColor  = new Color(1f, 0.78f, 0.35f);
+
+            _stResetBtn = new GUIStyle(GUI.skin.button) { fontSize = 11 };
+            _stResetBtn.normal.textColor = new Color(1f, 0.27f, 0.27f);
+            _stResetBtn.hover.textColor  = new Color(1f, 0.55f, 0.55f);
+
+            // ── 프리셋 ───────────────────────────────────────────────────────────
+            _stPresetOn = new GUIStyle(GUI.skin.button) { fontSize = 11, fontStyle = FontStyle.Bold };
+            _stPresetOn.normal.textColor = new Color(0.27f, 1f, 0.33f);
+            _stPresetOn.hover.textColor  = new Color(0.27f, 1f, 0.33f);
+
+            _stPresetOff = new GUIStyle(GUI.skin.button) { fontSize = 11 };
+            _stPresetOff.normal.textColor = new Color(0.65f, 0.65f, 0.65f);
+            _stPresetOff.hover.textColor  = Color.white;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // Update
+        // ════════════════════════════════════════════════════════════════════════
         void Update() => ApplyCheats();
 
         private void ApplyCheats()
@@ -49,103 +134,69 @@ namespace BloodshedModToolkit.UI
 
             if (CheatState.InfiniteGems && ps != null && ps.money < CheatState.GemsFloor)
                 ps.SetMoney(CheatState.GemsFloor);
-
             if (CheatState.InfiniteGems && pd != null && pd.currentMoney < CheatState.GemsFloor)
                 pd.currentMoney = CheatState.GemsFloor;
-
             if (CheatState.InfiniteSkullCoins && pd != null
                 && pd.currentSuperTickets < CheatState.SkullCoinsFloor)
                 pd.currentSuperTickets = CheatState.SkullCoinsFloor;
-
             if (CheatState.InfiniteAway)
             {
                 if (ps != null && ps.LevelUpAway < 99) ps.LevelUpAway = 99;
                 if (pd != null && pd.currentAways < 99) pd.currentAways = 99;
             }
-
             if (CheatState.MaxStats && ps != null)
                 ps.RestoreHp(99999f);
-
             if (CheatState.InfiniteRevive && ps != null && ps.revivals < 99)
                 ps.SetRevivals(99);
         }
 
-        // ── GUI ──────────────────────────────────────────────────────────────────
+        // ════════════════════════════════════════════════════════════════════════
+        // OnGUI
+        // ════════════════════════════════════════════════════════════════════════
         void OnGUI()
         {
+            EnsureStyles();
             DrawStatusOverlay();
 
             if (_visible)
                 _windowRect = GUI.Window(0, _windowRect,
                     (GUI.WindowFunction)DrawWindow,
-                    "\u2605 Bloodshed Cheat Mod v1.0 \u2605");
+                    "\u25c8  Bloodshed Mod Toolkit");
         }
 
-        // ── 우측 상단 상태 오버레이 ───────────────────────────────────────────────
-        private const int OverlayWidth  = 200;
-        private const int OverlayMargin = 8;
-        private const int LineHeight    = 16;
-
-        // GUIStyle은 OnGUI 안에서만 생성해야 합니다.
-        private GUIStyle? _overlayTitle;
-        private GUIStyle? _overlayItem;
-
-        private void EnsureOverlayStyles()
-        {
-            if (_overlayTitle != null) return;
-
-            _overlayTitle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize  = 11,
-                fontStyle = FontStyle.Bold,
-                wordWrap  = false,
-            };
-            _overlayTitle.normal.textColor = new Color(1f, 0.92f, 0.3f);   // 노란색
-
-            _overlayItem = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 10,
-                wordWrap = false,
-            };
-            _overlayItem.normal.textColor = new Color(0.4f, 1f, 0.45f);    // 초록색
-        }
+        // ════════════════════════════════════════════════════════════════════════
+        // 우측 상단 오버레이 (항상 표시)
+        // ════════════════════════════════════════════════════════════════════════
+        private const int OW = 210;   // overlay width
+        private const int OM = 8;     // margin
+        private const int LH = 16;    // line height
 
         private void DrawStatusOverlay()
         {
-            EnsureOverlayStyles();
+            var lines   = BuildActiveLines();
+            float panelH = (1 + lines.Count) * LH + OM * 2;
+            float panelX = Screen.width - OW - OM;
+            float panelY = OM;
+            var   rect   = new Rect(panelX, panelY, OW, panelH);
 
-            var activeLines = BuildActiveLines();
-            int totalLines  = 1 + activeLines.Count;   // 제목 1줄 + 활성 치트 목록
-            float panelH    = totalLines * LineHeight + OverlayMargin * 2;
-            float panelX    = Screen.width - OverlayWidth - OverlayMargin;
-            float panelY    = OverlayMargin;
-            var   panelRect = new Rect(panelX, panelY, OverlayWidth, panelH);
-
-            // 반투명 배경
             var prev = GUI.color;
-            GUI.color = new Color(0f, 0f, 0f, 0.58f);
-            GUI.DrawTexture(panelRect, Texture2D.whiteTexture);
+            GUI.color = new Color(0f, 0f, 0f, 0.68f);
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
             GUI.color = prev;
 
-            // 패널 전체 클릭 → 메뉴 토글
-            if (GUI.Button(panelRect, GUIContent.none, GUIStyle.none))
+            if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
                 _visible = !_visible;
 
-            // 제목 줄
-            float cx = panelX + OverlayMargin;
-            float cy = panelY + OverlayMargin;
-            string titleText = _visible
-                ? "\u2605 Cheat Mod  \u25b2"     // ▲ 열림 표시
-                : "\u2605 Cheat Mod  \u25bc";    // ▼ 닫힘 표시
-            GUI.Label(new Rect(cx, cy, OverlayWidth - OverlayMargin * 2, LineHeight),
-                      titleText, _overlayTitle!);
+            float cx = panelX + OM;
+            float cy = panelY + OM;
+            GUI.Label(new Rect(cx, cy, OW - OM * 2, LH),
+                "\u25c8 Mod Toolkit  " + (_visible ? "\u25b2" : "\u25bc"),
+                _stOverlayTitle!);
 
-            // 활성 치트 목록 (초록색)
-            for (int i = 0; i < activeLines.Count; i++)
+            for (int i = 0; i < lines.Count; i++)
             {
-                cy += LineHeight;
-                GUI.Label(new Rect(cx, cy, OverlayWidth - OverlayMargin * 2, LineHeight),
-                          activeLines[i], _overlayItem!);
+                cy += LH;
+                GUI.Label(new Rect(cx, cy, OW - OM * 2, LH), lines[i], _stOverlayItem!);
             }
         }
 
@@ -171,7 +222,7 @@ namespace BloodshedModToolkit.UI
 
             var preset = TweakState.ActivePreset;
             if (preset != TweakPresetType.Hunter)
-                list.Add("\u25cf " + string.Format(l.TweakActiveLabel, GetPresetName(preset, l)));
+                list.Add("\u25c6 " + GetPresetName(preset, l));
 
             return list;
         }
@@ -185,92 +236,184 @@ namespace BloodshedModToolkit.UI
             _                          => l.TweakHunter,
         };
 
-        // ── 메인 창 ───────────────────────────────────────────────────────────────
+        // ════════════════════════════════════════════════════════════════════════
+        // 메인 창
+        // ════════════════════════════════════════════════════════════════════════
         private void DrawWindow(int id)
         {
             var l = L();
-            GUILayout.Space(4);
 
-            CheatState.GodMode            = Toggle(CheatState.GodMode,            l.GodMode);
-            CheatState.InfiniteGems       = Toggle(CheatState.InfiniteGems,       l.InfiniteGems);
-            CheatState.InfiniteSkullCoins = Toggle(CheatState.InfiniteSkullCoins, l.InfiniteSkullCoins);
-            CheatState.MaxStats           = Toggle(CheatState.MaxStats,            l.MaxStats);
-            CheatState.SpeedHack          = Toggle(CheatState.SpeedHack,           l.SpeedHack);
-            CheatState.OneShotKill        = Toggle(CheatState.OneShotKill,         l.OneShotKill);
-            CheatState.NoCooldown         = Toggle(CheatState.NoCooldown,          l.NoCooldown);
-            CheatState.InfiniteRevive     = Toggle(CheatState.InfiniteRevive,      l.InfiniteRevive);
-            CheatState.InfiniteAway       = Toggle(CheatState.InfiniteAway,        l.InfiniteAway);
-            CheatState.NoReload           = Toggle(CheatState.NoReload,            l.NoReload);
-            CheatState.RapidFire          = Toggle(CheatState.RapidFire,           l.RapidFire);
-            CheatState.NoRecoil           = Toggle(CheatState.NoRecoil,            l.NoRecoil);
-            CheatState.PerfectAim         = Toggle(CheatState.PerfectAim,          l.PerfectAim);
-
-            GUILayout.Space(6);
-            GUILayout.Label("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
-
-            // 속도 배율 슬라이더
+            // ── 탭 바 ────────────────────────────────────────────────────────────
             GUILayout.BeginHorizontal();
-            GUILayout.Label(string.Format(l.SpeedLabel, CheatState.SpeedMultiplier.ToString("F1")),
-                            GUILayout.Width(150));
-            CheatState.SpeedMultiplier = GUILayout.HorizontalSlider(CheatState.SpeedMultiplier, 1f, 20f);
+            if (GUILayout.Button("CHEATS",
+                    _activeTab == Tab.Cheats ? _stTabActive! : _stTabInactive!,
+                    GUILayout.Height(26)))
+                _activeTab = Tab.Cheats;
+            if (GUILayout.Button("TWEAKS",
+                    _activeTab == Tab.Tweaks ? _stTabActive! : _stTabInactive!,
+                    GUILayout.Height(26)))
+                _activeTab = Tab.Tweaks;
             GUILayout.EndHorizontal();
 
-            GUILayout.Space(6);
+            GUILayout.Space(3);
 
-            if (GUILayout.Button(l.ForceLevelUp))  ForceLevelUp();
-            if (GUILayout.Button(l.AddGems))        AddGems();
-            if (GUILayout.Button(l.AddSkullCoins))  AddSkullCoins();
-            if (GUILayout.Button(l.HealFull))       HealFull();
+            if (_activeTab == Tab.Cheats)
+                DrawCheatsTab(l);
+            else
+                DrawTweaksTab(l);
 
-            GUILayout.Space(4);
-            GUILayout.Label("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
-            if (GUILayout.Button(l.AllCheatsOff))   CheatState.Initialize();
-
-            // ── 밸런스 트윅 ───────────────────────────────────────────────────────
-            GUILayout.Space(6);
-            GUILayout.Label("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
-            GUILayout.Label(l.TweakSectionHeader);
-            GUILayout.Label(string.Format(l.TweakActiveLabel,
-                GetPresetName(TweakState.ActivePreset, l)));
-
-            GUILayout.Space(4);
-            GUILayout.BeginHorizontal();
-            DrawPresetButton(l.TweakMortal,     TweakPresetType.Mortal);
-            DrawPresetButton(l.TweakHunter,     TweakPresetType.Hunter);
-            DrawPresetButton(l.TweakSlayer,     TweakPresetType.Slayer);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            DrawPresetButton(l.TweakDemon,      TweakPresetType.Demon);
-            DrawPresetButton(l.TweakApocalypse, TweakPresetType.Apocalypse);
-            GUILayout.EndHorizontal();
-
-            GUI.DragWindow();
+            // 타이틀바 영역만 드래그 허용
+            GUI.DragWindow(new Rect(0, 0, _windowRect.width, 22));
         }
 
-        // ── 헬퍼 ─────────────────────────────────────────────────────────────────
-        private static void DrawPresetButton(string label, TweakPresetType preset)
+        // ════════════════════════════════════════════════════════════════════════
+        // CHEATS 탭
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawCheatsTab(LangStrings l)
         {
-            bool isActive = TweakState.ActivePreset == preset;
-            var style = new GUIStyle(GUI.skin.button);
-            style.normal.textColor = isActive ? Color.green : Color.white;
-            if (GUILayout.Button(label, style))
+            _scrollCheats = GUILayout.BeginScrollView(_scrollCheats, GUILayout.ExpandHeight(true));
+
+            // SURVIVAL ──────────────────────────────────────────────────────────
+            SectionHeader("SURVIVAL");
+            TwoCol(ref CheatState.GodMode,        l.GodMode,
+                   ref CheatState.MaxStats,        l.MaxStats);
+            TwoCol(ref CheatState.InfiniteRevive,  l.InfiniteRevive,
+                   ref CheatState.InfiniteAway,    l.InfiniteAway);
+
+            // ECONOMY ───────────────────────────────────────────────────────────
+            SectionHeader("ECONOMY");
+            TwoCol(ref CheatState.InfiniteGems,       l.InfiniteGems,
+                   ref CheatState.InfiniteSkullCoins, l.InfiniteSkullCoins);
+
+            // COMBAT ────────────────────────────────────────────────────────────
+            SectionHeader("COMBAT");
+            TwoCol(ref CheatState.OneShotKill, l.OneShotKill,
+                   ref CheatState.NoCooldown,  l.NoCooldown);
+            TwoCol(ref CheatState.RapidFire,   l.RapidFire,
+                   ref CheatState.NoRecoil,    l.NoRecoil);
+            TwoCol(ref CheatState.PerfectAim,  l.PerfectAim,
+                   ref CheatState.NoReload,    l.NoReload);
+
+            // MOVEMENT ──────────────────────────────────────────────────────────
+            SectionHeader("MOVEMENT");
+            CheatState.SpeedHack = Toggle(CheatState.SpeedHack, l.SpeedHack);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(string.Format(l.SpeedLabel, CheatState.SpeedMultiplier.ToString("F1")),
+                            _stSliderName!, GUILayout.Width(110));
+            CheatState.SpeedMultiplier = GUILayout.HorizontalSlider(
+                CheatState.SpeedMultiplier, 1f, 20f);
+            GUILayout.EndHorizontal();
+
+            GUILayout.EndScrollView();
+
+            // ── 액션 바 (스크롤 외부 고정) ──────────────────────────────────────
+            GUILayout.Space(4);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button(l.ForceLevelUp, _stActionBtn!)) ForceLevelUp();
+            if (GUILayout.Button(l.AddGems,       _stActionBtn!)) AddGems();
+            if (GUILayout.Button(l.AddSkullCoins, _stActionBtn!)) AddSkullCoins();
+            if (GUILayout.Button(l.HealFull,      _stActionBtn!)) HealFull();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(3);
+            if (GUILayout.Button(l.AllCheatsOff, _stResetBtn!))
+                CheatState.Initialize();
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // TWEAKS 탭
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawTweaksTab(LangStrings l)
+        {
+            var c = TweakState.Current;
+
+            _scrollTweaks = GUILayout.BeginScrollView(_scrollTweaks, GUILayout.ExpandHeight(true));
+
+            // DIFFICULTY ────────────────────────────────────────────────────────
+            SectionHeader("DIFFICULTY");
+            GUILayout.BeginHorizontal();
+            PresetBtn(l.TweakMortal,     TweakPresetType.Mortal);
+            PresetBtn(l.TweakHunter,     TweakPresetType.Hunter);
+            PresetBtn(l.TweakSlayer,     TweakPresetType.Slayer);
+            PresetBtn(l.TweakDemon,      TweakPresetType.Demon);
+            PresetBtn(l.TweakApocalypse, TweakPresetType.Apocalypse);
+            GUILayout.EndHorizontal();
+            GUILayout.Space(2);
+
+            // PLAYER ────────────────────────────────────────────────────────────
+            SectionHeader("PLAYER");
+            c.PlayerHpMult    = SliderRow("HP",    c.PlayerHpMult,    0.10f, 4.00f);
+            c.PlayerSpeedMult = SliderRow("Speed", c.PlayerSpeedMult, 0.50f, 3.00f);
+
+            // WEAPON ────────────────────────────────────────────────────────────
+            SectionHeader("WEAPON");
+            c.WeaponDamageMult      = SliderRow("Damage", c.WeaponDamageMult,      0.50f, 3.00f);
+            c.WeaponFireRateMult    = SliderRow("Fire",   c.WeaponFireRateMult,    0.50f, 3.00f);
+            c.WeaponReloadSpeedMult = SliderRow("Reload", c.WeaponReloadSpeedMult, 0.50f, 3.00f);
+
+            // ENEMY ─────────────────────────────────────────────────────────────
+            SectionHeader("ENEMY");
+            c.EnemyHpMult     = SliderRow("HP",     c.EnemyHpMult,     0.25f, 5.00f);
+            c.EnemySpeedMult  = SliderRow("Speed",  c.EnemySpeedMult,  0.25f, 3.00f);
+            c.EnemyDamageMult = SliderRow("Damage", c.EnemyDamageMult, 0.25f, 5.00f);
+
+            // SPAWN ─────────────────────────────────────────────────────────────
+            SectionHeader("SPAWN");
+            c.SpawnCountMult = SliderRow("Count", c.SpawnCountMult, 0.25f, 4.00f);
+
+            GUILayout.Space(4);
+            GUILayout.EndScrollView();
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // 드로잉 헬퍼
+        // ════════════════════════════════════════════════════════════════════════
+        private void SectionHeader(string title)
+        {
+            GUILayout.Space(5);
+            GUILayout.Label($"\u2500\u2500 {title} " + new string('\u2500', 32), _stSection!);
+        }
+
+        private float SliderRow(string name, float value, float min, float max)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(name,              _stSliderName!,  GUILayout.Width(52));
+            GUILayout.Label($"{value:F2}\u00d7", _stSliderValue!, GUILayout.Width(46));
+            float next = GUILayout.HorizontalSlider(value, min, max);
+            GUILayout.EndHorizontal();
+            return (float)System.Math.Round(next, 2);
+        }
+
+        private void PresetBtn(string label, TweakPresetType preset)
+        {
+            bool active = TweakState.ActivePreset == preset;
+            if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
             {
                 TweakState.Apply(preset);
-                Plugin.Log.LogInfo($"[TweakMenu] 프리셋 선택 → {preset}");
+                Plugin.Log.LogInfo($"[TweakMenu] {preset}");
             }
         }
 
-        private static bool Toggle(bool current, string label)
+        /// <summary>2열 토글 행. ref를 직접 수정합니다.</summary>
+        private void TwoCol(ref bool a, string la, ref bool b, string lb)
         {
-            var style = new GUIStyle(GUI.skin.toggle);
-            style.normal.textColor = current ? Color.green : Color.white;
-            style.hover.textColor  = current ? Color.green : Color.white;
-            bool next = GUILayout.Toggle(current, label, style);
+            GUILayout.BeginHorizontal();
+            a = Toggle(a, la);
+            b = Toggle(b, lb);
+            GUILayout.EndHorizontal();
+        }
+
+        private bool Toggle(bool current, string label)
+        {
+            bool next = GUILayout.Toggle(current, label,
+                current ? _stToggleOn! : _stToggleOff!);
             if (next != current)
                 Plugin.Log.LogInfo($"[CheatMenu] {label.Trim()} \u2192 {(next ? "ON" : "OFF")}");
             return next;
         }
 
+        // ════════════════════════════════════════════════════════════════════════
+        // 액션 구현
+        // ════════════════════════════════════════════════════════════════════════
         private void AddGems()
         {
             PS()?.SetMoney(CheatState.GemsFloor);
@@ -284,7 +427,7 @@ namespace BloodshedModToolkit.UI
             var pd = PD();
             if (pd == null) { Plugin.Log.LogWarning("[SkullCoins] PersistentData 없음"); return; }
             pd.currentSuperTickets = CheatState.SkullCoinsFloor;
-            Plugin.Log.LogInfo($"[SkullCoins] currentSuperTickets → {CheatState.SkullCoinsFloor}");
+            Plugin.Log.LogInfo($"[SkullCoins] → {CheatState.SkullCoinsFloor}");
         }
 
         private void HealFull() => PS()?.RestoreHp(99999f);
@@ -293,14 +436,12 @@ namespace BloodshedModToolkit.UI
         {
             var ps = PS();
             if (ps == null) { Plugin.Log.LogWarning("[ForceLevelUp] PlayerStats 없음"); return; }
-            // experienceCap = 현재 레벨의 다음 레벨업에 필요한 누적 XP 상한.
-            // 현재 experience 에서 cap 을 1 이상 초과하면 LevelUpChecker 가 레벨업 화면을 발생시킵니다.
             float current = ps.experience;
             float cap     = ps.experienceCap;
             float needed  = cap - current + 1f;
             if (needed < 1f) needed = 1f;
             ps.AddXp(needed);
-            Plugin.Log.LogInfo($"[ForceLevelUp] XP +{needed:F0}  ({current:F0} → {current + needed:F0} / cap {cap:F0})");
+            Plugin.Log.LogInfo($"[ForceLevelUp] +{needed:F0} XP");
         }
     }
 }
