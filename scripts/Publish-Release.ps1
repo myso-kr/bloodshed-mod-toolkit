@@ -82,16 +82,20 @@ Write-Host "`n[2/5] 인스톨러 빌드 중..." -ForegroundColor Yellow
 $makensis = @('C:\Program Files (x86)\NSIS\makensis.exe',
               'C:\Program Files\NSIS\makensis.exe') |
             Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $makensis) { throw "NSIS not found. Install: https://nsis.sourceforge.io/" }
-Push-Location "Installer"
-try {
-    if (-not (Test-Path "publish")) { New-Item -ItemType Directory "publish" | Out-Null }
-    & $makensis bloodshed.nsi
-    if ($LASTEXITCODE -ne 0) { throw "인스톨러 빌드 실패" }
-} finally {
-    Pop-Location
+if (-not $makensis) {
+    Write-Host "  ⚠ NSIS not found — installer build skipped. Install: https://nsis.sourceforge.io/" -ForegroundColor DarkYellow
+    $installerExe = $null
+} else {
+    Push-Location "Installer"
+    try {
+        if (-not (Test-Path "publish")) { New-Item -ItemType Directory "publish" | Out-Null }
+        & $makensis bloodshed.nsi
+        if ($LASTEXITCODE -ne 0) { throw "인스톨러 빌드 실패" }
+    } finally {
+        Pop-Location
+    }
+    Write-Host "  완료: $installerExe" -ForegroundColor Green
 }
-Write-Host "  완료: $installerExe" -ForegroundColor Green
 
 # ── 3. zip 패키지 ─────────────────────────────────────────────────────────────
 Write-Host "`n[3/5] 패키지 생성 중..." -ForegroundColor Yellow
@@ -122,17 +126,21 @@ if ($existingTag) {
 # ── 5. GitHub Release ─────────────────────────────────────────────────────────
 Write-Host "`n[5/5] GitHub Release 업로드..." -ForegroundColor Yellow
 
+$uploadArgs = @($zipName, "$dll#BloodshedModToolkit.dll")
+if ($installerExe -and (Test-Path $installerExe)) {
+    $uploadArgs += "$installerExe#BloodshedModToolkitInstaller.exe"
+}
+
 $null = gh release view $tag 2>&1
 if ($LASTEXITCODE -eq 0) {
     Write-Host "  기존 릴리즈에 파일 추가..." -ForegroundColor DarkYellow
-    gh release upload $tag $zipName "$dll#BloodshedModToolkit.dll" `
-        "$installerExe#BloodshedModToolkitInstaller.exe" --clobber
+    gh release upload $tag @uploadArgs --clobber
     if (-not $DraftOnly) { gh release edit $tag --draft=false }
 } else {
     # 빈 문자열이 인자로 전달되지 않도록 배열 splatting 사용
     $releaseArgs = @(
-        $tag, $zipName, "$dll#BloodshedModToolkit.dll",
-        "$installerExe#BloodshedModToolkitInstaller.exe",
+        $tag
+    ) + $uploadArgs + @(
         '--title', "Bloodshed Mod Toolkit v$Version",
         '--generate-notes'
     )
