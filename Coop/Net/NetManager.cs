@@ -39,6 +39,10 @@ namespace BloodshedModToolkit.Coop.Net
         private const float HeartbeatTimeout  = 60f;
         private readonly Dictionary<CSteamID, float> _lastHeartbeat = new();
 
+        // ── Guest 연결 재시도 ────────────────────────────────────────────────
+        private float _retryTimer;
+        private const float RetryInterval = 5f;
+
         // ════════════════════════════════════════════════════════════════════
         // Unity 생명주기
         // ════════════════════════════════════════════════════════════════════
@@ -96,6 +100,17 @@ namespace BloodshedModToolkit.Coop.Net
 
             PollMessages(0);  // 채널 0 — Reliable (이벤트)
             PollMessages(1);  // 채널 1 — Unreliable (위치 스냅샷)
+
+            // Guest: 미연결 상태면 주기적으로 Host에게 Handshake 재전송
+            if (!CoopState.IsHost && !CoopState.IsConnected && CoopState.LobbyId != CSteamID.Nil)
+            {
+                _retryTimer += Time.deltaTime;
+                if (_retryTimer >= RetryInterval)
+                {
+                    _retryTimer = 0f;
+                    RetryConnectToHost();
+                }
+            }
 
             if (CoopState.IsConnected)
             {
@@ -214,8 +229,16 @@ namespace BloodshedModToolkit.Coop.Net
         // ════════════════════════════════════════════════════════════════════
         private void OnP2PSessionRequest(P2PSessionRequest_t parm)
         {
-            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청: {parm.m_steamIDRemote}");
+            Plugin.Log.LogInfo($"[NetManager] P2P 세션 요청 수락: {parm.m_steamIDRemote}");
             SteamNetworking.AcceptP2PSessionWithUser(parm.m_steamIDRemote);
+
+            // 세션 수락 즉시 Handshake 응답 — PollMessages 타이밍에 의존하지 않고
+            // 상대방이 연결 확인을 바로 받을 수 있도록 보장
+            if (!CoopState.IsEnabled) return;
+            var myId = SteamUser.GetSteamID();
+            SendReliable(parm.m_steamIDRemote,
+                HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, CoopState.IsHost));
+            Plugin.Log.LogInfo($"[NetManager] Handshake 즉시 응답 → {parm.m_steamIDRemote}");
         }
 
         private void OnP2PConnectFail(P2PSessionConnectFail_t parm)
@@ -302,12 +325,42 @@ namespace BloodshedModToolkit.Coop.Net
 
         private void ConnectToHost(CSteamID hostId, CSteamID myId)
         {
-            CoopState.Peers.Add(hostId);
-            _lastHeartbeat[hostId] = Time.time;
-            CoopState.IsConnected  = true;
+            if (!CoopState.Peers.Contains(hostId))
+            {
+                CoopState.Peers.Add(hostId);
+                _lastHeartbeat[hostId] = Time.time;
+            }
+            CoopState.IsConnected = true;
             SendReliable(hostId,
                 HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: false));
             Plugin.Log.LogInfo($"[NetManager] Host에게 Handshake 전송 완료 → {hostId}");
+        }
+
+        private void RetryConnectToHost()
+        {
+            var myId   = SteamUser.GetSteamID();
+            var hostId = SteamMatchmaking.GetLobbyOwner(CoopState.LobbyId);
+
+            // GetLobbyOwner 실패 시 멤버 목록에서 자신이 아닌 첫 번째 멤버를 Host로 간주
+            if (hostId == CSteamID.Nil || hostId == myId)
+            {
+                int n = SteamMatchmaking.GetNumLobbyMembers(CoopState.LobbyId);
+                for (int i = 0; i < n; i++)
+                {
+                    var m = SteamMatchmaking.GetLobbyMemberByIndex(CoopState.LobbyId, i);
+                    if (m != myId && m != CSteamID.Nil) { hostId = m; break; }
+                }
+            }
+
+            if (hostId == CSteamID.Nil || hostId == myId)
+            {
+                Plugin.Log.LogWarning(
+                    $"[NetManager] 재시도: Host 미발견 (멤버={SteamMatchmaking.GetNumLobbyMembers(CoopState.LobbyId)})");
+                return;
+            }
+
+            Plugin.Log.LogInfo($"[NetManager] 재시도: Handshake → {hostId}");
+            ConnectToHost(hostId, myId);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -330,9 +383,15 @@ namespace BloodshedModToolkit.Coop.Net
             {
                 CoopState.Peers.Add(from);
                 _lastHeartbeat[from] = Time.time;
-                CoopState.IsConnected = true;
                 Plugin.Log.LogInfo(
-                    $"[NetManager] 새 Peer: {SteamFriends.GetFriendPersonaName(from)} ({from})");
+                    $"[NetManager] 새 Peer 등록: {SteamFriends.GetFriendPersonaName(from)} ({from})");
+            }
+
+            // Handshake 수신 시 항상 연결 확립 (이미 Peers에 있어도 IsConnected가 false일 수 있음)
+            if (!CoopState.IsConnected)
+            {
+                CoopState.IsConnected = true;
+                Plugin.Log.LogInfo($"[NetManager] 연결 확립 ← {from}");
             }
 
             // Host이면 응답 Handshake + FullSnapshot + TweakConfig 전송

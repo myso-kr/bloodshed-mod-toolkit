@@ -85,11 +85,12 @@ namespace BloodshedModToolkit.Coop.Bots
                 _verticalVelocity += Gravity * Time.deltaTime;
             }
 
-            // CharacterController 이동
+            // 위스커 레이캐스트 장애물 회피 → CharacterController 이동
+            var moveDir = AvoidObstacles(_desiredMoveDir);
             _cc.Move(new Vector3(
-                _desiredMoveDir.x * MoveSpeed * Time.deltaTime,
+                moveDir.x * MoveSpeed * Time.deltaTime,
                 _verticalVelocity * Time.deltaTime,
-                _desiredMoveDir.z * MoveSpeed * Time.deltaTime));
+                moveDir.z * MoveSpeed * Time.deltaTime));
 
             // 적 감지 스캔 (0.2초 간격)
             _enemyScanTimer += Time.deltaTime;
@@ -98,6 +99,46 @@ namespace BloodshedModToolkit.Coop.Bots
                 _enemyScanTimer = 0f;
                 ScanForEnemies();
             }
+        }
+
+        // ── Whisker Raycast 장애물 회피 ─────────────────────────────────────
+        // 정면 + 좌우 30° 총 3개 광선으로 벽·장애물 감지 → 회피 방향 블렌드
+        private Vector3 AvoidObstacles(Vector3 desired)
+        {
+            if (desired.x == 0f && desired.z == 0f) return desired;
+
+            float len = (float)Math.Sqrt(desired.x * desired.x + desired.z * desired.z);
+            float nx  = desired.x / len, nz = desired.z / len;
+
+            // 가슴 높이(0.9m)에서 수평 광선 발사 — 지면·천장 오탐 방지
+            var origin = transform.position + new Vector3(0f, 0.9f, 0f);
+
+            // cos30° ≈ 0.8660, sin30° = 0.5000
+            const float CosA = 0.8660f, SinA = 0.5000f;
+            const float CenterLen = 2.0f, SideLen = 1.5f;
+
+            float steerX = 0f, steerZ = 0f;
+
+            // 정면 위스커 — 충돌 시 역방향으로 강하게 밀어냄
+            if (Physics.Raycast(origin, new Vector3(nx, 0f, nz), CenterLen))
+            { steerX -= nx; steerZ -= nz; }
+
+            // 우측 위스커 (CW 30°) — 충돌 시 좌로 스티어
+            float rx = nx * CosA + nz * SinA, rz = -nx * SinA + nz * CosA;
+            if (Physics.Raycast(origin, new Vector3(rx, 0f, rz), SideLen))
+            { steerX -= rx * 0.7f; steerZ -= rz * 0.7f; }
+
+            // 좌측 위스커 (CCW 30°) — 충돌 시 우로 스티어
+            float lx = nx * CosA - nz * SinA, lz = nx * SinA + nz * CosA;
+            if (Physics.Raycast(origin, new Vector3(lx, 0f, lz), SideLen))
+            { steerX -= lx * 0.7f; steerZ -= lz * 0.7f; }
+
+            if (steerX == 0f && steerZ == 0f) return desired;
+
+            // 회피 벡터를 원하는 방향에 블렌드 후 정규화
+            float blX = nx + steerX * 1.8f, blZ = nz + steerZ * 1.8f;
+            float bl  = (float)Math.Sqrt(blX * blX + blZ * blZ);
+            return bl > 0.001f ? new Vector3(blX / bl, 0f, blZ / bl) : desired;
         }
 
         private void ScanForEnemies()
