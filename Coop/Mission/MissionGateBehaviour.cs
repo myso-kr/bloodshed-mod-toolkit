@@ -78,6 +78,16 @@ namespace BloodshedModToolkit.Coop.Mission
                 // WaveGroupStartPatch(DebugGuestMode 경로)가 웨이브를 차단한다.
                 if (CoopState.DebugGuestMode)
                 {
+                    // MetaGame = 게임 준비 화면 (캐릭터 선택/업그레이드).
+                    // 실제 미션은 이 화면에서 "게임 시작" 클릭 후 로딩→미션 순서로 진입.
+                    // 준비 화면 자체는 투표 대상이 아니므로 통과.
+                    if (scene.name == "MetaGame")
+                    {
+                        MissionState.Status = MissionStatus.Idle;
+                        Plugin.Log.LogInfo("[MissionGate] Debug 모드 — MetaGame(준비화면) 통과");
+                        return;
+                    }
+
                     MissionState.PendingSceneName  = scene.name;
                     MissionState.PendingBuildIndex = scene.buildIndex;
 
@@ -90,11 +100,11 @@ namespace BloodshedModToolkit.Coop.Mission
                     }
                     else
                     {
-                        // 투표 미완료 상태에서 씬 진입 → 투표 UI 활성화 + 웨이브 차단
+                        // 실제 미션 씬 진입 → 투표 UI 활성화 + 웨이브 차단
                         MissionState.VoteCountdown = 30f;
                         MissionState.Status = MissionStatus.VoteRequested;
                         Plugin.Log.LogInfo(
-                            $"[MissionGate] Debug 모드 — 씬 진입 감지, 투표 UI 활성: '{scene.name}'");
+                            $"[MissionGate] Debug 모드 — 미션 씬 감지, 투표 UI 활성: '{scene.name}'");
                     }
                     return;  // MissionStart 브로드캐스트 없음
                 }
