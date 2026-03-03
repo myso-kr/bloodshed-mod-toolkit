@@ -241,15 +241,29 @@ namespace UnityEngine
         public static Quaternion LookRotation(Vector3 forward) => identity;
     }
 
+    // ── Shader ──────────────────────────────────────────────────────────────────
+    public class Shader : Object
+    {
+        public Shader(IntPtr ptr) : base(ptr) { }
+        public static Shader? Find(string name) => null;
+        public new string name => "";
+    }
+
     // ── Material / MeshRenderer / Collider ─────────────────────────────────────
     public class Material
     {
+        public Material() { }
+        public Material(Shader shader) { }
+        public Material(Material source) { }
         public Color color { get; set; }
+        public Shader? shader { get; set; }
+        public void SetColor(string name, Color value) { }
     }
     public class Renderer : Component
     {
         public Renderer(IntPtr ptr) : base(ptr) { }
-        public Material material { get; set; } = new Material();
+        public Material  material       { get; set; } = new Material();
+        public Material? sharedMaterial { get; set; }
     }
     public class MeshRenderer : Renderer
     {

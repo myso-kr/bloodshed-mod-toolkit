@@ -2,8 +2,10 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.76"
+!define VERSION    "1.0.77"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
+!define GITHUB_REPO "myso-kr/bloodshed-mod-toolkit"
+!define MOD_DLL_URL "https://github.com/${GITHUB_REPO}/releases/latest/download/BloodshedModToolkit.dll"
 
 Name    "${APPNAME} v${VERSION}"
 OutFile "publish\BloodshedModToolkitInstaller.exe"
@@ -30,9 +32,6 @@ SectionEnd
 
 ; - .onInit -
 Function .onInit
-    SetOutPath $PLUGINSDIR
-    File "..\bin\Release\net6.0\BloodshedModToolkit.dll"
-
     Call DetectGamePath
 FunctionEnd
 
@@ -221,9 +220,23 @@ Function MainPageLeave
 
     ; - 5. Mod DLL -
     ${If} $DoInstallModDll == ${BST_CHECKED}
+        !insertmacro SetStatus "Downloading mod DLL..."
+        FileOpen $0 "$TEMP\bmti_dlmod.ps1" w
+        FileWrite $0 "Invoke-WebRequest -Uri '${MOD_DLL_URL}' -OutFile '$TEMP\BloodshedModToolkit.dll' -UseBasicParsing$\n"
+        FileClose $0
+        nsExec::ExecToStack "powershell -NoProfile -ExecutionPolicy Bypass -File $\"$TEMP\bmti_dlmod.ps1$\""
+        Pop $0
+        Pop $1
+        Delete "$TEMP\bmti_dlmod.ps1"
+        ${If} $0 != 0
+            MessageBox MB_OK|MB_ICONEXCLAMATION "Mod DLL download failed (exit $0):$\n$1$\nCheck your internet connection and try again."
+            Abort
+        ${EndIf}
+
         !insertmacro SetStatus "Installing mod DLL..."
         CreateDirectory "$GamePath\BepInEx\plugins"
-        CopyFiles "$PLUGINSDIR\BloodshedModToolkit.dll" "$GamePath\BepInEx\plugins\"
+        CopyFiles "$TEMP\BloodshedModToolkit.dll" "$GamePath\BepInEx\plugins\"
+        Delete "$TEMP\BloodshedModToolkit.dll"
         !insertmacro SetProgress 90
     ${EndIf}
 

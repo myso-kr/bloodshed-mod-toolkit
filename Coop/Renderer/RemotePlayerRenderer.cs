@@ -60,9 +60,13 @@ namespace BloodshedModToolkit.Coop.Renderer
             go.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
             go.transform.position   = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
 
-            // 색상 설정
+            // URP 호환 material 적용
             var mr = go.GetComponent<MeshRenderer>();
-            if (mr != null) mr.material.color = BotState.IsBot(id) ? BotColor : PeerColor;
+            if (mr != null)
+            {
+                var mat = ResolveUrpMaterial(BotState.IsBot(id) ? BotColor : PeerColor);
+                if (mat != null) mr.material = mat;
+            }
 
             // 콜라이더 비활성화 (게임 물리 충돌 방지)
             var col = go.GetComponent<Collider>();
@@ -119,6 +123,42 @@ namespace BloodshedModToolkit.Coop.Renderer
                     if (BotState.BotSteamIds[i] == id) return BotState.BotNames[i];
             try { return SteamFriends.GetFriendPersonaName(new CSteamID(id)); }
             catch { return $"Peer_{id:X8}"; }
+        }
+
+        /// <summary>
+        /// URP 호환 Material을 생성한다.
+        /// 1차: Shader.Find("Universal Render Pipeline/Unlit")
+        /// 2차 폴백: 씬에서 기존 MeshRenderer의 sharedMaterial 복사
+        /// 실패 시 null 반환 (기본 material 유지)
+        /// </summary>
+        private static Material? ResolveUrpMaterial(Color color)
+        {
+            // 1차: URP Unlit 셰이더 직접 검색
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Simple Lit");
+
+            if (shader != null)
+            {
+                var mat = new Material(shader);
+                // URP Unlit의 base color 프로퍼티 이름: "_BaseColor"
+                mat.SetColor("_BaseColor", color);
+                mat.color = color;  // 폴백 (일부 셰이더는 _Color도 지원)
+                Plugin.Log.LogInfo($"[Renderer] URP 셰이더 적용: {shader.name}");
+                return mat;
+            }
+
+            // 2차 폴백: 씬의 기존 MeshRenderer에서 material 복사
+            var existing = UnityEngine.Object.FindObjectOfType<MeshRenderer>();
+            if (existing?.sharedMaterial != null)
+            {
+                var mat = new Material(existing.sharedMaterial);
+                mat.color = color;
+                Plugin.Log.LogWarning("[Renderer] Shader.Find 실패 — 기존 MeshRenderer material 복사");
+                return mat;
+            }
+
+            Plugin.Log.LogError("[Renderer] URP material 해결 실패 — 캡슐 렌더링 불가");
+            return null;
         }
     }
 }
