@@ -1,8 +1,8 @@
 name: Build Check
 
+# push 는 pre-push hook 이 실제 빌드를 보장하므로 제외.
+# PR 에서만 실행 — 외부 기여자 코드를 게임 DLL 없이 검증.
 on:
-  push:
-    branches: [main, master, develop]
   pull_request:
     branches: [main, master]
 
