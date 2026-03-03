@@ -18,3 +18,10 @@ RapidFire	Rapid Fire	Rapid Fire	속사	速射	速射	速射	Скорострел
 NoRecoil	No Recoil	No Recoil	무반동	無反動	无后坐力	無後坐力	Без отдачи	Kein Rückstoß	Sans recul	Sans recul	Sin retroceso	Sin retroceso	Sin retroceso	Bez odrzutu	Sem recuo	Sem recuo	Senza rinculo	Geen terugslag	Geri Tepme Yok
 PerfectAim	Perfect Aim	Perfect Aim	완벽한 조준	完璧な照準	完美瞄准	完美瞄準	Идеальный прицел	Perfektes Zielen	Visée parfaite	Visée parfaite	Puntería perfecta	Puntería perfecta	Puntería perfecta	Idealne celowanie	Mira perfeita	Mira perfeita	Mira perfetta	Perfecte aim	Mükemmel Nişan
 AllCheatsOff	Reset All	Reset All	모두 초기화	全リセット	重置全部	重置全部	Сброс всего	Alles zurücksetzen	Tout réinitialiser	Tout réinitialiser	Reiniciar todo	Reiniciar todo	Reiniciar todo	Zresetuj wszystko	Redefinir tudo	Redefinir tudo	Reinizializza tutto	Alles resetten	Hepsini Sıfırla
+TweakSectionHeader	★ Balance Tweaks	★ Balance Tweaks	★ 밸런스 트윅	★ バランス調整	★ 平衡调整	★ 平衡調整	★ Баланс	★ Spielbalance	★ Réglages	★ Réglages	★ Ajustes	★ Ajustes	★ Ajustes	★ Balans	★ Ajustes	★ Ajustes	★ Bilanciamento	★ Balans	★ Denge Ayarı
+TweakActiveLabel	Active: {0}	Active: {0}	활성: {0}	アクティブ: {0}	当前: {0}	目前: {0}	Активно: {0}	Aktiv: {0}	Actif: {0}	Actif: {0}	Activo: {0}	Activo: {0}	Activo: {0}	Aktywny: {0}	Ativo: {0}	Ativo: {0}	Attivo: {0}	Actief: {0}	Etkin: {0}
+TweakMortal	Mortal	Mortal	모탈	モータル	凡人	凡人	Смертный	Sterblich	Mortel	Mortel	Mortal	Mortal	Mortal	Śmiertelnik	Mortal	Mortal	Mortale	Sterfelijk	Ölümlü
+TweakHunter	Hunter	Hunter	헌터	ハンター	猎手	獵手	Охотник	Jäger	Chasseur	Chasseur	Cazador	Cazador	Cazador	Łowca	Caçador	Caçador	Cacciatore	Jager	Avcı
+TweakSlayer	Slayer	Slayer	슬레이어	スレイヤー	猎魔人	獵魔人	Истребитель	Vernichter	Pourfendeur	Pourfendeur	Aniquilador	Aniquilador	Aniquilador	Pogromca	Exterminador	Exterminador	Sterminatore	Verdelger	Katil
+TweakDemon	Demon	Demon	데몬	デーモン	恶魔	惡魔	Демон	Dämon	Démon	Démon	Demonio	Demonio	Demonio	Demon	Demônio	Demônio	Demone	Demon	İblis
+TweakApocalypse	Apocalypse	Apocalypse	아포칼립스	アポカリプス	末日	末日	Апокалипсис	Apokalypse	Apocalypse	Apocalypse	Apocalipsis	Apocalipsis	Apocalipsis	Apokalipsa	Apocalipse	Apocalipse	Apocalisse	Apocalyps	Kıyamet

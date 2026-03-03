@@ -17,6 +17,7 @@ namespace BloodshedModToolkit
             Log = base.Log;
 
             CheatState.Initialize();
+            Tweaks.TweakState.Initialize();
 
             var harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
             harmony.PatchAll();
@@ -32,6 +33,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.3";
+        public const string PLUGIN_VERSION = "1.0.4";
     }
 }

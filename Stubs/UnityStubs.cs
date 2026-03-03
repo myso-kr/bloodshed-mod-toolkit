@@ -16,6 +16,7 @@ namespace UnityEngine
 
     public class Component  : Object { public Component(IntPtr ptr) : base(ptr) { } }
     public class Behaviour  : Component { public Behaviour(IntPtr ptr) : base(ptr) { } }
+    public class Transform  : Component { public Transform(IntPtr ptr) : base(ptr) { } }
 
     public class MonoBehaviour : Behaviour
     {
@@ -155,6 +156,7 @@ namespace UnityEngine
         public static bool Toggle(bool value, string text) => value;
         public static bool Toggle(bool value, string text, GUIStyle style) => value;
         public static bool Button(string text) => false;
+        public static bool Button(string text, GUIStyle style) => false;
         public static bool Button(string text, params GUILayoutOption[] options) => false;
         public static void Label(string text) { }
         public static void Label(string text, params GUILayoutOption[] options) { }

@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using com8com1.SCFPS;
 using BloodshedModToolkit.I18n;
+using BloodshedModToolkit.Tweaks;
 
 namespace BloodshedModToolkit.UI
 {
     public class CheatMenu : MonoBehaviour
     {
         private bool _visible    = false;
-        private Rect _windowRect = new Rect(20, 20, 360, 660);
+        private Rect _windowRect = new Rect(20, 20, 360, 760);
 
         public CheatMenu(System.IntPtr ptr) : base(ptr) { }
 
@@ -151,7 +152,7 @@ namespace BloodshedModToolkit.UI
         private List<string> BuildActiveLines()
         {
             var l    = L();
-            var list = new List<string>(13);
+            var list = new List<string>(15);
 
             if (CheatState.GodMode)            list.Add("\u25cf " + l.GodMode);
             if (CheatState.InfiniteGems)       list.Add("\u25cf " + l.InfiniteGems);
@@ -168,8 +169,21 @@ namespace BloodshedModToolkit.UI
             if (CheatState.NoRecoil)           list.Add("\u25cf " + l.NoRecoil);
             if (CheatState.PerfectAim)         list.Add("\u25cf " + l.PerfectAim);
 
+            var preset = TweakState.ActivePreset;
+            if (preset != TweakPresetType.Hunter)
+                list.Add("\u25cf " + string.Format(l.TweakActiveLabel, GetPresetName(preset, l)));
+
             return list;
         }
+
+        private static string GetPresetName(TweakPresetType p, LangStrings l) => p switch
+        {
+            TweakPresetType.Mortal     => l.TweakMortal,
+            TweakPresetType.Slayer     => l.TweakSlayer,
+            TweakPresetType.Demon      => l.TweakDemon,
+            TweakPresetType.Apocalypse => l.TweakApocalypse,
+            _                          => l.TweakHunter,
+        };
 
         // ── 메인 창 ───────────────────────────────────────────────────────────────
         private void DrawWindow(int id)
@@ -212,10 +226,40 @@ namespace BloodshedModToolkit.UI
             GUILayout.Label("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
             if (GUILayout.Button(l.AllCheatsOff))   CheatState.Initialize();
 
+            // ── 밸런스 트윅 ───────────────────────────────────────────────────────
+            GUILayout.Space(6);
+            GUILayout.Label("\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
+            GUILayout.Label(l.TweakSectionHeader);
+            GUILayout.Label(string.Format(l.TweakActiveLabel,
+                GetPresetName(TweakState.ActivePreset, l)));
+
+            GUILayout.Space(4);
+            GUILayout.BeginHorizontal();
+            DrawPresetButton(l.TweakMortal,     TweakPresetType.Mortal);
+            DrawPresetButton(l.TweakHunter,     TweakPresetType.Hunter);
+            DrawPresetButton(l.TweakSlayer,     TweakPresetType.Slayer);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            DrawPresetButton(l.TweakDemon,      TweakPresetType.Demon);
+            DrawPresetButton(l.TweakApocalypse, TweakPresetType.Apocalypse);
+            GUILayout.EndHorizontal();
+
             GUI.DragWindow();
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────────────────────────
+        private static void DrawPresetButton(string label, TweakPresetType preset)
+        {
+            bool isActive = TweakState.ActivePreset == preset;
+            var style = new GUIStyle(GUI.skin.button);
+            style.normal.textColor = isActive ? Color.green : Color.white;
+            if (GUILayout.Button(label, style))
+            {
+                TweakState.Apply(preset);
+                Plugin.Log.LogInfo($"[TweakMenu] 프리셋 선택 → {preset}");
+            }
+        }
+
         private static bool Toggle(bool current, string label)
         {
             var style = new GUIStyle(GUI.skin.toggle);

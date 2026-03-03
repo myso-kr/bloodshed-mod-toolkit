@@ -15,6 +15,7 @@ namespace com8com1.SCFPS
         public float curHp           { get; set; }
         public float maxHp           { get; set; }
         public float MaxHp           { get; set; }
+        public float CurrentHp       { get; set; }
         public float Armor           { get; set; }
         public float Agility         { get; set; }
         public float Might           { get; set; }
@@ -63,15 +64,34 @@ namespace com8com1.SCFPS
     public class Health : MonoBehaviour
     {
         public Health(IntPtr ptr) : base(ptr) { }
-        public bool isPlayer { get; set; }
-        public void Damage(float damage) { }
+        public bool   isPlayer      { get; set; }
+        public float  initialHealth { get; set; }
+        public float  maximumHealth { get; set; }
+        public float  currentHealth { get; set; }
+        public void   Initialization() { }
+        public void   Damage(float damage, GameObject instigator,
+                            float flickerDuration, float invincibilityDuration,
+                            Vector3 damageDirection, Vector3 damagePosition,
+                            bool suppressReaction) { }
     }
 
     public class Q3PlayerController : MonoBehaviour
     {
         public Q3PlayerController(IntPtr ptr) : base(ptr) { }
-        public void Accelerate(float targetSpeed, float accel) { }
-        public void AirControl(float targetSpeed) { }
+        public void Accelerate(Vector3 targetDir, float targetSpeed, float accel) { }
+        public void AirControl(Vector3 targetDir, float targetSpeed) { }
+    }
+
+    public class SpawnProcessor : MonoBehaviour
+    {
+        public SpawnProcessor(IntPtr ptr) : base(ptr) { }
+        public int GetMaxEnemyCount() => 0;
+    }
+
+    public class SpawnDirector : MonoBehaviour
+    {
+        public SpawnDirector(IntPtr ptr) : base(ptr) { }
+        public void SpawnEnemies(Transform transToSpawn, int spawnAmount, bool tryForceSpawn) { }
     }
 
     public class WeaponData
@@ -92,7 +112,10 @@ namespace com8com1.SCFPS
     public class WeaponItem : MonoBehaviour
     {
         public WeaponItem(IntPtr ptr) : base(ptr) { }
-        public float GetRecoilTotal() => 0f;
+        public float GetRecoilTotal()           => 0f;
+        public float GetDamageTotal()           => 0f;
+        public float GetCooldownTotal()         => 0f;
+        public float GetReloadDurationTotal()   => 0f;
     }
 
     public class PersistentData : MonoBehaviour
@@ -107,6 +130,22 @@ namespace com8com1.SCFPS
     {
         public GameSettings(IntPtr ptr) : base(ptr) { }
         public LocalizationManager.Language languageText { get; set; }
+    }
+}
+
+// Enemies.EnemyAi 네임스페이스
+namespace Enemies.EnemyAi
+{
+    using System;
+    using UnityEngine;
+
+    public class EnemyAbilityController : MonoBehaviour
+    {
+        public EnemyAbilityController(IntPtr ptr) : base(ptr) { }
+        public void SetBehaviorWalkable(float totalSpeed) { }
+        public void SetWalkModifier(float walkModifier) { }
+        public void SetCustomModifier(float customModifier) { }
+        public void RefreshAgentSpeed() { }
     }
 }
 
