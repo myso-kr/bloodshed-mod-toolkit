@@ -59,6 +59,8 @@ namespace BloodshedModToolkit.Coop.Mission
                     return;
                 }
                 MissionState.GuestReadyMap.Clear();
+                MissionState.HostCurrentScene      = scene.name;
+                MissionState.HostCurrentBuildIndex = scene.buildIndex;
                 Plugin.Log.LogInfo(
                     $"[MissionGate] Host 미션 진입: '{scene.name}'" +
                     $" — 게스트 {CoopState.Peers.Count}명에게 알림");

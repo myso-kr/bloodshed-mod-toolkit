@@ -278,6 +278,7 @@ namespace BloodshedModToolkit.Coop.Net
         // ════════════════════════════════════════════════════════════════════
         private void HandleHandshake(CSteamID from, byte[] payload)
         {
+            Plugin.Log.LogInfo($"[NetManager] Handshake 수신: {from}");
             var pkt = HandshakePacket.Decode(payload);
 
             if (pkt.Version != CoopState.CoopVersion)
@@ -305,6 +306,16 @@ namespace BloodshedModToolkit.Coop.Net
                     HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
                 SendFullSnapshotTo(from);
                 TweakSyncHandler.SendTo(from);
+
+                // 뒤늦게 접속한 Guest — Host가 이미 미션 씬에 있으면 MissionStart 재전송
+                var scene = Mission.MissionState.HostCurrentScene;
+                var idx   = Mission.MissionState.HostCurrentBuildIndex;
+                if (!string.IsNullOrEmpty(scene) && idx > 0)
+                {
+                    SendReliable(from, Net.MissionStartPacket.Encode(scene, idx));
+                    Plugin.Log.LogInfo(
+                        $"[NetManager] 뒤늦게 접속한 Guest에게 MissionStart 재전송: '{scene}' → {from}");
+                }
             }
         }
 

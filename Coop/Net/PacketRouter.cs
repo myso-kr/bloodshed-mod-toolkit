@@ -23,7 +23,7 @@ namespace BloodshedModToolkit.Coop.Net
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogError($"[PacketRouter] 패킷 처리 오류: {ex.Message}");
+                Plugin.Log.LogError($"[PacketRouter] 패킷 처리 오류:\n{ex}");
             }
         }
     }
