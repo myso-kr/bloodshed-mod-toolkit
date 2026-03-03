@@ -2,7 +2,7 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.68"
+!define VERSION    "1.0.69"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
 
 Name    "${APPNAME} v${VERSION}"
@@ -37,41 +37,40 @@ Function .onInit
 FunctionEnd
 
 ; - DetectGamePath -
-; Detects the Bloodshed install path via NSIS native registry reads.
-; Priority: 1) HKCU Steam SteamPath  2) HKLM Wow6432Node InstallPath  3) default paths
+; Writes a PowerShell script to %TEMP% and runs it to search all Steam library
+; folders (via libraryfolders.vdf) for the Bloodshed install directory.
+; Uses NSIS double-quoted FileWrite strings: $$ = literal $, $\" = literal "
 Function DetectGamePath
     StrCpy $GamePath ""
 
-    ; 1. HKCU (standard Steam install)
-    ReadRegStr $0 HKCU "SOFTWARE\Valve\Steam" "SteamPath"
-    ${If} $0 != ""
-        StrCpy $1 "$0\steamapps\common\Bloodshed"
-        IfFileExists "$1\Bloodshed.exe" 0 +3
-            StrCpy $GamePath $1
-            Goto DetectDone
-    ${EndIf}
+    FileOpen $0 "$TEMP\bmti_detect.ps1" w
+    FileWrite $0 "$$reg = 'HKCU:\SOFTWARE\Valve\Steam'$\n"
+    FileWrite $0 "try { $$sp = (Get-ItemProperty $$reg -EA Stop).SteamPath } catch { $$sp = '' }$\n"
+    FileWrite $0 "$$libs = @()$\n"
+    FileWrite $0 "if ($$sp) {$\n"
+    FileWrite $0 "    $$vdf = Join-Path $$sp 'steamapps\libraryfolders.vdf'$\n"
+    FileWrite $0 "    if (Test-Path $$vdf) {$\n"
+    FileWrite $0 "        foreach ($$line in (Get-Content $$vdf)) {$\n"
+    FileWrite $0 "            $$m = [regex]::Match($$line, '[A-Z]:\\[^$\"]+')$\n"
+    FileWrite $0 "            if ($$m.Success) { $$libs += ($$m.Value.Trim('$\"') -replace '\\\\', '\') }$\n"
+    FileWrite $0 "        }$\n"
+    FileWrite $0 "    }$\n"
+    FileWrite $0 "    $$libs += $$sp$\n"
+    FileWrite $0 "}$\n"
+    FileWrite $0 "$$libs += 'C:\Program Files (x86)\Steam'$\n"
+    FileWrite $0 "$$libs += 'C:\Program Files\Steam'$\n"
+    FileWrite $0 "foreach ($$lib in $$libs) {$\n"
+    FileWrite $0 "    $$p = Join-Path $$lib 'steamapps\common\Bloodshed'$\n"
+    FileWrite $0 "    if (Test-Path (Join-Path $$p 'Bloodshed.exe')) { [Console]::Write($$p); exit 0 }$\n"
+    FileWrite $0 "}$\n"
+    FileClose $0
 
-    ; 2. HKLM Wow6432Node (32-bit Steam on 64-bit OS)
-    ReadRegStr $0 HKLM "SOFTWARE\Wow6432Node\Valve\Steam" "InstallPath"
-    ${If} $0 != ""
-        StrCpy $1 "$0\steamapps\common\Bloodshed"
-        IfFileExists "$1\Bloodshed.exe" 0 +3
-            StrCpy $GamePath $1
-            Goto DetectDone
-    ${EndIf}
+    nsExec::ExecToStack "powershell -NoProfile -ExecutionPolicy Bypass -File $\"$TEMP\bmti_detect.ps1$\""
+    Pop $0   ; exit code
+    Pop $1   ; stdout (game path, no trailing newline)
+    Delete "$TEMP\bmti_detect.ps1"
 
-    ; 3. Common fallback paths
-    StrCpy $1 "C:\Program Files (x86)\Steam\steamapps\common\Bloodshed"
-    IfFileExists "$1\Bloodshed.exe" 0 +3
-        StrCpy $GamePath $1
-        Goto DetectDone
-
-    StrCpy $1 "C:\Program Files\Steam\steamapps\common\Bloodshed"
-    IfFileExists "$1\Bloodshed.exe" 0 +3
-        StrCpy $GamePath $1
-        Goto DetectDone
-
-    DetectDone:
+    StrCpy $GamePath $1
 FunctionEnd
 
 ; - MainPage -
