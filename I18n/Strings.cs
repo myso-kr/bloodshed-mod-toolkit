@@ -50,6 +50,36 @@ namespace BloodshedModToolkit.I18n
         public string TweakSlayer        => G(nameof(TweakSlayer));
         public string TweakDemon         => G(nameof(TweakDemon));
         public string TweakApocalypse    => G(nameof(TweakApocalypse));
+
+        // ── DPS 패널 ────────────────────────────────────────────────────────────
+        /// <summary>피크 있을 때 하단 행. {0}=피크DPS, {1}=히트수, {2}=누적피해</summary>
+        public string DpsSubWithPeak     => G(nameof(DpsSubWithPeak));
+        /// <summary>피크 없을 때 하단 행. {0}=히트수, {1}=누적피해</summary>
+        public string DpsSubNoPeak       => G(nameof(DpsSubNoPeak));
+
+        // ── Co-op 탭 ────────────────────────────────────────────────────────────
+        public string CoopStatusDisconnected => G(nameof(CoopStatusDisconnected));
+        public string CoopConnected          => G(nameof(CoopConnected));
+        public string CoopWaiting            => G(nameof(CoopWaiting));
+        public string CoopCreateLobby        => G(nameof(CoopCreateLobby));
+        public string CoopLobbyIdLabel       => G(nameof(CoopLobbyIdLabel));
+        public string CoopLobbyIdEmpty       => G(nameof(CoopLobbyIdEmpty));
+        public string CoopPasteClipboard     => G(nameof(CoopPasteClipboard));
+        public string CoopClear              => G(nameof(CoopClear));
+        public string CoopJoin               => G(nameof(CoopJoin));
+        public string CoopLeave              => G(nameof(CoopLeave));
+        public string CoopXpIndependent      => G(nameof(CoopXpIndependent));
+        public string CoopXpReplicate        => G(nameof(CoopXpReplicate));
+        public string CoopXpSplit            => G(nameof(CoopXpSplit));
+        public string CoopXpIndependentDesc  => G(nameof(CoopXpIndependentDesc));
+        public string CoopXpReplicateDesc    => G(nameof(CoopXpReplicateDesc));
+        public string CoopXpSplitDesc        => G(nameof(CoopXpSplitDesc));
+        public string CoopRefresh            => G(nameof(CoopRefresh));
+        /// <summary>{0}=온라인 수</summary>
+        public string CoopFriendsOnlineCount => G(nameof(CoopFriendsOnlineCount));
+        public string CoopFriendsLoadPrompt  => G(nameof(CoopFriendsLoadPrompt));
+        public string CoopFriendsNone        => G(nameof(CoopFriendsNone));
+        public string CoopInvite             => G(nameof(CoopInvite));
     }
 
     /// <summary>

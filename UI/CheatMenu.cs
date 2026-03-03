@@ -236,7 +236,7 @@ namespace BloodshedModToolkit.UI
             else if (_activeTab == Tab.Tweaks)
                 DrawTweaksTab(l);
             else
-                DrawCoopTab();
+                DrawCoopTab(l);
 
             // 타이틀바 영역만 드래그 허용
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 22));
@@ -348,7 +348,7 @@ namespace BloodshedModToolkit.UI
         // ════════════════════════════════════════════════════════════════════════
         // CO-OP 탭
         // ════════════════════════════════════════════════════════════════════════
-        private void DrawCoopTab()
+        private void DrawCoopTab(LangStrings l)
         {
             _scrollCoop = GUILayout.BeginScrollView(_scrollCoop, GUILayout.ExpandHeight(true));
 
@@ -356,28 +356,28 @@ namespace BloodshedModToolkit.UI
             {
                 // ── 연결 안됨 ────────────────────────────────────────────────
                 SectionHeader("STATUS");
-                GUILayout.Label("\u25c6 상태: 연결 안됨", _stSliderName!);
+                GUILayout.Label($"\u25c6 {l.CoopStatusDisconnected}", _stSliderName!);
 
                 GUILayout.Space(4);
                 SectionHeader("HOST");
-                if (GUILayout.Button("방 만들기 (최대 4인)", _stActionBtn!))
+                if (GUILayout.Button(l.CoopCreateLobby, _stActionBtn!))
                     NetManager.Instance?.CreateLobby(4);
 
                 GUILayout.Space(4);
                 SectionHeader("JOIN");
                 // GUILayout.TextField 는 이 게임의 IL2CPP 빌드에서 strip 됨 →
                 // 클립보드 붙여넣기 방식으로 대체합니다.
-                GUILayout.Label("로비 ID (Steam Lobby ID):", _stSliderName!);
+                GUILayout.Label(l.CoopLobbyIdLabel, _stSliderName!);
                 GUILayout.Label(
-                    _lobbyIdInput.Length > 0 ? _lobbyIdInput : "(비어있음)",
+                    _lobbyIdInput.Length > 0 ? _lobbyIdInput : l.CoopLobbyIdEmpty,
                     _stSliderValue!);
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("클립보드에서 붙여넣기", _stActionBtn!))
+                if (GUILayout.Button(l.CoopPasteClipboard, _stActionBtn!))
                     _lobbyIdInput = GUIUtility.systemCopyBuffer?.Trim() ?? "";
-                if (_lobbyIdInput.Length > 0 && GUILayout.Button("지우기", _stResetBtn!))
+                if (_lobbyIdInput.Length > 0 && GUILayout.Button(l.CoopClear, _stResetBtn!))
                     _lobbyIdInput = "";
                 GUILayout.EndHorizontal();
-                if (GUILayout.Button("참가", _stActionBtn!))
+                if (GUILayout.Button(l.CoopJoin, _stActionBtn!))
                 {
                     if (ulong.TryParse(_lobbyIdInput.Trim(), out var rawId))
                         NetManager.Instance?.JoinLobby(new CSteamID(rawId));
@@ -385,15 +385,17 @@ namespace BloodshedModToolkit.UI
                         Plugin.Log.LogWarning("[CoopTab] 유효하지 않은 로비 ID");
                 }
 
-                DrawFriendsSection();
+                DrawFriendsSection(l);
             }
             else
             {
                 // ── 연결됨 ───────────────────────────────────────────────────
                 SectionHeader("STATUS");
-                string connText = CoopState.IsConnected ? "\u25cf 연결됨" : "\u25cb 대기 중";
+                string connText = CoopState.IsConnected
+                    ? $"\u25cf {l.CoopConnected}"
+                    : $"\u25cb {l.CoopWaiting}";
                 string roleText = CoopState.IsHost ? "HOST" : "GUEST";
-                GUILayout.Label($"\u25c6 상태: {connText}  [{roleText}]", _stSliderName!);
+                GUILayout.Label($"\u25c6 {connText}  [{roleText}]", _stSliderName!);
                 GUILayout.Label($"\u25c6 Lobby ID: {CoopState.LobbyId}", _stSliderName!);
 
                 SectionHeader("PEERS");
@@ -419,20 +421,20 @@ namespace BloodshedModToolkit.UI
                     }
                 }
 
-                DrawFriendsSection();
+                DrawFriendsSection(l);
 
                 // ── XP SYNC ──────────────────────────────────────────────────
                 GUILayout.Space(4);
                 SectionHeader("XP SYNC");
                 GUILayout.BeginHorizontal();
-                XpModeBtn("독립", XpShareMode.Independent);
-                XpModeBtn("복제", XpShareMode.Replicate);
-                XpModeBtn("분할", XpShareMode.Split);
+                XpModeBtn(l.CoopXpIndependent, XpShareMode.Independent);
+                XpModeBtn(l.CoopXpReplicate,   XpShareMode.Replicate);
+                XpModeBtn(l.CoopXpSplit,        XpShareMode.Split);
                 GUILayout.EndHorizontal();
-                GUILayout.Label(XpModeDescription(), _stSliderName!);
+                GUILayout.Label(XpModeDescription(l), _stSliderName!);
 
                 GUILayout.Space(6);
-                if (GUILayout.Button("로비 떠나기", _stResetBtn!))
+                if (GUILayout.Button(l.CoopLeave, _stResetBtn!))
                     NetManager.Instance?.LeaveLobby();
             }
 
@@ -449,39 +451,41 @@ namespace BloodshedModToolkit.UI
             }
         }
 
-        private static string XpModeDescription() =>
+        private static string XpModeDescription(LangStrings l) =>
             CoopConfig.XpShare switch
             {
-                XpShareMode.Independent => "각자 독립적으로 XP 획득 (동기화 없음)",
-                XpShareMode.Split       => "Host XP의 절반을 Guest에게 전달",
-                _                       => "Host XP를 Guest에게 그대로 복제 (기본)",
+                XpShareMode.Independent => l.CoopXpIndependentDesc,
+                XpShareMode.Split       => l.CoopXpSplitDesc,
+                _                       => l.CoopXpReplicateDesc,
             };
 
         // ════════════════════════════════════════════════════════════════════════
         // FRIENDS 섹션
         // ════════════════════════════════════════════════════════════════════════
-        private void DrawFriendsSection()
+        private void DrawFriendsSection(LangStrings l)
         {
             GUILayout.Space(4);
             SectionHeader("FRIENDS");
 
             // 새로고침 버튼 + 카운트
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("새로고침", _stActionBtn!))
+            if (GUILayout.Button(l.CoopRefresh, _stActionBtn!))
                 FriendListCache.Refresh();
             if (FriendListCache.LastRefreshTime >= 0f)
-                GUILayout.Label($"({FriendListCache.Entries.Count}명 온라인)", _stSliderName!);
+                GUILayout.Label(
+                    string.Format(l.CoopFriendsOnlineCount, FriendListCache.Entries.Count),
+                    _stSliderName!);
             GUILayout.EndHorizontal();
 
             if (FriendListCache.LastRefreshTime < 0f)
             {
-                GUILayout.Label("  [새로고침]을 눌러 친구 목록 불러오기", _stSliderName!);
+                GUILayout.Label($"  {l.CoopFriendsLoadPrompt}", _stSliderName!);
                 return;
             }
 
             if (FriendListCache.Entries.Count == 0)
             {
-                GUILayout.Label("  온라인 친구 없음", _stSliderName!);
+                GUILayout.Label($"  {l.CoopFriendsNone}", _stSliderName!);
                 return;
             }
 
@@ -493,7 +497,7 @@ namespace BloodshedModToolkit.UI
 
                 // 참가 버튼 — 친구가 Bloodshed 로비에 있고 우리가 미연결 상태일 때
                 if (!CoopState.IsEnabled && f.LobbyId.IsValid() &&
-                    GUILayout.Button("참가", _stActionBtn!, GUILayout.Width(44)))
+                    GUILayout.Button(l.CoopJoin, _stActionBtn!, GUILayout.Width(44)))
                 {
                     NetManager.Instance?.JoinLobby(f.LobbyId);
                     Plugin.Log.LogInfo($"[Friends] {f.Name} 의 로비에 참가");
@@ -501,7 +505,7 @@ namespace BloodshedModToolkit.UI
 
                 // 초대 버튼 — 우리가 로비를 열었을 때
                 if (CoopState.IsEnabled &&
-                    GUILayout.Button("초대", _stActionBtn!, GUILayout.Width(44)))
+                    GUILayout.Button(l.CoopInvite, _stActionBtn!, GUILayout.Width(44)))
                 {
                     SteamMatchmaking.InviteUserToLobby(CoopState.LobbyId, f.SteamId);
                     Plugin.Log.LogInfo($"[Friends] {f.Name} 초대 전송");

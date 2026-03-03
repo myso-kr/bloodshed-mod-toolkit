@@ -1,5 +1,7 @@
 using UnityEngine;
+using com8com1.SCFPS;
 using BloodshedModToolkit.Combat;
+using BloodshedModToolkit.I18n;
 
 namespace BloodshedModToolkit.UI.Overlay.Panels
 {
@@ -18,6 +20,18 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
         private float _alpha;
 
         public bool  Visible         => _alpha >= 0.02f;
+
+        // ── 언어 조회 ───────────────────────────────────────────────────────────
+        private GameSettings? _gs;
+
+        private GameSettings? GS()
+        {
+            if (_gs != null && _gs.isActiveAndEnabled) return _gs;
+            return _gs = Object.FindObjectOfType<GameSettings>();
+        }
+
+        private LangStrings Lang()
+            => Strings.Get(GS()?.languageText ?? LocalizationManager.Language.English);
         public float BackgroundAlpha => 0.72f * _alpha;
 
         /// <summary>
@@ -76,10 +90,13 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
             float flash  = Mathf.Clamp01(1f - DpsTracker.TimeSinceHit / 0.12f);
             Color numCol = Color.Lerp(dpsCol, Color.white, flash * 0.65f);
 
+            var    l   = Lang();
             float  pk  = DpsTracker.ValidPeakDps;
             string sub = pk > 0f
-                ? $"\u25b2pk {FormatDps(pk)}   {DpsTracker.HitCount} hits   tot {FormatTotal(DpsTracker.TotalDamage)}"
-                : $"{DpsTracker.HitCount} hits   total {FormatTotal(DpsTracker.TotalDamage)}";
+                ? string.Format(l.DpsSubWithPeak,
+                      FormatDps(pk), DpsTracker.HitCount, FormatTotal(DpsTracker.TotalDamage))
+                : string.Format(l.DpsSubNoPeak,
+                      DpsTracker.HitCount, FormatTotal(DpsTracker.TotalDamage));
 
             ctx
                 // Row 1: ◈ DPS 타이틀 — TitleLineH 로 클리핑 없이 렌더링
