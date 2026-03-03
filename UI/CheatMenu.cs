@@ -8,6 +8,7 @@ using BloodshedModToolkit.Tweaks;
 using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Sync;
+using BloodshedModToolkit.Coop.Mission;
 using BloodshedModToolkit.Coop.Friends;
 using BloodshedModToolkit.Coop.Bots;
 using BloodshedModToolkit.Coop.Renderer;
@@ -454,6 +455,39 @@ namespace BloodshedModToolkit.UI
                 XpModeBtn(l.CoopXpSplit,        XpShareMode.Split);
                 GUILayout.EndHorizontal();
                 GUILayout.Label(XpModeDescription(l), _stSliderName!);
+
+                // ── MISSION GATE ──────────────────────────────────────────────
+                GUILayout.Space(4);
+                SectionHeader("MISSION GATE");
+
+                if (CoopState.IsHost)
+                {
+                    int ready = 0;
+                    foreach (var v in MissionState.GuestReadyMap.Values) if (v) ready++;
+                    GUILayout.Label($"GUESTS READY: {ready} / {CoopState.Peers.Count}", _stSliderName!);
+                }
+                else
+                {
+                    switch (MissionState.Status)
+                    {
+                        case MissionStatus.Idle:
+                            GUILayout.Label("대기 중 — 호스트가 미션을 시작하면 알림", _stSliderName!);
+                            break;
+                        case MissionStatus.WaitingForHost:
+                            GUILayout.Label("씬 로드 완료 — 호스트 신호 대기 중", _stSliderName!);
+                            GUILayout.Label($"({MissionState.PendingSceneName})", _stSliderName!);
+                            break;
+                        case MissionStatus.ReadyUp:
+                            GUILayout.Label("호스트가 미션을 시작했습니다!", _stSliderName!);
+                            GUILayout.Label($"자동 입장: {(int)MissionState.ReadyCountdown}초", _stSliderName!);
+                            if (GUILayout.Button("READY UP", _stActionBtn!))
+                                MissionSyncHandler.OnGuestReady();
+                            break;
+                        case MissionStatus.Permitted:
+                            GUILayout.Label("미션 로딩 중...", _stSliderName!);
+                            break;
+                    }
+                }
 
                 GUILayout.Space(6);
                 if (GUILayout.Button(l.CoopLeave, _stResetBtn!))

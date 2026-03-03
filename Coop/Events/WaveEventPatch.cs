@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop;
+using BloodshedModToolkit.Coop.Mission;
 
 namespace BloodshedModToolkit.Coop.Events
 {
@@ -28,7 +29,12 @@ namespace BloodshedModToolkit.Coop.Events
         {
             // Guest가 연결 중일 때는 Host 명령 없이 자체 실행 차단
             if (!CoopState.IsHost && CoopState.IsConnected && !_allowGuestTrigger)
-                return false;
+            {
+                var st = MissionState.Status;
+                if (st == MissionStatus.Permitted || st == MissionStatus.Idle)
+                    return true;  // Permitted이면 허용
+                return false;     // 그 외 차단 유지
+            }
             return true;
         }
     }

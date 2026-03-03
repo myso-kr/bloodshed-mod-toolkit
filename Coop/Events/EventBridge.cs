@@ -67,5 +67,12 @@ namespace BloodshedModToolkit.Coop.Events
             if (CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
             Net.BroadcastReliable(DamageRequestPacket.Encode(hostEntityIdx, damage));
         }
+
+        public static void OnMissionStart(string sceneName, int buildIndex)
+        {
+            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(MissionStartPacket.Encode(sceneName, buildIndex));
+            Plugin.Log.LogInfo($"[EventBridge] MissionStart 브로드캐스트: {sceneName} (idx={buildIndex})");
+        }
     }
 }

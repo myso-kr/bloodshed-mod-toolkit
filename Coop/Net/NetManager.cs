@@ -6,6 +6,7 @@ using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Sync;
+using BloodshedModToolkit.Coop.Mission;
 
 namespace BloodshedModToolkit.Coop.Net
 {
@@ -65,6 +66,8 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.DamageRequest,  HandleDamageRequest);
             Router.Register(PacketType.TweakSync,      HandleTweakSync);
             Router.Register(PacketType.ItemSelected,   HandleItemSelected);
+            Router.Register(PacketType.MissionStart,   HandleMissionStart);
+            Router.Register(PacketType.PlayerReady,    HandlePlayerReady);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -451,6 +454,19 @@ namespace BloodshedModToolkit.Coop.Net
             // TODO: 게임 아이템 선택 API 확인 후 자동 적용 구현
             Plugin.Log.LogInfo(
                 $"[NetManager] ItemSelected 수신: index={pkt.ItemIndex}  (자동 적용 미구현)");
+        }
+
+        private void HandleMissionStart(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;  // Guest만 수신
+            var (sceneName, buildIndex) = MissionStartPacket.Decode(payload);
+            MissionSyncHandler.OnMissionStart(sceneName, buildIndex);
+        }
+
+        private void HandlePlayerReady(CSteamID from, byte[] payload)
+        {
+            if (!CoopState.IsHost) return;  // Host만 처리
+            MissionSyncHandler.OnPlayerReady((ulong)from);
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)

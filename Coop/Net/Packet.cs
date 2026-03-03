@@ -22,6 +22,10 @@ namespace BloodshedModToolkit.Coop.Net
 
         // Phase 7 — 밸런스 설정 동기화
         TweakSync     = 0x60,
+
+        // Phase 9 — 미션 진입 게이트
+        MissionStart  = 0x70,   // Host → Guest: 씬 이름 + 빌드 인덱스
+        PlayerReady   = 0x71,   // Guest → Host: 준비 완료
     }
 
     // ── 직렬화 헬퍼 ──────────────────────────────────────────────────────────
@@ -278,6 +282,31 @@ namespace BloodshedModToolkit.Coop.Net
                 SpawnCountMult        = br.ReadSingle(),
             };
         }
+    }
+
+    // MissionStart — Host → Guest
+    public static class MissionStartPacket
+    {
+        public static byte[] Encode(string sceneName, int buildIndex)
+            => Packet.Encode(PacketType.MissionStart, w =>
+            {
+                w.Write(sceneName);
+                w.Write(buildIndex);
+            });
+
+        public static (string sceneName, int buildIndex) Decode(byte[] payload)
+        {
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms);
+            return (br.ReadString(), br.ReadInt32());
+        }
+    }
+
+    // PlayerReady — Guest → Host
+    public static class PlayerReadyPacket
+    {
+        public static byte[] Encode()
+            => Packet.Encode(PacketType.PlayerReady, _ => { });
     }
 
     // DamageRequest — Guest → Host

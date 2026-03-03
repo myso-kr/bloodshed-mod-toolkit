@@ -7,6 +7,7 @@ using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Bots;
 using BloodshedModToolkit.Coop.Renderer;
+using BloodshedModToolkit.Coop.Mission;
 
 namespace BloodshedModToolkit
 {
@@ -45,6 +46,9 @@ namespace BloodshedModToolkit
             AddComponent<BotManager>();
             AddComponent<RemotePlayerRenderer>();
 
+            // Phase 9 — 미션 진입 게이트
+            AddComponent<MissionGateBehaviour>();
+
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
     }
@@ -53,6 +57,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.87";
+        public const string PLUGIN_VERSION = "1.0.88";
     }
 }

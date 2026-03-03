@@ -337,3 +337,24 @@ namespace UnityEngine
         public static GUILayoutOption ExpandHeight(bool expand) => new GUILayoutOption();
     }
 }
+
+namespace UnityEngine.SceneManagement
+{
+    public struct Scene
+    {
+        public string name;
+        public int    buildIndex;
+    }
+
+    public enum LoadSceneMode { Single, Additive }
+
+    public static class SceneManager
+    {
+        // IL2CPP interop에서 UnityAction<T1,T2>은 System.Action<T1,T2>의 암묵적 변환을 지원하므로
+        // CI 스텁에서는 System.Action 이벤트로 선언합니다.
+        public static event System.Action<Scene, LoadSceneMode>? sceneLoaded;
+        public static Scene GetActiveScene() => default;
+        public static void LoadScene(string sceneName) { }
+        public static void LoadScene(int sceneBuildIndex) { }
+    }
+}

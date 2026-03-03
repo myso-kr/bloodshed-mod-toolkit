@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Steamworks;
 using BloodshedModToolkit.Coop.Ecs;
+using BloodshedModToolkit.Coop.Mission;
 
 namespace BloodshedModToolkit.Coop
 {
@@ -23,6 +24,7 @@ namespace BloodshedModToolkit.Coop
             LobbyId     = CSteamID.Nil;
             Peers.Clear();
             EntityRegistry.Reset();
+            MissionState.Reset();
         }
     }
 }
