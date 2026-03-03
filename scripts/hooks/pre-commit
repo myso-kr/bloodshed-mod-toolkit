@@ -19,14 +19,21 @@ dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
     -v minimal
 
 # ── 2. patch 버전 자동 증가 ──────────────────────────────────────────────────
-echo "[pre-commit] 버전 자동 증가 (patch)..."
+# 버전 파일 3개(csproj/nsi/Plugin.cs) 외 실질 변경이 없으면 버전 증가를 건너뜁니다.
+# 이렇게 하지 않으면 "chore: bump version" 커밋 자체가 또 버전을 올려 무한 루프가 됩니다.
+NON_VERSION=$(git diff --cached --name-only | \
+    grep -vE "^(BloodshedModToolkit\.csproj|Installer/bloodshed\.nsi|Plugin\.cs)$" || true)
 
-pwsh -NonInteractive -File "$REPO_ROOT/scripts/Bump-Version.ps1" -Bump Patch
-
-# 버전 파일을 현재 커밋에 포함
-git add "$REPO_ROOT/BloodshedModToolkit.csproj" \
-        "$REPO_ROOT/Installer/bloodshed.nsi" \
-        "$REPO_ROOT/Plugin.cs"
+if [ -z "$NON_VERSION" ]; then
+    echo "[pre-commit] 버전 파일만 변경됨 — 버전 증가 건너뜀"
+else
+    echo "[pre-commit] 버전 자동 증가 (patch)..."
+    pwsh -NonInteractive -File "$REPO_ROOT/scripts/Bump-Version.ps1" -Bump Patch
+    # 버전 파일을 현재 커밋에 포함
+    git add "$REPO_ROOT/BloodshedModToolkit.csproj" \
+            "$REPO_ROOT/Installer/bloodshed.nsi" \
+            "$REPO_ROOT/Plugin.cs"
+fi
 
 echo "[pre-commit] OK"
 exit 0
