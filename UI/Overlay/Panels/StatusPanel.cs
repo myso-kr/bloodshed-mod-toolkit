@@ -21,7 +21,7 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
         /// 타이틀 1줄 + 활성 치트 N줄 × LineH + 상하 패딩.
         /// </summary>
         public float Height =>
-            Padding.Vertical + (1 + CountActiveLines()) * OverlayManager.LineH;
+            Padding.Vertical + (2 + CountActiveLines()) * OverlayManager.LineH; // +1 단축키 힌트 줄
 
         // ── 언어 조회 ───────────────────────────────────────────────────────────
         private GameSettings? _gs;
@@ -52,6 +52,11 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
             // 활성 치트 항목
             foreach (var line in BuildLines(l))
                 ctx.Label(OverlayStyle.Lime, line, OverlayStyle.Item!, lh, gap: 0f);
+
+            // 단축키 힌트
+            ctx.Label(OverlayStyle.Dim,
+                      "[F5] Menu  [F6] Heal  [F7] Lv+",
+                      OverlayStyle.Item!, lh, gap: 0f);
         }
 
         // ── 헬퍼 ────────────────────────────────────────────────────────────────

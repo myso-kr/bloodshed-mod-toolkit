@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace BloodshedModToolkit.UI.Overlay
 {
+    public enum OverlayPosition { Hidden, TopLeft, TopCenter, TopRight }
+
     /// <summary>
     /// 우측 상단 오버레이 패널을 관리합니다.
     ///
@@ -27,6 +29,9 @@ namespace BloodshedModToolkit.UI.Overlay
         /// <summary>CheatMenu 의 열림/닫힘 상태 — StatusPanel 이 화살표 표시에 사용.</summary>
         public static bool IsMenuOpen { get; set; }
 
+        /// <summary>고정 UI 위치. Hidden 으로 설정하면 오버레이 전체를 숨깁니다.</summary>
+        public static OverlayPosition Position { get; set; } = OverlayPosition.TopRight;
+
         private static readonly List<IOverlayPanel> _panels = new();
 
         // ── 패널 등록 ─────────────────────────────────────────────────────────
@@ -48,7 +53,14 @@ namespace BloodshedModToolkit.UI.Overlay
         {
             OverlayStyle.EnsureReady();
 
-            float px      = Screen.width - PanelWidth - Margin;
+            if (Position == OverlayPosition.Hidden) return false;
+
+            float px = Position switch
+            {
+                OverlayPosition.TopLeft   => Margin,
+                OverlayPosition.TopCenter => (Screen.width - PanelWidth) * 0.5f,
+                _                         => Screen.width - PanelWidth - Margin,
+            };
             float py      = Margin;
             bool  clicked = false;
 

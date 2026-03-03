@@ -148,7 +148,15 @@ namespace BloodshedModToolkit.UI
         {
             ApplyCheats();
             TickRefreshTimers();
+            HandleHotkeys();
             OverlayManager.Tick();
+        }
+
+        private void HandleHotkeys()
+        {
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.F5)) _visible = !_visible;
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.F6)) HealFull();
+            if (UnityEngine.Input.GetKeyDown(UnityEngine.KeyCode.F7)) ForceLevelUp();
         }
 
         /// <summary>
@@ -283,6 +291,15 @@ namespace BloodshedModToolkit.UI
                             _stSliderName!, GUILayout.Width(110));
             CheatState.SpeedMultiplier = GUILayout.HorizontalSlider(
                 CheatState.SpeedMultiplier, 1f, 20f);
+            GUILayout.EndHorizontal();
+
+            // OVERLAY ────────────────────────────────────────────────────────
+            SectionHeader("OVERLAY");
+            GUILayout.BeginHorizontal();
+            OverlayPosBtn("숨김",   OverlayPosition.Hidden);
+            OverlayPosBtn("상단좌", OverlayPosition.TopLeft);
+            OverlayPosBtn("상단중", OverlayPosition.TopCenter);
+            OverlayPosBtn("상단우", OverlayPosition.TopRight);
             GUILayout.EndHorizontal();
 
             GUILayout.EndScrollView();
@@ -589,6 +606,13 @@ namespace BloodshedModToolkit.UI
             float next = GUILayout.HorizontalSlider(value, min, max);
             GUILayout.EndHorizontal();
             return (float)System.Math.Round(next, 2);
+        }
+
+        private void OverlayPosBtn(string label, OverlayPosition pos)
+        {
+            bool active = OverlayManager.Position == pos;
+            if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
+                OverlayManager.Position = pos;
         }
 
         private void PresetBtn(string label, TweakPresetType preset)

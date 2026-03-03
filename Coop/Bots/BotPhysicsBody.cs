@@ -25,7 +25,7 @@ namespace BloodshedModToolkit.Coop.Bots
         private const float JumpIntervalMax   =  10f;
         private const float MoveSpeed         =   4f;
         private const float EnemyScanInterval =   0.2f;
-        private const float EnemyDetectRange  =  15f;
+        private const float EnemyDetectRange  =  75f;  // 원거리 공격 적 대비 (15 × 5)
 
         private static readonly System.Random s_rng = new();
 
