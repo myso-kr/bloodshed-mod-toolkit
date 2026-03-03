@@ -17,7 +17,7 @@ namespace BloodshedModToolkit.Coop.Bots
         private const float TickInterval = 0.05f;  // 20 Hz
         private float _tickTimer;
 
-        void Awake() { Instance = this; Plugin.Log.LogInfo("[BotManager] loaded"); }
+        void Awake() { Instance = this; BotState.AssignWeaponClasses(); Plugin.Log.LogInfo("[BotManager] loaded"); }
         void OnDestroy() { RemoveAll(); Instance = null; }
 
         void Update()
@@ -52,10 +52,17 @@ namespace BloodshedModToolkit.Coop.Bots
 
                 if (bot.ShouldAttack && enemyHealth != null)
                 {
-                    enemyHealth.Damage(25f, null!, 0.1f, 0f,
+                    float dmg = bot.WeaponClass switch {
+                        WeaponClass.Melee    => 30f,
+                        WeaponClass.Pistol   => 20f,
+                        WeaponClass.Rifle    => 35f,
+                        WeaponClass.Launcher => 60f,
+                        _                    => 25f,
+                    };
+                    enemyHealth.Damage(dmg, null!, 0.1f, 0f,
                         bot.DesiredMoveDir, enemyPos, false);
                     Plugin.Log.LogInfo(
-                        $"[Bot] {BotState.BotNames[bot.BotIndex]} → 적 25 dmg");
+                        $"[Bot] {BotState.BotNames[bot.BotIndex]} → 적 {dmg} dmg");
                     bot.ShouldAttack = false;
 
                     // ── 공격 모션 ──
@@ -74,8 +81,10 @@ namespace BloodshedModToolkit.Coop.Bots
                 int idx = _bots.Count;
                 // Y + 1.5f: CharacterController(center=0)는 중력으로 바닥까지 낙하 → 지면 착지 보장
                 var spawn = new Vector3(localPos.x + (idx - 1) * 2f, localPos.y + 1.5f, localPos.z);
-                _bots.Add(new BotController(idx, spawn));
-                Plugin.Log.LogInfo($"[BotManager] 봇 추가: {BotState.BotNames[idx]}");
+                var bot = new BotController(idx, spawn);
+                bot.WeaponClass = BotState.BotWeaponClasses[idx];
+                _bots.Add(bot);
+                Plugin.Log.LogInfo($"[BotManager] 봇 추가: {BotState.BotNames[idx]} ({bot.WeaponClass})");
             }
             while (_bots.Count > desired)
             {

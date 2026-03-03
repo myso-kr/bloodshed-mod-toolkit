@@ -67,7 +67,8 @@ namespace BloodshedModToolkit.Coop.Renderer
                 ? new GameObject(GetName(id))
                 : GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = GetName(id);
-            go.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
+            if (!BotState.IsBot(id))
+                go.transform.localScale = new Vector3(0.5f, 0.9f, 0.5f);
             go.transform.position   = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
 
             // URP 호환 material 적용
@@ -85,13 +86,17 @@ namespace BloodshedModToolkit.Coop.Renderer
             // 봇 전용: 아바타 빌더 + BotPhysicsBody
             if (BotState.IsBot(id))
             {
+                int botIdx = 0;
+                for (int i = 0; i < BotState.BotSteamIds.Length; i++)
+                    if (BotState.BotSteamIds[i] == id) { botIdx = i; break; }
+                var wc = BotState.BotWeaponClasses[botIdx];
+
                 var anim = go.AddComponent<BotAvatarAnimator>();
                 if (anim != null)
                 {
                     anim.Init(id);
-                    if (!BotAvatarBuilder.TryClonePlayerModel(go, anim))
-                        if (!BotAvatarBuilder.TryCloneEnemyModel(go, anim))
-                            BotAvatarBuilder.BuildProcedural(go, BotColor, anim);
+                    anim.WeaponClass = wc;
+                    BotAvatarBuilder.BuildProcedural(go, BotColor, anim, wc);
                 }
 
                 var pb = go.AddComponent<BotPhysicsBody>();
@@ -140,9 +145,9 @@ namespace BloodshedModToolkit.Coop.Renderer
             bool hasPrev = _lastPos.TryGetValue(id, out var prev);
             if (hasPrev)
             {
-                var delta = new Vector3(newPos.x - prev.x, newPos.y - prev.y, newPos.z - prev.z);
-                if (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z > 0.0001f)
-                    go.transform.rotation = Quaternion.LookRotation(delta);
+                float fdx = newPos.x - prev.x, fdz = newPos.z - prev.z;
+                if (fdx*fdx + fdz*fdz > 0.0001f)
+                    go.transform.rotation = Quaternion.LookRotation(new Vector3(fdx, 0f, fdz));
             }
             _lastPos[id] = newPos;
 

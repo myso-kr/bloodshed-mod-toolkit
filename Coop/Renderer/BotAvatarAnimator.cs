@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using BloodshedModToolkit.Coop.Bots;
 
 namespace BloodshedModToolkit.Coop.Renderer
 {
@@ -29,13 +30,17 @@ namespace BloodshedModToolkit.Coop.Renderer
         public Transform? ShinL,  ShinR;
         public Transform? ShoulderL, ShoulderR;
         public Transform? ForearmR;           // 공격 시 오른팔 전완부 회전
+        public Transform? ElbowL;             // 양손 무기용 왼팔 팔꿈치
         public Transform? Torso;              // 숨쉬기용
+
+        // ── 무기 클래스 ──
+        public WeaponClass WeaponClass = WeaponClass.Melee;
 
         // ── 공통 상태 ──
         private float _moveSpeed;
         private bool  _isGrounded = true;
         private float _attackTimer = -1f;
-        private const float AttackDuration = 0.4f;
+        private float _attackDuration = 0.40f;
         private const float MoveSpeedMax   = 4f;
         private const double TwoPI = Math.PI * 2.0;
 
@@ -52,6 +57,13 @@ namespace BloodshedModToolkit.Coop.Renderer
 
         public void TriggerAttack()
         {
+            _attackDuration = WeaponClass switch {
+                WeaponClass.Melee    => 0.30f,
+                WeaponClass.Pistol   => 0.15f,
+                WeaponClass.Rifle    => 0.25f,
+                WeaponClass.Launcher => 0.50f,
+                _                    => 0.40f,
+            };
             _attackTimer = 0f;
             if (Mode == AvatarMode.GameModel && GameAnimator != null && _paramAttack != null)
                 GameAnimator.SetTrigger(_paramAttack);
@@ -82,7 +94,7 @@ namespace BloodshedModToolkit.Coop.Renderer
         {
             float dt = Time.deltaTime;
             if (_attackTimer >= 0f) _attackTimer += dt;
-            if (_attackTimer >= AttackDuration)  _attackTimer = -1f;
+            if (_attackTimer >= _attackDuration)  _attackTimer = -1f;
 
             if (Mode == AvatarMode.GameModel)
                 UpdateGameModel();
@@ -132,17 +144,43 @@ namespace BloodshedModToolkit.Coop.Renderer
                 SetRot(ShoulderR,  sin * amp * 0.6f, 0f, 0f);
             }
 
-            // 공격: 오른팔 전완부 앞으로 스윙 (sin 곡선, 0.4초)
-            if (_attackTimer >= 0f && ForearmR != null)
+            // 공격 모션 (sin 곡선, WeaponClass별)
+            if (_attackTimer >= 0f)
             {
-                float p = _attackTimer / AttackDuration;
-                float thrust = (float)Math.Sin(p * Math.PI) * 70f;
-                SetRot(ForearmR, -thrust, 0f, 0f);
+                float p    = _attackTimer / _attackDuration;
+                float sinP = (float)Math.Sin(p * Math.PI);
+                switch (WeaponClass)
+                {
+                    case WeaponClass.Melee:
+                        SetRot(ShoulderR, -sinP*50f, sinP*10f, 0f);
+                        SetRot(ShoulderL, -sinP*20f, 0f, 0f);
+                        SetRot(ForearmR,  -sinP*70f, 0f, 0f);
+                        SetRot(Torso,      sinP*10f, 0f, 0f);
+                        break;
+                    case WeaponClass.Pistol:
+                        SetRot(ShoulderR, -sinP*15f, 0f, 0f);
+                        SetRot(ForearmR,  -sinP*5f,  0f, 0f);
+                        break;
+                    case WeaponClass.Rifle:
+                        SetRot(ShoulderR, -sinP*25f, 0f, 0f);
+                        SetRot(ShoulderL, -sinP*20f, 0f, 0f);
+                        SetRot(ForearmR,  -sinP*10f, 0f, 0f);
+                        SetRot(ElbowL,    -sinP*20f, 0f, 0f);
+                        break;
+                    case WeaponClass.Launcher:
+                        SetRot(ShoulderR, -sinP*40f, 0f, 0f);
+                        SetRot(ShoulderL, -sinP*35f, 0f, 0f);
+                        SetRot(ForearmR,  -sinP*5f,  0f, 0f);
+                        SetRot(ElbowL,    -sinP*30f, 0f, 0f);
+                        SetRot(Torso,      sinP*15f, 0f, 0f);
+                        break;
+                }
             }
-            else if (ForearmR != null)
+            else  // idle 자세 복원
             {
-                // 기본 자세: 팔꿈치 약간 굽힘
                 SetRot(ForearmR, -10f, 0f, 0f);
+                SetRot(ElbowL,   -10f, 0f, 0f);
+                SetRot(Torso,      0f, 0f, 0f);
             }
         }
 

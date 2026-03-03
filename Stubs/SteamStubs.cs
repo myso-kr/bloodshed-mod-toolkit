@@ -98,6 +98,13 @@ namespace Steamworks
     public struct P2PSessionRequest_t      { public CSteamID m_steamIDRemote; }
     public struct P2PSessionConnectFail_t  { public CSteamID m_steamIDRemote; public byte m_eP2PSessionError; }
 
+    public struct LobbyDataUpdate_t
+    {
+        public ulong m_ulSteamIDLobby;
+        public ulong m_ulSteamIDMember;
+        public byte  m_bSuccess;
+    }
+
     // ── Steam API ─────────────────────────────────────────────────────────────
     public static class SteamMatchmaking
     {
@@ -110,6 +117,7 @@ namespace Steamworks
         public static bool      SetLobbyData(CSteamID steamIDLobby, string pchKey, string pchValue) => false;
         public static string    GetLobbyData(CSteamID steamIDLobby, string pchKey) => "";
         public static bool      InviteUserToLobby(CSteamID steamIDLobby, CSteamID steamIDInvitee) => false;
+        public static bool      RequestLobbyData(CSteamID steamIDLobby) => false;
     }
 
     public static class SteamNetworking

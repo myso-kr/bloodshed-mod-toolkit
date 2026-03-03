@@ -25,6 +25,7 @@ namespace BloodshedModToolkit.Coop.Net
         private Callback<P2PSessionRequest_t>?      _cbP2PRequest;
         private Callback<P2PSessionConnectFail_t>?  _cbP2PFail;
         private Callback<GameLobbyJoinRequested_t>? _cbJoinRequested;
+        private Callback<LobbyDataUpdate_t>?        _cbLobbyDataUpdate;
         private CallResult<LobbyCreated_t>?         _crLobbyCreated;
         private CallResult<LobbyEnter_t>?           _crLobbyEnter;
 
@@ -46,13 +47,15 @@ namespace BloodshedModToolkit.Coop.Net
         void Start()
         {
             // Action<T> → DispatchDelegate 암묵적 변환 (Il2CppInterop 생성 연산자)
-            Action<P2PSessionRequest_t>      onReq   = OnP2PSessionRequest;
-            Action<P2PSessionConnectFail_t>  onFail  = OnP2PConnectFail;
-            Action<GameLobbyJoinRequested_t> onJoin  = OnGameLobbyJoinRequested;
+            Action<P2PSessionRequest_t>      onReq        = OnP2PSessionRequest;
+            Action<P2PSessionConnectFail_t>  onFail       = OnP2PConnectFail;
+            Action<GameLobbyJoinRequested_t> onJoin       = OnGameLobbyJoinRequested;
+            Action<LobbyDataUpdate_t>        onLobbyData  = OnLobbyDataUpdate;
 
-            _cbP2PRequest    = Callback<P2PSessionRequest_t>.Create(onReq);
-            _cbP2PFail       = Callback<P2PSessionConnectFail_t>.Create(onFail);
-            _cbJoinRequested = Callback<GameLobbyJoinRequested_t>.Create(onJoin);
+            _cbP2PRequest      = Callback<P2PSessionRequest_t>.Create(onReq);
+            _cbP2PFail         = Callback<P2PSessionConnectFail_t>.Create(onFail);
+            _cbJoinRequested   = Callback<GameLobbyJoinRequested_t>.Create(onJoin);
+            _cbLobbyDataUpdate = Callback<LobbyDataUpdate_t>.Create(onLobbyData);
 
             Router.Register(PacketType.Handshake,     HandleHandshake);
             Router.Register(PacketType.Heartbeat,     HandleHeartbeat);
@@ -80,6 +83,7 @@ namespace BloodshedModToolkit.Coop.Net
             _cbP2PRequest?.Dispose();
             _cbP2PFail?.Dispose();
             _cbJoinRequested?.Dispose();
+            _cbLobbyDataUpdate?.Dispose();
             _crLobbyCreated?.Dispose();
             _crLobbyEnter?.Dispose();
             Instance = null;
@@ -262,15 +266,48 @@ namespace BloodshedModToolkit.Coop.Net
             var hostId = SteamMatchmaking.GetLobbyOwner(CoopState.LobbyId);
             var myId   = SteamUser.GetSteamID();
 
+            Plugin.Log.LogInfo(
+                $"[NetManager] 로비 입장: lobbyId={CoopState.LobbyId} hostId={hostId} myId={myId}");
+
             if (hostId != CSteamID.Nil && hostId != myId)
             {
-                CoopState.Peers.Add(hostId);
-                _lastHeartbeat[hostId] = Time.time;
-                CoopState.IsConnected  = true;
-                SendReliable(hostId,
-                    HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: false));
-                Plugin.Log.LogInfo($"[NetManager] 로비 입장 완료 → Host: {hostId}");
+                ConnectToHost(hostId, myId);
             }
+            else
+            {
+                Plugin.Log.LogWarning(
+                    $"[NetManager] hostId 미확정 (hostId={hostId}) — LobbyDataUpdate 대기");
+                SteamMatchmaking.RequestLobbyData(CoopState.LobbyId);
+            }
+        }
+
+        private void OnLobbyDataUpdate(LobbyDataUpdate_t parm)
+        {
+            // 이미 연결됐거나 Host 쪽이면 무시
+            if (!CoopState.IsEnabled || CoopState.IsHost || CoopState.IsConnected) return;
+            if (parm.m_ulSteamIDLobby != (ulong)CoopState.LobbyId) return;
+
+            var hostId = SteamMatchmaking.GetLobbyOwner(CoopState.LobbyId);
+            var myId   = SteamUser.GetSteamID();
+
+            Plugin.Log.LogInfo(
+                $"[NetManager] LobbyDataUpdate 수신: lobbyId={parm.m_ulSteamIDLobby} hostId={hostId}");
+
+            if (hostId != CSteamID.Nil && hostId != myId)
+                ConnectToHost(hostId, myId);
+            else
+                Plugin.Log.LogWarning(
+                    $"[NetManager] LobbyDataUpdate 후에도 hostId 미확정: {hostId}");
+        }
+
+        private void ConnectToHost(CSteamID hostId, CSteamID myId)
+        {
+            CoopState.Peers.Add(hostId);
+            _lastHeartbeat[hostId] = Time.time;
+            CoopState.IsConnected  = true;
+            SendReliable(hostId,
+                HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: false));
+            Plugin.Log.LogInfo($"[NetManager] Host에게 Handshake 전송 완료 → {hostId}");
         }
 
         // ════════════════════════════════════════════════════════════════════

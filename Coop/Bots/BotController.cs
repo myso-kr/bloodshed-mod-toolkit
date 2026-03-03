@@ -16,6 +16,7 @@ namespace BloodshedModToolkit.Coop.Bots
         public int     Level = 1;
         public float   Experience = 0f, ExperienceCap = 100f;
 
+        public WeaponClass WeaponClass    = WeaponClass.Melee;
         public BotAiState AiState        = BotAiState.Wander;
         public Vector3    DesiredMoveDir = Vector3.zero;
         public bool       ShouldAttack  = false;
@@ -24,10 +25,23 @@ namespace BloodshedModToolkit.Coop.Bots
         private float _sectorScanAngle = 0f;
         private const float WanderRadius      = 5f;
         private const float ScanRotateSpeed   = 0.25f; // rad/s — ~25초 한 바퀴
-        private const float AttackRange       = 4f;
-        private const float ChaseRange        = 12f;
-        private const float AttackCooldown    = 1.5f;
         private const float FormationDeadzone = 0.8f;  // m — 이 이내면 정지
+
+        private float AttackRange => WeaponClass switch {
+            WeaponClass.Melee    => 2.0f,
+            WeaponClass.Pistol   => 8.0f,
+            WeaponClass.Rifle    => 15.0f,
+            WeaponClass.Launcher => 20.0f,
+            _                    => 4.0f,
+        };
+        private float ChaseRange => Math.Max(AttackRange * 1.5f, 15f);
+        private float AttackCooldownVal => WeaponClass switch {
+            WeaponClass.Melee    => 0.8f,
+            WeaponClass.Pistol   => 1.2f,
+            WeaponClass.Rifle    => 2.0f,
+            WeaponClass.Launcher => 3.5f,
+            _                    => 1.5f,
+        };
 
         public BotController(int index, Vector3 spawnPos)
         {
@@ -92,7 +106,7 @@ namespace BloodshedModToolkit.Coop.Bots
         private void DoAttack()
         {
             DesiredMoveDir = Vector3.zero;
-            if (_attackCooldown <= 0f) { ShouldAttack = true; _attackCooldown = AttackCooldown; }
+            if (_attackCooldown <= 0f) { ShouldAttack = true; _attackCooldown = AttackCooldownVal; }
         }
 
         public PlayerStatePacket ToPacket() => new()
