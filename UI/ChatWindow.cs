@@ -81,15 +81,22 @@ namespace BloodshedModToolkit.UI
         {
             float now = Time.time;
             int start = Math.Max(0, _messages.Count - 8);
-            int visibleCount = 0;
-            for (int i = start; i < _messages.Count; i++)
-            {
-                if (!IsTyping && now - _messages[i].Time > FadeAfter) continue;
-                visibleCount++;
-            }
-            if (visibleCount == 0 && !IsTyping) return;
 
-            GUI.color = new Color(0, 0, 0, 0.45f);
+            // 가장 밝은(최신) 메시지의 알파 = 배경 패널 알파 기준
+            float maxAlpha = IsTyping ? 1f : 0f;
+            if (!IsTyping)
+            {
+                for (int i = start; i < _messages.Count; i++)
+                {
+                    float age = now - _messages[i].Time;
+                    if (age > FadeAfter) continue;
+                    float a = Math.Max(0f, 1f - (age - (FadeAfter - 1f)));
+                    if (a > maxAlpha) maxAlpha = a;
+                }
+            }
+            if (maxAlpha <= 0f) return;
+
+            GUI.color = new Color(0, 0, 0, 0.45f * maxAlpha);
             GUI.DrawTexture(new Rect(x, y, WinW, MsgH), Texture2D.whiteTexture);
             GUI.color = Color.white;
 
