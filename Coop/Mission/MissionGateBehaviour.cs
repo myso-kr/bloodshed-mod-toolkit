@@ -81,6 +81,13 @@ namespace BloodshedModToolkit.Coop.Mission
             // Guest 경로 — 시스템 씬은 무시
             if (scene.buildIndex <= 0 || scene.name.StartsWith("00_")) return;
 
+            // MetaGame은 캐릭터 선택 화면 — 게스트가 자유롭게 이용하므로 상태 변경 없음
+            if (scene.name == "MetaGame")
+            {
+                Plugin.Log.LogInfo("[MissionGate] Guest MetaGame 도착 — 캐릭터 선택 대기 중");
+                return;
+            }
+
             if (MissionState.Status == MissionStatus.Permitted)
             {
                 MissionState.Status = MissionStatus.Idle;

@@ -19,10 +19,12 @@ namespace BloodshedModToolkit.Coop.Sync
                     net.SendReliable(peer, Net.PlayerReadyPacket.Encode());
 
             // 현재 씬과 다른 경우에만 로드
+            // MetaGame 중에는 강제 이동 금지 — 게스트가 캐릭터 선택 후 자연스럽게 진입
             var current = SceneManager.GetActiveScene();
             bool alreadyInScene = current.name == sceneName
                                 || current.buildIndex == buildIndex;
-            if (!alreadyInScene)
+            bool inMetaGame = current.name == "MetaGame";
+            if (!alreadyInScene && !inMetaGame)
             {
                 if (sceneName.Length > 0)
                     SceneManager.LoadScene(sceneName);
@@ -30,7 +32,10 @@ namespace BloodshedModToolkit.Coop.Sync
                     SceneManager.LoadScene(buildIndex);
             }
 
-            Plugin.Log.LogInfo($"[MissionGate] MissionStart 수신 → 진입: {sceneName}");
+            if (inMetaGame && !alreadyInScene)
+                Plugin.Log.LogInfo($"[MissionGate] MetaGame 중 MissionStart 수신 '{sceneName}' → 캐릭터 선택 후 자연 진입 대기");
+            else
+                Plugin.Log.LogInfo($"[MissionGate] MissionStart 수신 → 진입: {sceneName}");
         }
 
         // Host에서 호출 — PlayerReady 패킷 수신 시
