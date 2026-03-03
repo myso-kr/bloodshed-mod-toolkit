@@ -15,7 +15,24 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
 
         public bool Visible => _alpha >= 0.02f;
 
-        public float Height => 76f;
+        // ── 행 높이 상수 ────────────────────────────────────────────────────
+        // Unity IMGUI는 Label Rect 밖의 픽셀을 잘라내므로
+        // 폰트 크기보다 충분히 큰 값을 지정합니다.
+        private const float RowTitle = 14f;   // 11pt Bold   타이틀 행
+        private const float RowNum   = 30f;   // 22pt Bold   DPS 숫자 행
+        private const float RowBar   =  5f;   // 게이지 바
+        private const float RowSub   = 14f;   // 10pt Normal 보조 정보 행
+
+        public float Height
+        {
+            get
+            {
+                float m = OverlayManager.Margin;
+                // m(상단) + Row1 + gap + Row2 + gap + Bar + gap + Row4 + m(하단)
+                return m * 2 + RowTitle + 2f + RowNum + 2f + RowBar + 5f + RowSub;
+                // = 16 + 16 + 32 + 10 + 14 = 88f
+            }
+        }
 
         // ── IOverlayPanel ───────────────────────────────────────────────────
         public void Tick()
@@ -56,17 +73,17 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
             // ── Row 1: ◈ DPS ─────────────────────────────────────────────────
             GUI.color = new Color(OverlayStyle.Amber.r, OverlayStyle.Amber.g,
                                   OverlayStyle.Amber.b, _alpha);
-            GUI.Label(new Rect(cx, cy, cw, 12), "\u25c8  DPS", OverlayStyle.Title!);
-            cy += 14f;
+            GUI.Label(new Rect(cx, cy, cw, RowTitle), "\u25c8  DPS", OverlayStyle.Title!);
+            cy += RowTitle + 2f;
 
             // ── Row 2: DPS 숫자 (22pt, 우측 정렬) ────────────────────────────
             GUI.color = new Color(numCol.r, numCol.g, numCol.b, _alpha);
-            GUI.Label(new Rect(cx, cy, cw, 24), FormatDps(dps), OverlayStyle.DpsNum!);
-            cy += 26f;
+            GUI.Label(new Rect(cx, cy, cw, RowNum), FormatDps(dps), OverlayStyle.DpsNum!);
+            cy += RowNum + 2f;
 
             // ── Row 3: 게이지 바 ─────────────────────────────────────────────
-            OverlayStyle.DrawBar(new Rect(cx, cy, cw, 5), dps / peak, dpsCol, _alpha);
-            cy += 7f;
+            OverlayStyle.DrawBar(new Rect(cx, cy, cw, RowBar), dps / peak, dpsCol, _alpha);
+            cy += RowBar + 5f;
 
             // ── Row 4: 피크 / 히트 수 / 누적 피해 ───────────────────────────
             float pk   = DpsTracker.ValidPeakDps;
@@ -75,7 +92,7 @@ namespace BloodshedModToolkit.UI.Overlay.Panels
                 : $"\u25cf{DpsTracker.HitCount}H   \u2295{FormatTotal(DpsTracker.TotalDamage)}";
             GUI.color = new Color(OverlayStyle.Dim.r, OverlayStyle.Dim.g,
                                   OverlayStyle.Dim.b, _alpha);
-            GUI.Label(new Rect(cx, cy, cw, 12), sub, OverlayStyle.Small!);
+            GUI.Label(new Rect(cx, cy, cw, RowSub), sub, OverlayStyle.Small!);
 
             GUI.color = saved;
         }
