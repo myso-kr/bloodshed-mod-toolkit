@@ -4,6 +4,8 @@ using BloodshedModToolkit.Coop.Net;
 
 namespace BloodshedModToolkit.Coop.Bots
 {
+    public enum BotAiState { Wander, Chase, Attack }
+
     /// <summary>순수 C# 이동 클래스 (MonoBehaviour 아님). 스레드 안전한 System.Random 사용.</summary>
     public class BotController
     {
@@ -14,9 +16,19 @@ namespace BloodshedModToolkit.Coop.Bots
         public int     Level = 1;
         public float   Experience = 0f, ExperienceCap = 100f;
 
+        public BotAiState AiState        = BotAiState.Wander;
+        public Vector3    DesiredMoveDir = Vector3.zero;
+        public bool       ShouldAttack  = false;
+        private float     _attackCooldown = 0f;
+
         private Vector3 _targetPos;
         private float   _wanderTimer;
-        private const float WanderRadius = 8f, WalkSpeed = 3f, WanderInterval = 3f;
+        private const float WanderRadius   = 8f;
+        private const float WanderInterval = 3f;
+        private const float AttackRange    = 4f;
+        private const float ChaseRange     = 12f;
+        private const float AttackCooldown = 1.5f;
+
         private static readonly System.Random s_rng = new();
 
         public BotController(int index, Vector3 spawnPos)
@@ -28,9 +40,31 @@ namespace BloodshedModToolkit.Coop.Bots
             _wanderTimer = WanderInterval; // 즉시 첫 목표 선정
         }
 
-        public void Tick(float dt, Vector3 centerPos)
+        public void Tick(float dt, Vector3 centerPos, Vector3 enemyPos, float enemyDist)
         {
-            // 목표 재선정 (매 3초)
+            ShouldAttack = false;
+            if (_attackCooldown > 0f) _attackCooldown -= dt;
+
+            // 상태 전환
+            if      (enemyDist <= AttackRange) AiState = BotAiState.Attack;
+            else if (enemyDist <= ChaseRange)  AiState = BotAiState.Chase;
+            else                               AiState = BotAiState.Wander;
+
+            switch (AiState)
+            {
+                case BotAiState.Wander: DoWander(dt, centerPos); break;
+                case BotAiState.Chase:  DoChase(enemyPos);       break;
+                case BotAiState.Attack: DoAttack();               break;
+            }
+
+            // 플레이어에서 3× 반경 이탈 시 리셋
+            float dx = Position.x - centerPos.x, dz = Position.z - centerPos.z;
+            if (dx*dx + dz*dz > (WanderRadius*3f)*(WanderRadius*3f))
+                Position = _targetPos = centerPos;
+        }
+
+        private void DoWander(float dt, Vector3 centerPos)
+        {
             _wanderTimer += dt;
             if (_wanderTimer >= WanderInterval)
             {
@@ -39,37 +73,39 @@ namespace BloodshedModToolkit.Coop.Bots
                 float radius = (float)(s_rng.NextDouble() * WanderRadius);
                 _targetPos = new Vector3(
                     centerPos.x + (float)Math.Cos(angle) * radius,
-                    centerPos.y,   // Y는 플레이어와 동일 (NavMesh 없이 지형 무시)
+                    centerPos.y,
                     centerPos.z + (float)Math.Sin(angle) * radius);
             }
+            var diff  = new Vector3(_targetPos.x - Position.x, 0f, _targetPos.z - Position.z);
+            float len = (float)Math.Sqrt(diff.x*diff.x + diff.z*diff.z);
+            DesiredMoveDir = len > 0.01f
+                ? new Vector3(diff.x / len, 0f, diff.z / len) : Vector3.zero;
+        }
 
-            // 목표를 향해 이동
-            var diff = new Vector3(_targetPos.x - Position.x, 0f, _targetPos.z - Position.z);
-            float distSq = diff.x * diff.x + diff.z * diff.z;
-            if (distSq > 0.001f)
-            {
-                float step = WalkSpeed * dt / (float)Math.Sqrt(distSq);
-                if (step > 1f) step = 1f;
-                Position.x += diff.x * step;
-                Position.z += diff.z * step;
-            }
+        private void DoChase(Vector3 enemyPos)
+        {
+            var diff  = new Vector3(enemyPos.x - Position.x, 0f, enemyPos.z - Position.z);
+            float len = (float)Math.Sqrt(diff.x*diff.x + diff.z*diff.z);
+            DesiredMoveDir = len > 0.01f
+                ? new Vector3(diff.x / len, 0f, diff.z / len) : Vector3.zero;
+        }
 
-            // 플레이어에서 3× 반경 이탈 시 리셋 (씬 전환 대비)
-            float dx = Position.x - centerPos.x, dz = Position.z - centerPos.z;
-            if (dx*dx + dz*dz > (WanderRadius*3f)*(WanderRadius*3f))
-                Position = _targetPos = centerPos;
+        private void DoAttack()
+        {
+            DesiredMoveDir = Vector3.zero;
+            if (_attackCooldown <= 0f) { ShouldAttack = true; _attackCooldown = AttackCooldown; }
         }
 
         public PlayerStatePacket ToPacket() => new()
         {
-            SteamId      = BotId,
-            PosX         = Position.x,
-            PosY         = Position.y,
-            PosZ         = Position.z,
-            CurrentHp    = CurrentHp,
-            MaxHp        = MaxHp,
-            Level        = Level,
-            Experience   = Experience,
+            SteamId       = BotId,
+            PosX          = Position.x,
+            PosY          = Position.y,
+            PosZ          = Position.z,
+            CurrentHp     = CurrentHp,
+            MaxHp         = MaxHp,
+            Level         = Level,
+            Experience    = Experience,
             ExperienceCap = ExperienceCap,
         };
     }

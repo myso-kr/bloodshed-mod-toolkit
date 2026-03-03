@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Sync;
 
@@ -37,7 +38,27 @@ namespace BloodshedModToolkit.Coop.Bots
 
             foreach (var bot in _bots)
             {
-                bot.Tick(TickInterval, localPos);
+                BotPhysicsBody.Instances.TryGetValue(bot.BotId, out var pb);
+
+                if (pb != null) bot.Position = pb.position;
+
+                float    enemyDist   = pb?.NearestEnemyDist ?? float.MaxValue;
+                Vector3  enemyPos    = pb?.NearestEnemyPos  ?? Vector3.zero;
+                var      enemyHealth = pb?.NearestEnemy;
+
+                bot.Tick(TickInterval, localPos, enemyPos, enemyDist);
+
+                if (pb != null) pb.SetMoveDir(bot.DesiredMoveDir);
+
+                if (bot.ShouldAttack && enemyHealth != null)
+                {
+                    enemyHealth.Damage(25f, null!, 0.1f, 0f,
+                        bot.DesiredMoveDir, enemyPos, false);
+                    Plugin.Log.LogInfo(
+                        $"[Bot] {BotState.BotNames[bot.BotIndex]} → 적 25 dmg");
+                    bot.ShouldAttack = false;
+                }
+
                 PlayerSyncHandler.OnPlayerState(bot.BotId, bot.ToPacket());
             }
         }

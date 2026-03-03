@@ -276,6 +276,21 @@ namespace UnityEngine
     {
         public MeshRenderer(IntPtr ptr) : base(ptr) { }
     }
+    // ── CharacterController ──────────────────────────────────────────────────────
+    public enum CollisionFlags { None = 0, Sides = 1, Above = 2, Below = 4 }
+
+    public class CharacterController : Behaviour
+    {
+        public CharacterController(IntPtr ptr) : base(ptr) { }
+        public bool    isGrounded { get; }
+        public float   height     { get; set; }
+        public float   radius     { get; set; }
+        public Vector3 center     { get; set; }
+        public float   stepOffset { get; set; }
+        public float   slopeLimit { get; set; }
+        public CollisionFlags Move(Vector3 motion) => CollisionFlags.None;
+    }
+
     public class Collider : Component
     {
         public Collider(IntPtr ptr) : base(ptr) { }

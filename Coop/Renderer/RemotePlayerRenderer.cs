@@ -79,6 +79,27 @@ namespace BloodshedModToolkit.Coop.Renderer
             var col = go.GetComponent<Collider>();
             if (col != null) col.enabled = false;
 
+            // 봇 전용: 무기 비주얼 + BotPhysicsBody
+            if (BotState.IsBot(id))
+            {
+                var wGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                wGo.name = "WeaponVisual";
+                wGo.transform.SetParent(go.transform);
+                wGo.transform.localPosition = new Vector3(0.35f, 0f, 0.45f);
+                wGo.transform.localScale    = new Vector3(0.08f, 0.08f, 0.55f);
+                var wMr = wGo.GetComponent<MeshRenderer>();
+                if (wMr != null)
+                {
+                    var wMat = ResolveUrpMaterial(new Color(0.3f, 0.3f, 0.35f));
+                    if (wMat != null) wMr.material = wMat;
+                }
+                var wCol = wGo.GetComponent<Collider>();
+                if (wCol != null) wCol.enabled = false;
+
+                var pb = go.AddComponent<BotPhysicsBody>();
+                if (pb != null) pb.Init(id);
+            }
+
             // 부유 이름 레이블 (TextMesh 자식)
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(go.transform);
@@ -107,7 +128,15 @@ namespace BloodshedModToolkit.Coop.Renderer
                 _avatars.Remove(id); _lastPos.Remove(id);
                 CreateAvatar(id, pkt); return;
             }
-            var newPos = new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
+
+            // 봇: BotPhysicsBody가 위치 소유 → 패킷으로 덮어쓰지 않음
+            bool physicsOwned = BotState.IsBot(id) &&
+                                BotPhysicsBody.Instances.ContainsKey(id);
+            var newPos = physicsOwned
+                ? go.transform.position
+                : new Vector3(pkt.PosX, pkt.PosY, pkt.PosZ);
+
+            if (!physicsOwned) go.transform.position = newPos;
 
             // 이동 방향으로 회전 (0.01m 이상 이동 시)
             if (_lastPos.TryGetValue(id, out var prev))
@@ -116,7 +145,6 @@ namespace BloodshedModToolkit.Coop.Renderer
                 if (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z > 0.0001f)
                     go.transform.rotation = Quaternion.LookRotation(delta);
             }
-            go.transform.position = newPos;
             _lastPos[id] = newPos;
         }
 
