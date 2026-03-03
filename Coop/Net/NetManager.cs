@@ -63,6 +63,8 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.StateSnapshot,  HandleStateSnapshot);
             Router.Register(PacketType.FullSnapshot,   HandleFullSnapshot);
             Router.Register(PacketType.DamageRequest,  HandleDamageRequest);
+            Router.Register(PacketType.TweakSync,      HandleTweakSync);
+            Router.Register(PacketType.ItemSelected,   HandleItemSelected);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -127,6 +129,7 @@ namespace BloodshedModToolkit.Coop.Net
             if (CoopState.LobbyId != CSteamID.Nil)
                 SteamMatchmaking.LeaveLobby(CoopState.LobbyId);
             CoopState.Reset();
+            PlayerSyncHandler.Reset();
             _lastHeartbeat.Clear();
             _heartbeatTimer = 0f;
             Plugin.Log.LogInfo("[NetManager] 로비 퇴장");
@@ -153,6 +156,13 @@ namespace BloodshedModToolkit.Coop.Net
         {
             foreach (var peer in CoopState.Peers)
                 SendUnreliable(peer, data);
+        }
+
+        /// <summary>Phase 7: EntityScanner 주기적 FullSnapshot 트리거에서 호출.</summary>
+        public void BroadcastFullSnapshot()
+        {
+            foreach (var peer in CoopState.Peers)
+                SendFullSnapshotTo(peer);
         }
 
         // ════════════════════════════════════════════════════════════════════
@@ -272,13 +282,14 @@ namespace BloodshedModToolkit.Coop.Net
                     $"[NetManager] 새 Peer: {SteamFriends.GetFriendPersonaName(from)} ({from})");
             }
 
-            // Host이면 응답 Handshake + FullSnapshot 전송
+            // Host이면 응답 Handshake + FullSnapshot + TweakConfig 전송
             if (CoopState.IsHost)
             {
                 var myId = SteamUser.GetSteamID();
                 SendReliable(from,
                     HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
                 SendFullSnapshotTo(from);
+                TweakSyncHandler.SendTo(from);
             }
         }
 
@@ -402,10 +413,7 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandlePlayerState(CSteamID from, byte[] payload)
         {
             var pkt = PlayerStatePacket.Decode(payload);
-            // Phase 5에서 원격 플레이어 아바타 위치 업데이트 구현
-            Plugin.Log.LogDebug(
-                $"[NetManager] PlayerState from {from}: " +
-                $"pos=({pkt.PosX:F1},{pkt.PosY:F1},{pkt.PosZ:F1}) hp={pkt.CurrentHp:F0}");
+            PlayerSyncHandler.OnPlayerState(pkt.SteamId, pkt);
         }
 
         private void HandleStateSnapshot(CSteamID from, byte[] payload)
@@ -424,6 +432,22 @@ namespace BloodshedModToolkit.Coop.Net
                 ushort hp = br.ReadUInt16();
                 applicator?.EnqueueUpdate(hostIdx, px, py, pz, hp);
             }
+        }
+
+        private void HandleTweakSync(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;   // Guest만 수신
+            var pkt = TweakSyncPacket.Decode(payload);
+            TweakSyncHandler.ApplyFromPacket(pkt);
+        }
+
+        private void HandleItemSelected(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var pkt = ItemSelectedPacket.Decode(payload);
+            // TODO: 게임 아이템 선택 API 확인 후 자동 적용 구현
+            Plugin.Log.LogInfo(
+                $"[NetManager] ItemSelected 수신: index={pkt.ItemIndex}  (자동 적용 미구현)");
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)

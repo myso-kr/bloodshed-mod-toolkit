@@ -471,7 +471,19 @@ namespace BloodshedModToolkit.UI
                 foreach (var peer in CoopState.Peers)
                 {
                     var peerName = SteamFriends.GetFriendPersonaName(peer);
-                    GUILayout.Label($"  \u25cf {peerName}", _stSliderName!);
+                    if (PlayerSyncHandler.TryGetState((ulong)peer, out var ps))
+                    {
+                        int hpPct = ps.MaxHp > 0f
+                            ? (int)(ps.CurrentHp / ps.MaxHp * 100f)
+                            : 0;
+                        GUILayout.Label(
+                            $"  \u25cf {peerName}  Lv{ps.Level}  HP {hpPct}%",
+                            _stSliderName!);
+                    }
+                    else
+                    {
+                        GUILayout.Label($"  \u25cf {peerName}", _stSliderName!);
+                    }
                 }
 
                 // ── XP SYNC ──────────────────────────────────────────────────

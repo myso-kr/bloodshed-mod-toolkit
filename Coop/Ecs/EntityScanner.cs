@@ -18,11 +18,13 @@ namespace BloodshedModToolkit.Coop.Ecs
         public static EntityScanner? Instance { get; private set; }
 
         // ── 설정 ─────────────────────────────────────────────────────────────
-        private const float ScanInterval  = 0.05f;  // 20 Hz
-        private const int   MaxPerPacket  = 60;     // 60 × 18B = 1080B (MTU 안전)
+        private const float ScanInterval         = 0.05f;  // 20 Hz
+        private const float FullSnapshotInterval = 60f;    // 1분마다 디싱크 복구
+        private const int   MaxPerPacket         = 60;     // 60 × 18B = 1080B (MTU 안전)
 
         // ── 상태 ─────────────────────────────────────────────────────────────
         private float   _scanTimer;
+        private float   _fullSnapshotTimer;
         private World?  _world;
         private bool    _ecsReady;
         private EntityManager _em;
@@ -80,6 +82,14 @@ namespace BloodshedModToolkit.Coop.Ecs
 
             _lastSnapshot = snapshots;
             _tick++;
+
+            // 주기적 FullSnapshot — 디싱크 복구 (60초마다 전체 상태 재전송)
+            _fullSnapshotTimer += Time.deltaTime;
+            if (_fullSnapshotTimer >= FullSnapshotInterval)
+            {
+                _fullSnapshotTimer = 0f;
+                NetManager.Instance?.BroadcastFullSnapshot();
+            }
         }
 
         // ════════════════════════════════════════════════════════════════════

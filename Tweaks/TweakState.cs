@@ -20,6 +20,9 @@ namespace BloodshedModToolkit.Tweaks
             var enemies = Object.FindObjectsOfType<EnemyAbilityController>();
             if (enemies != null)
                 foreach (var ec in enemies) ec.RefreshAgentSpeed();
+
+            // Phase 7: Co-op Host → Guest TweakConfig 동기화
+            Coop.Sync.TweakSyncHandler.OnPresetApplied();
         }
 
         public static void Initialize() => Apply(TweakPresetType.Hunter);

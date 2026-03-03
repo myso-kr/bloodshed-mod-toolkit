@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 버전은 Bump-Version.ps1 로 부모 csproj 와 동기화됨 -->
-    <Version>1.0.28</Version>
+    <Version>1.0.29</Version>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>

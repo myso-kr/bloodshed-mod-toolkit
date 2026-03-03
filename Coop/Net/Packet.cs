@@ -19,6 +19,9 @@ namespace BloodshedModToolkit.Coop.Net
         DamageRequest = 0x41,
         PlayerInput   = 0x50,
         FullSnapshot  = 0x51,
+
+        // Phase 7 — 밸런스 설정 동기화
+        TweakSync     = 0x60,
     }
 
     // ── 직렬화 헬퍼 ──────────────────────────────────────────────────────────
@@ -234,6 +237,45 @@ namespace BloodshedModToolkit.Coop.Net
                 Level         = br.ReadInt32(),
                 Experience    = br.ReadSingle(),
                 ExperienceCap = br.ReadSingle(),
+            };
+        }
+    }
+
+    // TweakSync — Host → Guest (밸런스 프리셋 전파)
+    public struct TweakSyncPacket
+    {
+        public float PlayerHpMult, PlayerSpeedMult;
+        public float WeaponDamageMult, WeaponFireRateMult, WeaponReloadSpeedMult;
+        public float EnemyHpMult, EnemySpeedMult, EnemyDamageMult;
+        public float SpawnCountMult;
+
+        public static byte[] Encode(
+            float playerHp,  float playerSpd,
+            float wpnDmg,    float wpnFire,  float wpnReload,
+            float eneHp,     float eneSpd,   float eneDmg,
+            float spawn)
+            => Packet.Encode(PacketType.TweakSync, w =>
+            {
+                w.Write(playerHp);  w.Write(playerSpd);
+                w.Write(wpnDmg);    w.Write(wpnFire);   w.Write(wpnReload);
+                w.Write(eneHp);     w.Write(eneSpd);    w.Write(eneDmg);
+                w.Write(spawn);
+            });
+
+        public static TweakSyncPacket Decode(byte[] payload)
+        {
+            using var br = new BinaryReader(new MemoryStream(payload));
+            return new TweakSyncPacket
+            {
+                PlayerHpMult          = br.ReadSingle(),
+                PlayerSpeedMult       = br.ReadSingle(),
+                WeaponDamageMult      = br.ReadSingle(),
+                WeaponFireRateMult    = br.ReadSingle(),
+                WeaponReloadSpeedMult = br.ReadSingle(),
+                EnemyHpMult           = br.ReadSingle(),
+                EnemySpeedMult        = br.ReadSingle(),
+                EnemyDamageMult       = br.ReadSingle(),
+                SpawnCountMult        = br.ReadSingle(),
             };
         }
     }
