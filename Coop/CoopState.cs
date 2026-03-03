@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Steamworks;
+using BloodshedModToolkit.Coop.Ecs;
 
 namespace BloodshedModToolkit.Coop
 {
@@ -21,6 +22,7 @@ namespace BloodshedModToolkit.Coop
             IsConnected = false;
             LobbyId     = CSteamID.Nil;
             Peers.Clear();
+            EntityRegistry.Reset();
         }
     }
 }

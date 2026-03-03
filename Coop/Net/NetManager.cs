@@ -4,6 +4,7 @@ using UnityEngine;
 using Steamworks;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
+using BloodshedModToolkit.Coop.Ecs;
 
 namespace BloodshedModToolkit.Coop.Net
 {
@@ -58,7 +59,8 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.XpGained,      HandleXpGained);
             Router.Register(PacketType.LevelUp,       HandleLevelUp);
             Router.Register(PacketType.PlayerState,    HandlePlayerState);
-            Router.Register(PacketType.StateSnapshot, HandleStateSnapshot);
+            Router.Register(PacketType.StateSnapshot,  HandleStateSnapshot);
+            Router.Register(PacketType.FullSnapshot,   HandleFullSnapshot);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -268,13 +270,35 @@ namespace BloodshedModToolkit.Coop.Net
                     $"[NetManager] 새 Peer: {SteamFriends.GetFriendPersonaName(from)} ({from})");
             }
 
-            // Host이면 응답 Handshake 전송
+            // Host이면 응답 Handshake + FullSnapshot 전송
             if (CoopState.IsHost)
             {
                 var myId = SteamUser.GetSteamID();
                 SendReliable(from,
                     HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: true));
+                SendFullSnapshotTo(from);
             }
+        }
+
+        private void SendFullSnapshotTo(CSteamID guest)
+        {
+            var scanner = EntityScanner.Instance;
+            if (scanner == null) return;
+
+            var snapshot = scanner.GetCurrentSnapshot();
+            var pkt = Packet.Encode(PacketType.FullSnapshot, w =>
+            {
+                w.Write(snapshot.Count);
+                foreach (var (_, snap) in snapshot)
+                {
+                    w.Write(snap.HostEntityIndex);
+                    w.Write((ushort)0);  // typeId — Phase 5에서 정밀화
+                    w.Write(snap.PosX); w.Write(snap.PosY); w.Write(snap.PosZ);
+                    w.Write(snap.Hp);
+                }
+            });
+            SendReliable(guest, pkt);
+            Plugin.Log.LogInfo($"[NetManager] FullSnapshot 전송: {snapshot.Count} 에너미 → {guest}");
         }
 
         private void HandleHeartbeat(CSteamID from, byte[] payload)
@@ -323,18 +347,18 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (CoopState.IsHost) return;
             var pkt = EntitySpawnPacket.Decode(payload);
-            // Phase 4에서 실제 스폰 로직 구현
-            Plugin.Log.LogInfo(
-                $"[NetManager] EntitySpawn: idx={pkt.HostEntityIndex} type={pkt.EnemyTypeId}" +
-                $" @ ({pkt.PosX:F1},{pkt.PosY:F1},{pkt.PosZ:F1})");
+            // SpawnEventPatch.Postfix (Guest 경로)가 실행될 때 순서 매핑
+            EntityRegistry.PendingHostIds.Enqueue(pkt.HostEntityIndex);
+            Plugin.Log.LogDebug(
+                $"[NetManager] EntitySpawn 큐: idx={pkt.HostEntityIndex} type={pkt.EnemyTypeId}");
         }
 
         private void HandleEntityDespawn(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
             var pkt = EntityDespawnPacket.Decode(payload);
-            // Phase 4에서 실제 디스폰 로직 구현
-            Plugin.Log.LogInfo($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex}");
+            EntityRegistry.HostToLocal.Remove(pkt.HostEntityIndex);
+            Plugin.Log.LogDebug($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex}");
         }
 
         private void HandleWaveAdvance(CSteamID from, byte[] payload)
@@ -383,12 +407,40 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandleStateSnapshot(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
-            // Phase 4+에서 Guest의 엔티티 위치를 실제로 업데이트
             using var ms = new System.IO.MemoryStream(payload);
             using var br = new System.IO.BinaryReader(ms);
             uint   tick  = br.ReadUInt32();
             ushort count = br.ReadUInt16();
-            Plugin.Log.LogDebug($"[NetManager] StateSnapshot tick={tick} count={count}");
+            int    mapped = 0;
+            for (int i = 0; i < count; i++)
+            {
+                uint  hostIdx = br.ReadUInt32();
+                float px = br.ReadSingle(), py = br.ReadSingle(), pz = br.ReadSingle();
+                ushort hp = br.ReadUInt16();
+                // Phase 5에서 매핑된 로컬 엔티티 위치/HP 업데이트
+                if (EntityRegistry.HostToLocal.TryGetLocal(hostIdx, out _)) mapped++;
+            }
+            Plugin.Log.LogDebug(
+                $"[NetManager] StateSnapshot tick={tick} count={count} mapped={mapped}");
+        }
+
+        private void HandleFullSnapshot(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            EntityRegistry.Reset();
+
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms);
+            int count = br.ReadInt32();
+            for (int i = 0; i < count; i++)
+            {
+                uint hostIdx = br.ReadUInt32();
+                br.ReadUInt16();                      // typeId
+                br.ReadSingle(); br.ReadSingle(); br.ReadSingle();  // pos
+                br.ReadUInt16();                      // hp
+                EntityRegistry.PendingHostIds.Enqueue(hostIdx);
+            }
+            Plugin.Log.LogInfo($"[NetManager] FullSnapshot 수신: {count} 에너미 큐잉");
         }
     }
 }
