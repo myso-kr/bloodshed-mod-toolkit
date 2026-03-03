@@ -460,7 +460,24 @@ namespace BloodshedModToolkit.UI
                 GUILayout.Space(4);
                 SectionHeader("MISSION GATE");
 
+                // Debug 게스트 모드 토글 (Host 전용 디버깅 기능)
                 if (CoopState.IsHost)
+                {
+                    bool dbg = CoopState.DebugGuestMode;
+                    string dbgLabel = dbg ? "[ DEBUG GUEST: ON  ]" : "[ DEBUG GUEST: OFF ]";
+                    if (GUILayout.Button(dbgLabel, dbg ? _stPresetOn! : _stPresetOff!))
+                    {
+                        CoopState.DebugGuestMode = !dbg;
+                        if (!CoopState.DebugGuestMode)
+                            MissionState.Status = MissionStatus.Idle;  // 디버그 해제 시 초기화
+                    }
+                    GUILayout.Space(2);
+                }
+
+                // 게스트 뷰 조건: 실제 게스트 OR Host가 Debug 게스트 모드 활성화
+                bool showGuestView = !CoopState.IsHost || CoopState.DebugGuestMode;
+
+                if (!showGuestView)
                 {
                     // 투표 상태
                     if (MissionState.HostVoteActive)
@@ -490,19 +507,27 @@ namespace BloodshedModToolkit.UI
                     foreach (var v in MissionState.GuestReadyMap.Values) if (v) ready++;
                     GUILayout.Label($"GUESTS READY: {ready} / {CoopState.Peers.Count}", _stSliderName!);
                 }
-                else
+                else  // showGuestView
                 {
                     switch (MissionState.Status)
                     {
                         case MissionStatus.Idle:
-                            GUILayout.Label("대기 중 — 호스트가 투표를 시작하면 알림", _stSliderName!);
+                            GUILayout.Label(
+                                CoopState.DebugGuestMode
+                                    ? "[ Debug ] 게임 시작 시 투표 UI가 표시됩니다"
+                                    : "대기 중 — 호스트가 투표를 시작하면 알림",
+                                _stSliderName!);
                             break;
                         case MissionStatus.WaitingForHost:
                             GUILayout.Label("씬 로드 완료 — 호스트 신호 대기 중", _stSliderName!);
                             GUILayout.Label($"({MissionState.PendingSceneName})", _stSliderName!);
                             break;
                         case MissionStatus.VoteRequested:
-                            GUILayout.Label("호스트가 게임 시작을 제안했습니다!", _stSliderName!);
+                            GUILayout.Label(
+                                CoopState.DebugGuestMode
+                                    ? $"[ Debug ] 씬: {MissionState.PendingSceneName}"
+                                    : "호스트가 게임 시작을 제안했습니다!",
+                                _stSliderName!);
                             if (GUILayout.Button("ACCEPT", _stActionBtn!))
                                 MissionSyncHandler.OnGuestVoteResponse(true);
                             if (GUILayout.Button("REJECT", _stResetBtn!))

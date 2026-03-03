@@ -55,8 +55,13 @@ namespace BloodshedModToolkit.Coop.Sync
             var current = SceneManager.GetActiveScene();
             bool alreadyInScene = current.name == MissionState.PendingSceneName
                                 || current.buildIndex == MissionState.PendingBuildIndex;
-            if (!alreadyInScene && MissionState.PendingSceneName.Length > 0)
-                SceneManager.LoadScene(MissionState.PendingSceneName);
+            if (!alreadyInScene)
+            {
+                if (MissionState.PendingSceneName.Length > 0)
+                    SceneManager.LoadScene(MissionState.PendingSceneName);
+                else if (MissionState.PendingBuildIndex > 0)
+                    SceneManager.LoadScene(MissionState.PendingBuildIndex);
+            }
 
             Plugin.Log.LogInfo("[MissionGate] Guest ready — entering mission");
         }
