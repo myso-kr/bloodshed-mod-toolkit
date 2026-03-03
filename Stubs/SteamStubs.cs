@@ -37,6 +37,36 @@ namespace Steamworks
         k_EP2PSendReliableWithBuffering = 3,
     }
 
+    public enum EFriendFlags
+    {
+        k_EFriendFlagNone      = 0x0000,
+        k_EFriendFlagBlocked   = 0x0001,
+        k_EFriendFlagImmediate = 0x0004,   // 일반 친구
+        k_EFriendFlagAll       = 0xFFFF,
+    }
+
+    public enum EPersonaState
+    {
+        k_EPersonaStateOffline    = 0,
+        k_EPersonaStateOnline     = 1,
+        k_EPersonaStateBusy       = 2,
+        k_EPersonaStateAway       = 3,
+        k_EPersonaStateSnooze     = 4,
+        k_EPersonaStateInvisible  = 7,
+        k_EPersonaStateMax        = 8,
+    }
+
+    public struct CGameID
+    {
+        public ulong m_GameID;
+    }
+
+    public struct FriendGameInfo_t
+    {
+        public CGameID  m_gameID;
+        public CSteamID m_steamIDLobby;
+    }
+
     public enum EResult
     {
         k_EResultOK   = 1,
@@ -78,6 +108,7 @@ namespace Steamworks
         public static CSteamID  GetLobbyOwner(CSteamID steamIDLobby) => CSteamID.Nil;
         public static bool      SetLobbyData(CSteamID steamIDLobby, string pchKey, string pchValue) => false;
         public static string    GetLobbyData(CSteamID steamIDLobby, string pchKey) => "";
+        public static bool      InviteUserToLobby(CSteamID steamIDLobby, CSteamID steamIDInvitee) => false;
     }
 
     public static class SteamNetworking
@@ -100,7 +131,12 @@ namespace Steamworks
 
     public static class SteamFriends
     {
-        public static string GetFriendPersonaName(CSteamID steamIDFriend) => "";
+        public static string        GetFriendPersonaName(CSteamID steamIDFriend) => "";
+        public static int           GetFriendCount(EFriendFlags iFriendFlags) => 0;
+        public static CSteamID      GetFriendByIndex(int iFriend, EFriendFlags iFriendFlags) => CSteamID.Nil;
+        public static EPersonaState GetFriendPersonaState(CSteamID steamIDFriend) => EPersonaState.k_EPersonaStateOffline;
+        public static bool          GetFriendGamePlayed(CSteamID steamIDFriend, out FriendGameInfo_t pFriendGameInfo)
+        { pFriendGameInfo = default; return false; }
     }
 
     // ── 콜백 / 콜 리절트 래퍼 ────────────────────────────────────────────────

@@ -8,6 +8,7 @@ using BloodshedModToolkit.Tweaks;
 using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Net;
 using BloodshedModToolkit.Coop.Sync;
+using BloodshedModToolkit.Coop.Friends;
 
 namespace BloodshedModToolkit.UI
 {
@@ -453,6 +454,8 @@ namespace BloodshedModToolkit.UI
                     else
                         Plugin.Log.LogWarning("[CoopTab] 유효하지 않은 로비 ID");
                 }
+
+                DrawFriendsSection();
             }
             else
             {
@@ -485,6 +488,8 @@ namespace BloodshedModToolkit.UI
                         GUILayout.Label($"  \u25cf {peerName}", _stSliderName!);
                     }
                 }
+
+                DrawFriendsSection();
 
                 // ── XP SYNC ──────────────────────────────────────────────────
                 GUILayout.Space(4);
@@ -521,6 +526,49 @@ namespace BloodshedModToolkit.UI
                 XpShareMode.Split       => "Host XP의 절반을 Guest에게 전달",
                 _                       => "Host XP를 Guest에게 그대로 복제 (기본)",
             };
+
+        // ════════════════════════════════════════════════════════════════════════
+        // FRIENDS 섹션
+        // ════════════════════════════════════════════════════════════════════════
+        private void DrawFriendsSection()
+        {
+            GUILayout.Space(4);
+            SectionHeader("FRIENDS");
+
+            // 새로고침 버튼 + 카운트
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("새로고침", _stActionBtn!))
+                FriendListCache.Refresh();
+            if (FriendListCache.LastRefreshTime >= 0f)
+                GUILayout.Label($"({FriendListCache.Entries.Count}명 온라인)", _stSliderName!);
+            GUILayout.EndHorizontal();
+
+            if (FriendListCache.LastRefreshTime < 0f)
+            {
+                GUILayout.Label("  [새로고침]을 눌러 친구 목록 불러오기", _stSliderName!);
+                return;
+            }
+
+            if (FriendListCache.Entries.Count == 0)
+            {
+                GUILayout.Label("  온라인 친구 없음", _stSliderName!);
+                return;
+            }
+
+            foreach (var f in FriendListCache.Entries)
+            {
+                GUILayout.BeginHorizontal();
+                string suffix = f.IsInGame ? " [게임중]" : "";
+                GUILayout.Label($"  {f.Name}{suffix}", _stSliderName!);
+                if (CoopState.IsEnabled &&
+                    GUILayout.Button("초대", _stActionBtn!, GUILayout.Width(44)))
+                {
+                    SteamMatchmaking.InviteUserToLobby(CoopState.LobbyId, f.SteamId);
+                    Plugin.Log.LogInfo($"[Friends] {f.Name} 초대 전송");
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
 
         // ════════════════════════════════════════════════════════════════════════
         // 드로잉 헬퍼
