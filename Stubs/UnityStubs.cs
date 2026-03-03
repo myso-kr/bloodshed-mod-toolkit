@@ -21,6 +21,7 @@ namespace UnityEngine
         public Transform  transform  => null!;
         public GameObject gameObject => null!;
         public int GetInstanceID() => 0;
+        public T? GetComponent<T>() where T : Component => null!;
     }
     public class Behaviour : Component { public Behaviour(IntPtr ptr) : base(ptr) { } }
     public class Transform  : Component

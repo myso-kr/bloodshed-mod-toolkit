@@ -5,6 +5,7 @@ using Steamworks;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Ecs;
+using BloodshedModToolkit.Coop.Sync;
 
 namespace BloodshedModToolkit.Coop.Net
 {
@@ -61,6 +62,7 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.PlayerState,    HandlePlayerState);
             Router.Register(PacketType.StateSnapshot,  HandleStateSnapshot);
             Router.Register(PacketType.FullSnapshot,   HandleFullSnapshot);
+            Router.Register(PacketType.DamageRequest,  HandleDamageRequest);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -357,6 +359,9 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (CoopState.IsHost) return;
             var pkt = EntityDespawnPacket.Decode(payload);
+            // Phase 5: Health 캐시도 정리
+            if (EntityRegistry.HostToLocal.TryGetLocal(pkt.HostEntityIndex, out int localId))
+                EntityRegistry.LocalHealth.Remove(localId);
             EntityRegistry.HostToLocal.Remove(pkt.HostEntityIndex);
             Plugin.Log.LogDebug($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex}");
         }
@@ -391,8 +396,7 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (CoopState.IsHost) return;
             var pkt = LevelUpPacket.Decode(payload);
-            // Phase 6에서 레벨업 아이템 선택 동기화 구현
-            Plugin.Log.LogInfo($"[NetManager] LevelUp: level={pkt.NewLevel}");
+            XpSyncHandler.ApplyLevelUp(pkt.NewLevel);
         }
 
         private void HandlePlayerState(CSteamID from, byte[] payload)
@@ -407,21 +411,39 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandleStateSnapshot(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
+            var applicator = StateApplicator.Instance;
+
             using var ms = new System.IO.MemoryStream(payload);
             using var br = new System.IO.BinaryReader(ms);
             uint   tick  = br.ReadUInt32();
             ushort count = br.ReadUInt16();
-            int    mapped = 0;
             for (int i = 0; i < count; i++)
             {
-                uint  hostIdx = br.ReadUInt32();
-                float px = br.ReadSingle(), py = br.ReadSingle(), pz = br.ReadSingle();
+                uint   hostIdx = br.ReadUInt32();
+                float  px = br.ReadSingle(), py = br.ReadSingle(), pz = br.ReadSingle();
                 ushort hp = br.ReadUInt16();
-                // Phase 5에서 매핑된 로컬 엔티티 위치/HP 업데이트
-                if (EntityRegistry.HostToLocal.TryGetLocal(hostIdx, out _)) mapped++;
+                applicator?.EnqueueUpdate(hostIdx, px, py, pz, hp);
             }
+        }
+
+        private void HandleDamageRequest(CSteamID from, byte[] payload)
+        {
+            if (!CoopState.IsHost) return;
+            var pkt = DamageRequestPacket.Decode(payload);
+
+            // Host 측: hostIdx == GetInstanceID() (uint → int 변환으로 로컬 ID와 일치)
+            int localId = (int)pkt.HostEntityIndex;
+            if (!EntityRegistry.LocalHealth.TryGetValue(localId, out var health) || health == null)
+            {
+                Plugin.Log.LogDebug(
+                    $"[NetManager] DamageRequest Health 없음: idx={pkt.HostEntityIndex}");
+                return;
+            }
+            if (health.isPlayer) return;
+
+            health.Damage(pkt.Damage, null!, 0f, 0f, default, default, true);
             Plugin.Log.LogDebug(
-                $"[NetManager] StateSnapshot tick={tick} count={count} mapped={mapped}");
+                $"[NetManager] DamageRequest 적용: idx={pkt.HostEntityIndex} dmg={pkt.Damage:F1}");
         }
 
         private void HandleFullSnapshot(CSteamID from, byte[] payload)

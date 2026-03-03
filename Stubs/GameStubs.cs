@@ -38,6 +38,7 @@ namespace com8com1.SCFPS
         public void TakeDamage(float damage, GameObject instigator) { }
         public void RecalculateStats()         { }
         public void LevelUpChecker()           { }
+        public void SetLevel(int newLevel)     { }
     }
 
     public class ShotAction : MonoBehaviour

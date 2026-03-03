@@ -56,5 +56,16 @@ namespace BloodshedModToolkit.Coop.Events
             Net.BroadcastUnreliable(
                 PlayerStatePacket.Encode(steamId, px, py, pz, hp, maxHp, level, xp, xpCap));
         }
+
+        /// <summary>
+        /// Guest → Host: 적 데미지 요청.
+        /// Guest가 자체적으로 Hit 판정 후 Host에게 권위 있는 데미지 적용을 요청.
+        /// </summary>
+        public static void OnDamageRequest(uint hostEntityIdx, float damage)
+        {
+            // Guest만 호출 (IsHost가 아닐 때)
+            if (CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(DamageRequestPacket.Encode(hostEntityIdx, damage));
+        }
     }
 }

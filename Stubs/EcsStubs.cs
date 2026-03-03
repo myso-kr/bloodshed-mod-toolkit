@@ -79,8 +79,10 @@ namespace Unity.Entities
     public struct EntityManager
     {
         public EntityQuery CreateEntityQuery(params ComponentType[] componentTypes) => new EntityQuery();
-        public T           GetComponentData<T>(Entity entity) where T : struct => default;
-        public bool        HasComponent<T>(Entity entity)     where T : struct => false;
+        public T           GetComponentData<T>(Entity entity)        where T : struct => default;
+        public void        SetComponentData<T>(Entity entity, T value) where T : struct { }
+        public bool        HasComponent<T>(Entity entity)             where T : struct => false;
+        public bool        Exists(Entity entity) => false;
         public void        CompleteAllTrackedJobs() { }
     }
 

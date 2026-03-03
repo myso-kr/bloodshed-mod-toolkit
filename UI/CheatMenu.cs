@@ -7,6 +7,7 @@ using BloodshedModToolkit.I18n;
 using BloodshedModToolkit.Tweaks;
 using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Net;
+using BloodshedModToolkit.Coop.Sync;
 
 namespace BloodshedModToolkit.UI
 {
@@ -473,6 +474,16 @@ namespace BloodshedModToolkit.UI
                     GUILayout.Label($"  \u25cf {peerName}", _stSliderName!);
                 }
 
+                // ── XP SYNC ──────────────────────────────────────────────────
+                GUILayout.Space(4);
+                SectionHeader("XP SYNC");
+                GUILayout.BeginHorizontal();
+                XpModeBtn("독립", XpShareMode.Independent);
+                XpModeBtn("복제", XpShareMode.Replicate);
+                XpModeBtn("분할", XpShareMode.Split);
+                GUILayout.EndHorizontal();
+                GUILayout.Label(XpModeDescription(), _stSliderName!);
+
                 GUILayout.Space(6);
                 if (GUILayout.Button("로비 떠나기", _stResetBtn!))
                     NetManager.Instance?.LeaveLobby();
@@ -480,6 +491,24 @@ namespace BloodshedModToolkit.UI
 
             GUILayout.EndScrollView();
         }
+
+        private void XpModeBtn(string label, XpShareMode mode)
+        {
+            bool active = CoopConfig.XpShare == mode;
+            if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
+            {
+                CoopConfig.XpShare = mode;
+                Plugin.Log.LogInfo($"[CoopTab] XpShareMode → {mode}");
+            }
+        }
+
+        private static string XpModeDescription() =>
+            CoopConfig.XpShare switch
+            {
+                XpShareMode.Independent => "각자 독립적으로 XP 획득 (동기화 없음)",
+                XpShareMode.Split       => "Host XP의 절반을 Guest에게 전달",
+                _                       => "Host XP를 Guest에게 그대로 복제 (기본)",
+            };
 
         // ════════════════════════════════════════════════════════════════════════
         // 드로잉 헬퍼

@@ -33,6 +33,9 @@ namespace BloodshedModToolkit
             // Co-op ECS 엔티티 스캐너 (Phase 3)
             AddComponent<EntityScanner>();
 
+            // Co-op 상태 동기화 적용기 (Phase 5)
+            AddComponent<StateApplicator>();
+
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
     }
@@ -41,6 +44,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.25";
+        public const string PLUGIN_VERSION = "1.0.26";
     }
 }

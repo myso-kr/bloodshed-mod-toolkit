@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Unity.Entities;
+using com8com1.SCFPS;
 
 namespace BloodshedModToolkit.Coop.Ecs
 {
@@ -17,11 +19,25 @@ namespace BloodshedModToolkit.Coop.Ecs
         /// </summary>
         public static Queue<uint> PendingHostIds { get; } = new();
 
+        /// <summary>
+        /// Phase 5: hostIdx → ECS Entity (Guest 측, ECS 위치 쓰기용).
+        /// SpawnEventPatch에서 ECS Entity 추적 가능 시 등록.
+        /// </summary>
+        public static Dictionary<uint, Entity> EcsEntities { get; } = new();
+
+        /// <summary>
+        /// Phase 5: localId(GetInstanceID) → Health 컴포넌트 캐시.
+        /// Host/Guest 양측에서 SpawnEventPatch가 등록, StateApplicator/DamageRequest가 참조.
+        /// </summary>
+        public static Dictionary<int, Health> LocalHealth { get; } = new();
+
         /// <summary>씬 전환 또는 세션 종료 시 전체 초기화.</summary>
         public static void Reset()
         {
             HostToLocal.Clear();
             PendingHostIds.Clear();
+            EcsEntities.Clear();
+            LocalHealth.Clear();
         }
     }
 }
