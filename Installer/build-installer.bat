@@ -16,13 +16,9 @@ if ERRORLEVEL 1 (
 )
 
 echo.
-echo [2/2] Publishing installer as single EXE...
+echo [2/2] Publishing installer (net48)...
 cd /d "%~dp0"
-dotnet publish -c Release -r win-x64 --self-contained ^
-    -p:PublishSingleFile=true ^
-    -p:IncludeNativeLibrariesForSelfExtract=true ^
-    -p:EnableCompressionInSingleFile=true ^
-    -o publish
+dotnet publish -c Release -o publish
 
 if ERRORLEVEL 1 (
     echo ERROR: Installer publish failed.

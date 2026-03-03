@@ -81,11 +81,7 @@ if ($SkipBuild) {
 Write-Host "`n[2/5] 인스톨러 빌드 중..." -ForegroundColor Yellow
 Push-Location "Installer"
 try {
-    dotnet publish -c Release -r win-x64 --self-contained `
-        -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
-        -p:EnableCompressionInSingleFile=true `
-        -o publish
+    dotnet publish -c Release -o publish
     if ($LASTEXITCODE -ne 0) { throw "인스톨러 빌드 실패" }
 } finally {
     Pop-Location

@@ -1,14 +1,15 @@
 using System.IO.Compression;
+using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 
 namespace BloodshedModToolkitInstaller;
 
-public record InstallOptions
+public class InstallOptions
 {
-    public bool InstallBepInEx { get; init; }
-    public bool InstallModDll  { get; init; }
+    public bool InstallBepInEx { get; set; }
+    public bool InstallModDll  { get; set; }
 }
 
 public class InstallWorker
@@ -171,22 +172,22 @@ public class InstallWorker
         response.EnsureSuccessStatusCode();
 
         long? totalBytes = response.Content.Headers.ContentLength;
-        await using var src  = await response.Content.ReadAsStreamAsync();
-        await using var dest = File.Create(destZipPath);
+        using var src  = await response.Content.ReadAsStreamAsync();
+        using var dest = File.Create(destZipPath);
 
         const int bufSize = 8192;
         var buf = new byte[bufSize];
         long read = 0;
         int bytesRead;
 
-        while ((bytesRead = await src.ReadAsync(buf)) > 0)
+        while ((bytesRead = await src.ReadAsync(buf, 0, buf.Length)) > 0)
         {
-            await dest.WriteAsync(buf.AsMemory(0, bytesRead));
+            await dest.WriteAsync(buf, 0, bytesRead);
             read += bytesRead;
             if (totalBytes.HasValue && totalBytes.Value > 0)
             {
                 int pct = (int)(read * 100 / totalBytes.Value);
-                reportPct(Math.Clamp(pct, 0, 99));
+                reportPct(Math.Max(0, Math.Min(99, pct)));
             }
         }
 
@@ -221,7 +222,7 @@ public class InstallWorker
                 entry.ExtractToFile(destPath, overwrite: true);
 
                 int pct = (int)((double)current / total * 100);
-                reportPct(Math.Clamp(pct, 0, 100));
+                reportPct(Math.Max(0, Math.Min(100, pct)));
             }
         });
     }

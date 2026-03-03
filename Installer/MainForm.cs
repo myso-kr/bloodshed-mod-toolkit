@@ -35,7 +35,6 @@ public partial class MainForm : Form
         using var dlg = new FolderBrowserDialog
         {
             Description = "Select the Bloodshed game folder (where Bloodshed.exe is located)",
-            UseDescriptionForTitle = true,
             SelectedPath = txtGamePath.Text.Trim()
         };
         if (dlg.ShowDialog(this) == DialogResult.OK)
@@ -86,7 +85,7 @@ public partial class MainForm : Form
 
         var progress = new Progress<(int pct, string msg)>(report =>
         {
-            progressBar.Value = Math.Clamp(report.pct, 0, 100);
+            progressBar.Value = Math.Max(0, Math.Min(100, report.pct));
             SetStatus(report.msg);
         });
 
