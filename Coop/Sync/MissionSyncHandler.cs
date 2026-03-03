@@ -88,6 +88,14 @@ namespace BloodshedModToolkit.Coop.Sync
         // Guest에서 호출 — ACCEPT / REJECT 버튼 클릭 시
         public static void OnGuestVoteResponse(bool accepted)
         {
+            // Debug 게스트 모드: 네트워크 전송 없이 로컬 상태만 전환
+            if (CoopState.DebugGuestMode)
+            {
+                MissionState.Status = accepted ? MissionStatus.Permitted : MissionStatus.Idle;
+                Plugin.Log.LogInfo($"[Vote] Debug 모드 {(accepted ? "ACCEPT → Permitted (웨이브 해제)" : "REJECT → Idle")}");
+                return;
+            }
+
             MissionState.Status = accepted ? MissionStatus.VoteAccepted : MissionStatus.Idle;
             Events.EventBridge.OnVoteAccept(accepted);
             Plugin.Log.LogInfo($"[Vote] 응답 전송: {(accepted ? "수락" : "거부")}");

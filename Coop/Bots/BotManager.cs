@@ -19,6 +19,10 @@ namespace BloodshedModToolkit.Coop.Bots
         private float _tickTimer;
         private float _scanCooldown = 0f;
 
+        // XP·드롭 귀속을 위한 로컬 플레이어 GameObject 캐시
+        // Health.Damage(instigator=player) → 게임 내부 킬 판정이 플레이어 귀속으로 처리됨
+        private GameObject? _localPlayerGo;
+
         void Awake() { Instance = this; BotState.AssignWeaponClasses(); Plugin.Log.LogInfo("[BotManager] loaded"); }
         void OnDestroy() { RemoveAll(); Instance = null; }
 
@@ -31,6 +35,13 @@ namespace BloodshedModToolkit.Coop.Bots
 
             // 로컬 플레이어 위치가 아직 0이면 스폰 보류 (메인메뉴 대비)
             if (localPos.x == 0f && localPos.y == 0f && localPos.z == 0f) return;
+
+            // 로컬 플레이어 GameObject 캐시 — 씬 전환 후 null이 되면 재탐색
+            if (_localPlayerGo == null)
+            {
+                var ps = UnityEngine.Object.FindObjectOfType<PlayerStats>();
+                if (ps != null) _localPlayerGo = ps.gameObject;
+            }
 
             // NavGrid 스캔: 최초 or 플레이어 25m 이상 이동 시, 30초 쿨다운
             if (_scanCooldown > 0f) _scanCooldown -= Time.deltaTime;
@@ -69,8 +80,16 @@ namespace BloodshedModToolkit.Coop.Bots
                         WeaponClass.Launcher => 60f,
                         _                    => 25f,
                     };
-                    enemyHealth.Damage(dmg, null!, 0.1f, 0f,
-                        bot.DesiredMoveDir, enemyPos, false);
+
+                    // 봇→적 실제 방향 계산 (Attack 상태에서 DesiredMoveDir = zero이므로 직접 계산)
+                    float ddx = enemyPos.x - bot.Position.x, ddz = enemyPos.z - bot.Position.z;
+                    float dlen = (float)Math.Sqrt(ddx * ddx + ddz * ddz);
+                    var dmgDir = dlen > 0.01f
+                        ? new Vector3(ddx / dlen, 0f, ddz / dlen)
+                        : Vector3.zero;
+
+                    // instigator = 로컬 플레이어 GameObject → 게임이 XP·드롭을 플레이어에 귀속
+                    enemyHealth.Damage(dmg, _localPlayerGo!, 0.1f, 0f, dmgDir, enemyPos, false);
                     Plugin.Log.LogInfo(
                         $"[Bot] {BotState.BotNames[bot.BotIndex]} → 적 {dmg} dmg");
                     bot.ShouldAttack = false;

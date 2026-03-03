@@ -27,6 +27,12 @@ namespace BloodshedModToolkit.Coop.Events
 
         static bool Prefix()
         {
+            // Debug 게스트 모드: VoteRequested/VoteAccepted 중에는 웨이브 차단
+            if (CoopState.DebugGuestMode &&
+                MissionState.Status != MissionStatus.Idle &&
+                MissionState.Status != MissionStatus.Permitted)
+                return false;
+
             // Guest가 연결 중일 때는 Host 명령 없이 자체 실행 차단
             if (!CoopState.IsHost && CoopState.IsConnected && !_allowGuestTrigger)
             {
