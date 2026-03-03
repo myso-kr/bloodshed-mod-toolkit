@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Steamworks;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
@@ -324,6 +325,17 @@ namespace BloodshedModToolkit.Coop.Net
             CoopState.IsHost      = true;
             CoopState.IsConnected = false;
             CoopState.LobbyId     = new CSteamID(result.m_ulSteamIDLobby);
+
+            // 로비 생성 시점에 이미 비-시스템 씬에 있는 경우 HostCurrentScene을 즉시 기록.
+            // (예: MetaGame에 있는 상태에서 로비를 생성하면 OnSceneLoaded가 다시 발생하지 않음)
+            var active = SceneManager.GetActiveScene();
+            if (active.buildIndex > 0 && !active.name.StartsWith("00_"))
+            {
+                Mission.MissionState.HostCurrentScene      = active.name;
+                Mission.MissionState.HostCurrentBuildIndex = active.buildIndex;
+                Plugin.Log.LogInfo($"[NetManager] 로비 생성 시 현재 씬 기록: '{active.name}'");
+            }
+
             Plugin.Log.LogInfo($"[NetManager] 로비 생성 완료: {CoopState.LobbyId}");
         }
 

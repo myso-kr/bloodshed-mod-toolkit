@@ -268,6 +268,7 @@ namespace UnityEngine
         public delegate void WindowFunction(int id);
 
         public static Color   color { get; set; }
+        public static int     depth { get; set; }
         public static GUISkin skin  => new GUISkin();
 
         public static Rect Window(int id, Rect clientRect, WindowFunction func, string text)

@@ -28,8 +28,8 @@ namespace BloodshedModToolkit
             var harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
             harmony.PatchAll();
 
-            // IMGUI 치트 메뉴를 MonoBehaviour로 씬에 추가
-            AddComponent<UI.CheatMenu>();
+            // IMGUI 모드 메뉴를 MonoBehaviour로 씬에 추가
+            AddComponent<UI.ModMenu>();
 
             // Co-op 네트워크 레이어
             AddComponent<NetManager>();
@@ -53,6 +53,9 @@ namespace BloodshedModToolkit
             // Phase 10 — 인게임 채팅
             AddComponent<UI.ChatWindow>();
 
+            // Phase 12 — 호스트 대기 오버레이
+            AddComponent<UI.WaitingHostOverlay>();
+
 
             Log.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} loaded.");
         }
@@ -62,6 +65,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.117";
+        public const string PLUGIN_VERSION = "1.0.118";
     }
 }

@@ -17,9 +17,9 @@ using BloodshedModToolkit.UI.Overlay.Panels;
 
 namespace BloodshedModToolkit.UI
 {
-    public class CheatMenu : MonoBehaviour
+    public class ModMenu : MonoBehaviour
     {
-        public CheatMenu(System.IntPtr ptr) : base(ptr) { }
+        public ModMenu(System.IntPtr ptr) : base(ptr) { }
 
         // ── 탭 / 윈도우 상태 ─────────────────────────────────────────────────────
         private enum Tab { Cheats, Tweaks, Coop, Bots }
@@ -685,7 +685,7 @@ namespace BloodshedModToolkit.UI
             bool next = GUILayout.Toggle(current, label,
                 current ? _stToggleOn! : _stToggleOff!);
             if (next != current)
-                Plugin.Log.LogInfo($"[CheatMenu] {label.Trim()} \u2192 {(next ? "ON" : "OFF")}");
+                Plugin.Log.LogInfo($"[ModMenu] {label.Trim()} \u2192 {(next ? "ON" : "OFF")}");
             return next;
         }
 
