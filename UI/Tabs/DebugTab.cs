@@ -17,17 +17,19 @@ namespace BloodshedModToolkit.UI.Tabs
         private SaveDataManager? _debugSdm;
 
         // ── 선택된 에셋 + 캐싱된 이름 (draw 타임 .name 접근 방지) ─────────────
-        private PlayableCharacterData?  _debugSelectedChar             = null;
+        private PlayableCharacterData?  _debugSelectedChar              = null;
         private string                  _debugSelectedCharName          = "";
-        private MissionAsset?           _debugSelectedMission          = null;
-        private string                  _debugSelectedMissionAssetName  = "";  // 씬명 매칭용
+        private MissionAsset?           _debugSelectedMission           = null;
+        private string                  _debugSelectedMissionAssetName  = "";  // 고유 키 (m.name)
+        private string                  _debugSelectedMissionSceneName  = "";  // 실제 씬명 (m.strScene)
         private string                  _debugSelectedMissionName       = "";  // 표시용
 
-        // ── 스캔 결과: (에셋, 에셋명, 표시명) 튜플 배열 ─────────────────────────
-        // AssetName = MissionAsset.name (= 씬명과 직접 비교되는 키)
-        // DisplayName = strMissionTitle ?? AssetName (UI 표시용)
-        private (PlayableCharacterData Data, string Name)[]             _debugCharList    = System.Array.Empty<(PlayableCharacterData, string)>();
-        private (MissionAsset Data, string AssetName, string DisplayName)[] _debugMissionList = System.Array.Empty<(MissionAsset, string, string)>();
+        // ── 스캔 결과: (에셋, 에셋명, 표시명, 씬명) 튜플 배열 ───────────────────
+        // AssetName = MissionAsset.name        (고유 키, UI isActive 비교용)
+        // DisplayName = strMissionTitle ?? AssetName  (UI 표시용)
+        // SceneName = MissionAsset.strScene    (SceneManager.LoadScene에 넘길 실제 씬명)
+        private (PlayableCharacterData Data, string Name)[]                          _debugCharList    = System.Array.Empty<(PlayableCharacterData, string)>();
+        private (MissionAsset Data, string AssetName, string DisplayName, string SceneName)[] _debugMissionList = System.Array.Empty<(MissionAsset, string, string, string)>();
         private bool _debugScanned = false;
 
         // ── Debug 씬 로드 입력 및 검증 ─────────────────────────────────────────
@@ -54,9 +56,10 @@ namespace BloodshedModToolkit.UI.Tabs
             {
                 _debugSelectedChar            = null;
                 _debugSelectedCharName        = "";
-                _debugSelectedMission         = null;
-                _debugSelectedMissionAssetName = "";
-                _debugSelectedMissionName     = "";
+                _debugSelectedMission           = null;
+                _debugSelectedMissionAssetName  = "";
+                _debugSelectedMissionSceneName  = "";
+                _debugSelectedMissionName       = "";
                 _debugScanned                 = false;
                 _debugMetaChar                = "?";
                 _debugMetaMission             = "?";
@@ -100,9 +103,9 @@ namespace BloodshedModToolkit.UI.Tabs
             // ── META SELECTION ───────────────────────────────────────────────
             ctx.SectionHeader("META SELECTION");
             GUILayout.Label($"SaveSlot: {_debugMetaSaveSlot}", ctx.StSliderName!);
-            // 표시명 + [에셋명] 으로 씬명과의 대응 관계를 명시
-            string missionDisplay = _debugSelectedMissionAssetName.Length > 0
-                ? $"{_debugMetaMission} [{_debugSelectedMissionAssetName}]"
+            // 표시명 + [씬명] 으로 실제 씬 이름 표시
+            string missionDisplay = _debugSelectedMissionSceneName.Length > 0
+                ? $"{_debugMetaMission} [{_debugSelectedMissionSceneName}]"
                 : _debugMetaMission;
             GUILayout.Label($"Mission : {missionDisplay}", ctx.StSliderName!);
             GUILayout.Label($"Char    : {_debugMetaChar}", ctx.StSliderName!);
@@ -148,18 +151,18 @@ namespace BloodshedModToolkit.UI.Tabs
                 ctx.DrawButtonGrid(_debugMissionList, 2,
                     e => e.DisplayName,
                     e => selectedAssetName == e.AssetName,
-                    e => SelectMission(ctx, e.Data, e.AssetName, e.DisplayName));
+                    e => SelectMission(ctx, e.Data, e.AssetName, e.DisplayName, e.SceneName));
             }
 
             // ── MISSION QUICK LOAD ────────────────────────────────────────────
             GUILayout.Space(2);
-            bool hasMission = _debugSelectedMissionAssetName.Length > 0;
+            bool hasMission = _debugSelectedMissionSceneName.Length > 0;
             GUI.enabled = hasMission;
             string quickLoadLabel = hasMission
-                ? $"\u25b6  {_debugSelectedMissionName}  [{_debugSelectedMissionAssetName}]"
+                ? $"\u25b6  {_debugSelectedMissionName}  [{_debugSelectedMissionSceneName}]"
                 : "\u25b6  (미션을 먼저 선택하세요)";
             if (GUILayout.Button(quickLoadLabel, ctx.StActionBtn!))
-                TryLoadScene(ctx, _debugSelectedMissionAssetName);
+                TryLoadScene(ctx, _debugSelectedMissionSceneName);
             GUI.enabled = true;
 
             // ── FORCE SCENE LOAD ─────────────────────────────────────────────
@@ -230,16 +233,15 @@ namespace BloodshedModToolkit.UI.Tabs
 
         /// <summary>
         /// 씬 로드 전 검증.
-        /// 스캔된 미션 목록에서 MissionAsset.name == sceneName 정확 일치로 미션 씬 판정.
-        /// 키워드 추론 없음 — 에셋명이 씬명과 동일한 게임 구조를 직접 활용.
+        /// 스캔된 미션 목록에서 MissionAsset.strScene == sceneName 정확 일치로 미션 씬 판정.
         /// </summary>
         private bool ValidateSceneLoad(string sceneName, out string reason)
         {
-            // 스캔된 미션 중 에셋명이 씬명과 정확히 일치하는 항목 탐색
+            // 스캔된 미션 중 strScene 이 씬명과 정확히 일치하는 항목 탐색
             string? requiredDisplayName = null;
-            foreach (var (_, assetName, displayName) in _debugMissionList)
+            foreach (var (_, _, displayName, sn) in _debugMissionList)
             {
-                if (string.Equals(assetName, sceneName, System.StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(sn, sceneName, System.StringComparison.OrdinalIgnoreCase))
                 {
                     requiredDisplayName = displayName;
                     break;
@@ -274,13 +276,13 @@ namespace BloodshedModToolkit.UI.Tabs
                 return false;
             }
 
-            // ── Mission — 에셋명 정확 일치 ─────────────────────────────────
-            if (!string.Equals(_debugSelectedMissionAssetName, sceneName,
+            // ── Mission — strScene 정확 일치 ───────────────────────────────
+            if (!string.Equals(_debugSelectedMissionSceneName, sceneName,
                     System.StringComparison.OrdinalIgnoreCase))
             {
-                reason = string.IsNullOrEmpty(_debugSelectedMissionAssetName)
+                reason = string.IsNullOrEmpty(_debugSelectedMissionSceneName)
                     ? $"Mission: 미션 미선택\n'{requiredDisplayName}' [{sceneName}] 을(를) MISSION SELECT에서 선택 필요"
-                    : $"Mission 불일치: '{_debugSelectedMissionName}' [{_debugSelectedMissionAssetName}] ≠ '{sceneName}'\n'{requiredDisplayName}' [{sceneName}] 을(를) 선택 필요";
+                    : $"Mission 불일치: '{_debugSelectedMissionName}' [{_debugSelectedMissionSceneName}] ≠ '{sceneName}'\n'{requiredDisplayName}' [{sceneName}] 을(를) 선택 필요";
                 return false;
             }
 
@@ -319,13 +321,13 @@ namespace BloodshedModToolkit.UI.Tabs
         }
 
         /// <summary>
-        /// MissionAsset을 스캔하여 에셋명(= 씬명 키)과 표시명을 캐싱.
+        /// MissionAsset을 스캔하여 에셋명(고유 키), 표시명, 씬명(strScene)을 캐싱.
         /// 이름이 숫자로 시작하는 표준 미션만 포함 (CustomSession_*, DEMO_* 제외).
         /// </summary>
         private void ScanMissions()
         {
             var raw  = ModMenuContext.FindAllAssets<MissionAsset>();
-            var temp = new List<(MissionAsset, string, string)>(raw.Length);
+            var temp = new List<(MissionAsset, string, string, string)>(raw.Length);
             foreach (var m in raw)
             {
                 if (m == null) continue;
@@ -337,14 +339,18 @@ namespace BloodshedModToolkit.UI.Tabs
                 try { displayName = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : assetName; }
                 catch { displayName = assetName; }
 
-                temp.Add((m, assetName, displayName));
+                string sceneName;
+                try { sceneName = !string.IsNullOrEmpty(m.strScene) ? m.strScene : ""; }
+                catch { sceneName = ""; }
+
+                temp.Add((m, assetName, displayName, sceneName));
             }
             _debugMissionList = temp.ToArray();
             Plugin.Log.LogInfo($"[Debug] 미션 스캔: raw={raw.Length} standard={_debugMissionList.Length}");
             if (_debugMissionList.Length > 0)
             {
-                foreach (var (_, a, d) in _debugMissionList)
-                    Plugin.Log.LogDebug($"  mission: assetName='{a}' display='{d}'");
+                foreach (var (_, a, d, sn) in _debugMissionList)
+                    Plugin.Log.LogDebug($"  mission: assetName='{a}' scene='{sn}' display='{d}'");
             }
         }
 
@@ -357,14 +363,15 @@ namespace BloodshedModToolkit.UI.Tabs
             Plugin.Log.LogInfo($"[Debug] 캐릭터 선택: '{name}'");
         }
 
-        private void SelectMission(ModMenuContext ctx, MissionAsset m, string assetName, string displayName)
+        private void SelectMission(ModMenuContext ctx, MissionAsset m, string assetName, string displayName, string sceneName)
         {
             _debugSelectedMission          = m;
             _debugSelectedMissionAssetName = assetName;
+            _debugSelectedMissionSceneName = sceneName;
             _debugSelectedMissionName      = displayName;
             _debugMetaMission              = displayName;
             var ss = ctx.SS(); if (ss != null) ss.selectedMission = m;
-            Plugin.Log.LogInfo($"[Debug] 미션 선택: assetName='{assetName}' display='{displayName}'");
+            Plugin.Log.LogInfo($"[Debug] 미션 선택: assetName='{assetName}' scene='{sceneName}' display='{displayName}'");
         }
 
         private void ApplyDebugSelections(ModMenuContext ctx)
@@ -380,7 +387,7 @@ namespace BloodshedModToolkit.UI.Tabs
             if (_debugSelectedMission != null && ss != null)
             {
                 ss.selectedMission = _debugSelectedMission;
-                Plugin.Log.LogInfo($"[Debug] Apply: mission='{_debugSelectedMissionAssetName}'");
+                Plugin.Log.LogInfo($"[Debug] Apply: mission='{_debugSelectedMissionAssetName}' scene='{_debugSelectedMissionSceneName}'");
             }
         }
     }

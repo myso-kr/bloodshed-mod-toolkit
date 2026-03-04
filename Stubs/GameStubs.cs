@@ -15,6 +15,7 @@ namespace com8com1.SCFPS
     {
         public MissionAsset(IntPtr ptr) : base(ptr) { }
         public string strMissionTitle { get; set; } = "";
+        public string strScene        { get; set; } = "";
         // name 은 UnityEngine.Object 에서 상속
     }
 

@@ -172,3 +172,18 @@ foreach (var t in types.Where(x => x.Name.Contains("Setting", StringComparison.O
                                  || x.Name.Contains("Config", StringComparison.OrdinalIgnoreCase))
                         .OrderBy(x => x.Name))
     DumpType(t, t.Name);
+
+// ════════════════════════════════════════════════════════════════════════════
+// 10. MissionAsset — 씬 이름 필드 조사
+// ════════════════════════════════════════════════════════════════════════════
+var maType = types.FirstOrDefault(x => x.Name == "MissionAsset");
+if (maType != null)
+    DumpType(maType, "MissionAsset — 전체");
+else
+    Console.WriteLine("\n[NOT FOUND] MissionAsset");
+
+// 연관 타입도 검색
+SearchTypes(types, "Mission 타입 목록", new Regex(@"mission|Mission", RegexOptions.IgnoreCase));
+SearchMembers(types, "씬 이름 관련 멤버",
+    new Regex(@"scene|Scene|level|Level|sceneName|sceneToLoad|missionScene|levelScene|buildIndex",
+              RegexOptions.IgnoreCase));
