@@ -12,10 +12,18 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
 
-# Default OG image for pages that don't specify one
+# OG image defaults by domain (more specific scopes override the global fallback)
 defaults:
   - scope:
       path: ""
+    values:
+      image: /bloodshed-mod-toolkit/images/banner_hero.png
+  - scope:
+      path: "features"
+    values:
+      image: /bloodshed-mod-toolkit/images/banner_power.png
+  - scope:
+      path: "overview"
     values:
       image: /bloodshed-mod-toolkit/images/banner_hero.png
 
@@ -28,6 +36,10 @@ social:
   name: myso-kr
   links:
     - https://github.com/myso-kr/bloodshed-mod-toolkit
+
+# Include hidden directories so .well-known is served
+include:
+  - .well-known
 
 # Exclude non-docs files from Jekyll processing
 exclude:

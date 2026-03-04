@@ -1,0 +1,5 @@
+Contact: https://github.com/myso-kr/bloodshed-mod-toolkit/issues
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en, ko, ja, zh
+Canonical: https://myso-kr.github.io/bloodshed-mod-toolkit/.well-known/security.txt
+Policy: https://github.com/myso-kr/bloodshed-mod-toolkit/blob/main/LICENSE

@@ -1,0 +1,34 @@
+# Bloodshed Mod Toolkit
+
+> BepInEx mod for Bloodshed (Unity IL2CPP, Windows x64) — God Mode, 4-player Steam P2P co-op, difficulty tweaks, AI bots. Press F5 in-game to open the menu.
+
+## Overview
+- GitHub: https://github.com/myso-kr/bloodshed-mod-toolkit
+- Steam: https://store.steampowered.com/app/2747550/Bloodshed/
+- License: MIT (© 2024 myso-kr)
+- Game engine: Unity IL2CPP, BepInEx 6.x IL2CPP + HarmonyX
+
+## Features
+- CHEATS: God Mode, Infinite Gems, Infinite Revives, Speed Hack, One-Hit Kill, No Cooldown, No Reload, No Recoil, Perfect Aim, Force Level Up
+- TWEAKS: 5 difficulty presets, 9 balance sliders (enemy speed, spawn count, player HP, etc.)
+- CO-OP: 4-player Steam P2P lobby (invite friends, XP share, mission gate voting, in-game chat)
+- BOTS: Up to 3 AI companion bots per session
+- Hotkeys: F5 toggle, F1/F2/F3/F4 tab switch, F6 God Mode, F7 One-Hit Kill
+
+## Installation
+- Requires: BepInEx 6.x IL2CPP be.697+ for Windows x64
+- Download installer from GitHub Releases and run, OR manually place DLL in BepInEx/plugins/
+- Game path: Steam → Bloodshed → right-click → Manage → Browse local files
+
+## Documentation
+- Overview: https://myso-kr.github.io/bloodshed-mod-toolkit/overview/en/
+- Features: https://myso-kr.github.io/bloodshed-mod-toolkit/features/en/
+- Installation: https://myso-kr.github.io/bloodshed-mod-toolkit/installation/en/
+- Technical Notes: https://myso-kr.github.io/bloodshed-mod-toolkit/technical/en/
+- License: https://myso-kr.github.io/bloodshed-mod-toolkit/license/en/
+
+## Multilingual
+- English: /overview/en/
+- 한국어: /overview/ko/
+- 日本語: /overview/ja/
+- 中文: /overview/zh-CN/

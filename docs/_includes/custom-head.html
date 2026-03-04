@@ -1,10 +1,45 @@
-<!-- hreflang alternate links for multilingual pages -->
-{% assign page_lang = page.path | split: '/' | last | remove: '.md' %}
-{% assign supported_langs = "en,ko,ja,zh-CN" | split: "," %}
-{% if supported_langs contains page_lang %}
-  <link rel="alternate" hreflang="en"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}en/" />
-  <link rel="alternate" hreflang="ko"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}ko/" />
-  <link rel="alternate" hreflang="ja"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}ja/" />
-  <link rel="alternate" hreflang="zh-CN" href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}zh-CN/" />
-  <link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}en/" />
-{% endif %}
+<!--
+  custom-head.html
+  - hreflang alternate links (multilingual)
+  - og:locale + og:locale:alternate
+  - JSON-LD structured data (WebSite / SoftwareApplication / WebPage / BreadcrumbList)
+-->
+
+{%- assign _pl   = page.lang | default: "en" -%}
+{%- assign _up   = page.url  | split: '/' -%}
+{%- assign _dom  = _up[1] -%}
+{%- if _dom == "" or _dom == nil -%}{%- assign _dom = "" -%}{%- endif -%}
+
+{%- assign _base_url = site.url | append: site.baseurl -%}
+{%- assign _canon    = _base_url | append: page.url -%}
+
+{%- comment -%} og:locale map {%- endcomment -%}
+{%- if _pl == "ko" -%}{%- assign _og_locale = "ko_KR" -%}
+{%- elsif _pl == "ja" -%}{%- assign _og_locale = "ja_JP" -%}
+{%- elsif _pl == "zh-CN" -%}{%- assign _og_locale = "zh_CN" -%}
+{%- else -%}{%- assign _og_locale = "en_US" -%}
+{%- endif -%}
+
+<!-- og:locale -->
+<meta property="og:locale" content="{{ _og_locale }}" />
+{%- assign _all_langs     = "en,ko,ja,zh-CN" | split: "," -%}
+{%- assign _all_og_locale = "en_US,ko_KR,ja_JP,zh_CN" | split: "," -%}
+{%- for _l in _all_langs -%}
+  {%- if _l != _pl -%}
+<meta property="og:locale:alternate" content="{{ _all_og_locale[forloop.index0] }}" />
+  {%- endif -%}
+{%- endfor -%}
+
+<!-- hreflang alternate links -->
+{%- assign _supported = "en,ko,ja,zh-CN" | split: "," -%}
+{%- if _dom != "" -%}
+  {%- for _l in _supported -%}
+<link rel="alternate" hreflang="{{ _l }}" href="{{ _base_url }}/{{ _dom }}/{{ _l }}/" />
+  {%- endfor -%}
+<link rel="alternate" hreflang="x-default" href="{{ _base_url }}/{{ _dom }}/en/" />
+{%- else -%}
+<link rel="alternate" hreflang="en"      href="{{ _base_url }}/" />
+<link rel="alternate" hreflang="x-default" href="{{ _base_url }}/" />
+{%- endif -%}
+
+{%- include json-ld.html -%}

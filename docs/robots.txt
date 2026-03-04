@@ -2,3 +2,7 @@ User-agent: *
 Allow: /
 
 Sitemap: https://myso-kr.github.io/bloodshed-mod-toolkit/sitemap.xml
+
+# LLM-friendly summary of this project
+# See: https://llmstxt.org
+llms: https://myso-kr.github.io/bloodshed-mod-toolkit/llms.txt

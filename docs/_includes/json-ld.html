@@ -1,0 +1,139 @@
+<!--
+  json-ld.html — Schema.org structured data
+  Emits multiple JSON-LD blocks (all valid per Google spec):
+    1. WebSite  — every page
+    2. SoftwareApplication — every page (the toolkit itself)
+    3. WebPage + BreadcrumbList — domain pages only
+-->
+
+{%- assign _pl      = page.lang | default: "en" -%}
+{%- assign _up      = page.url  | split: '/' -%}
+{%- assign _dom     = _up[1] -%}
+{%- assign _base    = site.url | append: site.baseurl -%}
+{%- assign _canon   = _base | append: page.url -%}
+
+{%- comment -%} Page OG image (absolute URL) {%- endcomment -%}
+{%- if page.image -%}
+  {%- assign _og_img = page.image | prepend: site.url -%}
+{%- else -%}
+  {%- assign _og_img = "/images/banner_hero.png" | prepend: site.baseurl | prepend: site.url -%}
+{%- endif -%}
+
+{%- comment -%} Domain label for BreadcrumbList {%- endcomment -%}
+{%- if _pl == "ko" -%}
+  {%- assign _dom_labels = "개요,기능,설치,기술 노트,라이선스" | split: "," -%}
+{%- elsif _pl == "ja" -%}
+  {%- assign _dom_labels = "概要,機能,インストール,技術ノート,ライセンス" | split: "," -%}
+{%- elsif _pl == "zh-CN" -%}
+  {%- assign _dom_labels = "概述,功能,安装,技术说明,许可证" | split: "," -%}
+{%- else -%}
+  {%- assign _dom_labels = "Overview,Features,Installation,Technical,License" | split: "," -%}
+{%- endif -%}
+{%- assign _dom_slugs = "overview,features,installation,technical,license" | split: "," -%}
+{%- assign _dom_label = "" -%}
+{%- for _s in _dom_slugs -%}
+  {%- if _s == _dom -%}{%- assign _dom_label = _dom_labels[forloop.index0] -%}{%- endif -%}
+{%- endfor -%}
+
+<!-- JSON-LD: WebSite -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "{{ _base }}/#website",
+  "url": "{{ _base }}/",
+  "name": "{{ site.title }}",
+  "description": {{ site.description | jsonify }},
+  "inLanguage": ["en", "ko", "ja", "zh-CN"],
+  "publisher": {
+    "@type": "Person",
+    "name": "myso-kr",
+    "url": "https://github.com/myso-kr"
+  }
+}
+</script>
+
+<!-- JSON-LD: SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "{{ _base }}/#software",
+  "name": "Bloodshed Mod Toolkit",
+  "description": "BepInEx mod for Bloodshed (Unity IL2CPP) — God Mode, 4-player Steam P2P co-op, difficulty tweaks, AI bots. Windows x64.",
+  "applicationCategory": "Game",
+  "applicationSubCategory": "GameMod",
+  "operatingSystem": "Windows 10, Windows 11",
+  "processorRequirements": "x64",
+  "url": "https://github.com/myso-kr/bloodshed-mod-toolkit",
+  "downloadUrl": "https://github.com/myso-kr/bloodshed-mod-toolkit/releases",
+  "license": "https://opensource.org/licenses/MIT",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "myso-kr",
+    "url": "https://github.com/myso-kr"
+  },
+  "isBasedOn": {
+    "@type": "VideoGame",
+    "name": "Bloodshed",
+    "url": "https://store.steampowered.com/app/2747550/Bloodshed/",
+    "gamePlatform": "Steam"
+  },
+  "image": "{{ _base }}/images/banner_hero.png",
+  "thumbnailUrl": "{{ _base }}/images/steam_card.svg",
+  "inLanguage": ["en", "ko", "ja", "zh-CN"],
+  "isPartOf": {
+    "@id": "{{ _base }}/#website"
+  }
+}
+</script>
+
+{%- if _dom != "" -%}
+<!-- JSON-LD: WebPage -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": "{{ _canon }}#webpage",
+  "url": "{{ _canon }}",
+  "name": {{ page.title | jsonify }},
+  "description": {{ page.description | jsonify }},
+  "inLanguage": "{{ _pl }}",
+  "isPartOf": { "@id": "{{ _base }}/#website" },
+  "about": { "@id": "{{ _base }}/#software" },
+  "image": "{{ _og_img }}",
+  "potentialAction": {
+    "@type": "ReadAction",
+    "target": "{{ _canon }}"
+  }
+}
+</script>
+
+<!-- JSON-LD: BreadcrumbList -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "{{ site.title }}",
+      "item": "{{ _base }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ _dom_label | jsonify }},
+      "item": "{{ _base }}/{{ _dom }}/{{ _pl }}/"
+    }
+  ]
+}
+</script>
+{%- endif -%}
