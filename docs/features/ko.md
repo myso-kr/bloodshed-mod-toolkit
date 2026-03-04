@@ -1,3 +1,12 @@
+---
+title: "기능 — Bloodshed Mod Toolkit"
+description: >-
+  전체 기능 목록: 무적 모드, 무한 젬, 이동속도 배율, Steam 4인 코-업,
+  5가지 난이도 프리셋, 9개 밸런스 슬라이더, AI 봇, 단축키.
+lang: ko
+image: /bloodshed-mod-toolkit/images/banner_power.png
+---
+
 [← 개요](../overview/ko.md) · [설치](../installation/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
 
 **언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)

@@ -1,3 +1,11 @@
+---
+title: "Installation — Bloodshed Mod Toolkit"
+description: >-
+  Install Bloodshed Mod Toolkit: requires BepInEx 6.x IL2CPP be.697+.
+  Pre-built release download or manual DLL placement and build-from-source guide.
+lang: en
+---
+
 [← Overview](../overview/en.md) · [Features](../features/en.md) · [Technical](../technical/en.md) · [License](../license/en.md)
 
 **Language:** **English** · [한국어](ko.md) · [日本語](ja.md) · [中文](zh-CN.md)

@@ -1,3 +1,11 @@
+---
+title: "설치 — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed Mod Toolkit 설치 방법. BepInEx 6.x IL2CPP be.697 이상 필요.
+  빌드된 릴리스 다운로드 또는 DLL 수동 배치 및 소스 빌드 가이드.
+lang: ko
+---
+
 [← 개요](../overview/ko.md) · [기능](../features/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
 
 **언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)

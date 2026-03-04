@@ -1,3 +1,11 @@
+---
+title: "技術ノート — Bloodshed Mod Toolkit"
+description: >-
+  実装詳細: BloodshedのチートとトウィークにつかったHarmonyフック。
+  Co-opとチート使用に関する免責事項。
+lang: ja
+---
+
 [← 概要](../overview/ja.md) · [機能](../features/ja.md) · [インストール](../installation/ja.md) · [ライセンス](../license/ja.md)
 
 **言語:** [English](en.md) · [한국어](ko.md) · **日本語** · [中文](zh-CN.md)

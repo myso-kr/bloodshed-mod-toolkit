@@ -1,3 +1,12 @@
+---
+title: "概要 — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed Modツールキット: 無敵モード、ジェム無限、Steam P2P 4人Co-op、
+  難易度トウィーク、AIボット。F5一発で全部。
+lang: ja
+image: /bloodshed-mod-toolkit/images/banner_hero.png
+---
+
 [機能](../features/ja.md) · [インストール](../installation/ja.md) · [技術ノート](../technical/ja.md) · [ライセンス](../license/ja.md)
 
 **言語:** [English](en.md) · [한국어](ko.md) · **日本語** · [中文](zh-CN.md)
@@ -9,7 +18,7 @@
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../license/ja.md)
 ![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
 [![BepInEx](https://img.shields.io/badge/BepInEx-6.x_IL2CPP-7c3aed?logo=unity&logoColor=white)](https://builds.bepinex.dev/projects/bepinex_be)
 ![CO-OP](https://img.shields.io/badge/CO--OP-4_Players-1b2838?logo=steam&logoColor=white)

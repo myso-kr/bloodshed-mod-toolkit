@@ -1,3 +1,11 @@
+---
+title: "Technical Notes — Bloodshed Mod Toolkit"
+description: >-
+  Implementation details: Harmony hooks used for each cheat and tweak feature in Bloodshed.
+  Disclaimer for co-op and cheat usage.
+lang: en
+---
+
 [← Overview](../overview/en.md) · [Features](../features/en.md) · [Installation](../installation/en.md) · [License](../license/en.md)
 
 **Language:** **English** · [한국어](ko.md) · [日本語](ja.md) · [中文](zh-CN.md)

@@ -1,0 +1,10 @@
+<!-- hreflang alternate links for multilingual pages -->
+{% assign page_lang = page.path | split: '/' | last | remove: '.md' %}
+{% assign supported_langs = "en,ko,ja,zh-CN" | split: "," %}
+{% if supported_langs contains page_lang %}
+  <link rel="alternate" hreflang="en"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}en/" />
+  <link rel="alternate" hreflang="ko"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}ko/" />
+  <link rel="alternate" hreflang="ja"    href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}ja/" />
+  <link rel="alternate" hreflang="zh-CN" href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}zh-CN/" />
+  <link rel="alternate" hreflang="x-default" href="{{ site.url }}{{ site.baseurl }}{{ page.dir }}en/" />
+{% endif %}

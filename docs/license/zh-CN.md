@@ -1,3 +1,9 @@
+---
+title: "许可证 — Bloodshed Mod Toolkit"
+description: Bloodshed Mod Toolkit MIT许可证中文翻译（仅供参考）。
+lang: zh-CN
+---
+
 [← 概述](../overview/zh-CN.md) · [功能](../features/zh-CN.md) · [安装](../installation/zh-CN.md) · [技术说明](../technical/zh-CN.md)
 
 **语言:** [English](en.md) · [한국어](ko.md) · [日本語](ja.md) · **中文**

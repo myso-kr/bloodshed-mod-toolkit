@@ -1,3 +1,11 @@
+---
+title: "기술 노트 — Bloodshed Mod Toolkit"
+description: >-
+  구현 상세: Bloodshed 각 치트 및 트윅 기능에 사용된 Harmony 훅.
+  코-업 및 치트 사용 주의사항.
+lang: ko
+---
+
 [← 개요](../overview/ko.md) · [기능](../features/ko.md) · [설치](../installation/ko.md) · [라이선스](../license/ko.md)
 
 **언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)

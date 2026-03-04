@@ -1,9 +1,17 @@
+---
+title: Bloodshed Mod Toolkit
+description: >-
+  BepInEx mod for Bloodshed (Unity IL2CPP) — cheats, 4-player co-op, tweaks, AI bots.
+  Windows x64. Press F5 in-game.
+lang: en
+---
+
 # Bloodshed Mod Toolkit
 
 [![Bloodshed on Steam](images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](license/en.md)
 ![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
 [![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 

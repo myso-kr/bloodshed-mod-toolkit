@@ -1,3 +1,12 @@
+---
+title: "개요 — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed 모드 툴킷: 무적 모드, 무한 젬, Steam P2P 4인 코-업,
+  난이도 트윅, AI 봇. F5 하나로 전부.
+lang: ko
+image: /bloodshed-mod-toolkit/images/banner_hero.png
+---
+
 [기능](../features/ko.md) · [설치](../installation/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
 
 **언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)
@@ -9,7 +18,7 @@
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../license/ko.md)
 ![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
 [![BepInEx](https://img.shields.io/badge/BepInEx-6.x_IL2CPP-7c3aed?logo=unity&logoColor=white)](https://builds.bepinex.dev/projects/bepinex_be)
 ![CO-OP](https://img.shields.io/badge/CO--OP-4_Players-1b2838?logo=steam&logoColor=white)

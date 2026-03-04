@@ -1,0 +1,37 @@
+title: Bloodshed Mod Toolkit
+description: >-
+  BepInEx mod for Bloodshed (Unity IL2CPP) — God Mode, 4-player Steam P2P co-op,
+  difficulty tweaks, AI bots. Windows x64. Press F5 in-game.
+url: "https://myso-kr.github.io"
+baseurl: "/bloodshed-mod-toolkit"
+lang: en
+
+theme: minima
+permalink: pretty
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Default OG image for pages that don't specify one
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /bloodshed-mod-toolkit/images/banner_hero.png
+
+# Twitter card
+twitter:
+  card: summary_large_image
+
+# Social / author info (used by jekyll-seo-tag)
+social:
+  name: myso-kr
+  links:
+    - https://github.com/myso-kr/bloodshed-mod-toolkit
+
+# Exclude non-docs files from Jekyll processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - "*.gemspec"

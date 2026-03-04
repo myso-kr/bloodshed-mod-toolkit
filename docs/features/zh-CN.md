@@ -1,3 +1,12 @@
+---
+title: "功能 — Bloodshed Mod Toolkit"
+description: >-
+  完整功能列表: 无敌模式、无限宝石、移速倍率、Steam 4人联机、
+  5个难度预设、9个平衡滑块、AI机器人、快捷键。
+lang: zh-CN
+image: /bloodshed-mod-toolkit/images/banner_power.png
+---
+
 [← 概述](../overview/zh-CN.md) · [安装](../installation/zh-CN.md) · [技术说明](../technical/zh-CN.md) · [许可证](../license/zh-CN.md)
 
 **语言:** [English](en.md) · [한국어](ko.md) · [日本語](ja.md) · **中文**

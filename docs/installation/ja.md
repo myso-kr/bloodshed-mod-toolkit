@@ -1,3 +1,11 @@
+---
+title: "インストール — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed Mod Toolkitのインストール方法。BepInEx 6.x IL2CPP be.697以降が必要。
+  ビルド済みリリースまたは手動DLL配置・ソースビルドガイド。
+lang: ja
+---
+
 [← 概要](../overview/ja.md) · [機能](../features/ja.md) · [技術ノート](../technical/ja.md) · [ライセンス](../license/ja.md)
 
 **言語:** [English](en.md) · [한국어](ko.md) · **日本語** · [中文](zh-CN.md)

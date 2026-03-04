@@ -1,3 +1,12 @@
+---
+title: "Overview — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed mod toolkit: God Mode, infinite gems, 4-player Steam P2P co-op,
+  difficulty tweaks, AI bots. All in one F5 keypress.
+lang: en
+image: /bloodshed-mod-toolkit/images/banner_hero.png
+---
+
 [Features](../features/en.md) · [Installation](../installation/en.md) · [Technical](../technical/en.md) · [License](../license/en.md)
 
 **Language:** **English** · [한국어](ko.md) · [日本語](ja.md) · [中文](zh-CN.md)
@@ -9,7 +18,7 @@
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../license/en.md)
 ![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
 [![BepInEx](https://img.shields.io/badge/BepInEx-6.x_IL2CPP-7c3aed?logo=unity&logoColor=white)](https://builds.bepinex.dev/projects/bepinex_be)
 ![CO-OP](https://img.shields.io/badge/CO--OP-4_Players-1b2838?logo=steam&logoColor=white)

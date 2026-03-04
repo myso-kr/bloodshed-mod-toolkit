@@ -1,3 +1,12 @@
+---
+title: "概述 — Bloodshed Mod Toolkit"
+description: >-
+  Bloodshed Mod工具集: 无敌模式、无限宝石、Steam P2P 4人联机、
+  难度调整、AI机器人。一键F5全搞定。
+lang: zh-CN
+image: /bloodshed-mod-toolkit/images/banner_hero.png
+---
+
 [功能](../features/zh-CN.md) · [安装](../installation/zh-CN.md) · [技术说明](../technical/zh-CN.md) · [许可证](../license/zh-CN.md)
 
 **语言:** [English](en.md) · [한국어](ko.md) · [日本語](ja.md) · **中文**
@@ -9,7 +18,7 @@
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../license/zh-CN.md)
 ![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
 [![BepInEx](https://img.shields.io/badge/BepInEx-6.x_IL2CPP-7c3aed?logo=unity&logoColor=white)](https://builds.bepinex.dev/projects/bepinex_be)
 ![CO-OP](https://img.shields.io/badge/CO--OP-4_Players-1b2838?logo=steam&logoColor=white)

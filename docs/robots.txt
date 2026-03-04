@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://myso-kr.github.io/bloodshed-mod-toolkit/sitemap.xml
