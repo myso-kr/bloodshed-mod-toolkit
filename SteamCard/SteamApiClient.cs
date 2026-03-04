@@ -121,7 +121,8 @@ public sealed class SteamApiClient : IDisposable
     /// </summary>
     public async Task<byte[]> DownloadCapsuleSmallAsync(CancellationToken ct = default)
     {
-        foreach (var filename in new[] { "capsule_184x69.jpg", "library_hero.jpg", "header.jpg" })
+        // library_hero.jpg (3840×1240) 는 base64 임베드 시 수 MB로 SVG가 비대해지므로 제외
+        foreach (var filename in new[] { "capsule_184x69.jpg", "header.jpg" })
         {
             var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/{filename}";
             try

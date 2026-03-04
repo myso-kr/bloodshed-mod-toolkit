@@ -13,7 +13,7 @@ string? explicitPath = args.FirstOrDefault(a => !a.StartsWith("--"));
 
 string repoRoot   = ResolveRepoRoot();
 string outputPath = explicitPath
-    ?? Path.Combine(repoRoot, "docs", "images", "steam_card.png");
+    ?? Path.Combine(repoRoot, "docs", "images", "steam_card.svg");
 
 if (!force && File.Exists(outputPath))
 {

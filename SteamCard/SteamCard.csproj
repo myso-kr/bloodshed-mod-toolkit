@@ -10,8 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- PNG 렌더링 -->
-    <PackageReference Include="SixLabors.ImageSharp"         Version="3.1.5" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+    <!-- 텍스트 레이아웃 측정 전용 (SVG 렌더링은 브라우저가 담당) -->
+    <PackageReference Include="SixLabors.Fonts" Version="2.1.0" />
   </ItemGroup>
 </Project>

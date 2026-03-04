@@ -1,282 +1,284 @@
+using System.Text;
 using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace SteamCard;
 
 /// <summary>
-/// 646×190 Steam 위젯 iframe 픽셀 정확도 복원 렌더러.
+/// Steam 위젯 (646×190) 을 SVG로 재현합니다.
+/// - 캡슐 이미지는 base64 data URI로 임베드 → CORS 없음
+/// - 텍스트 레이아웃 계산에만 SixLabors.Fonts 사용
+/// - 실제 텍스트 렌더링은 브라우저 SVG 엔진 → 폰트 메트릭 100% 정확
 ///
-/// 측정값 출처: styles_widget.css + store.css
-///
-/// 위젯 레이아웃:
-///   #widget: height=146px (content-box) + padding=10px 15px → DOM total=166px
-///   .header_container h1: line-height=28px  → y=10..38
-///   .desc: margin=10px 10px 0 0           → y=48..
-///   .capsule (float:left): margin=2px 10px 10px 0 → x=15, y=50, w=184, h=69
-///   .desc text:                            → x=209, y=48, maxW=412
-///   .game_area_purchase_platform: absolute, bottom=13px left=15px → y_bot=153
-///   .game_purchase_action: absolute, bottom=-20px, right=10px
-///     → container y=150..186, h=36 (32 content + 4 padding)
-///     → blocks (pct/prices/btn) y=152, h=32
+/// 레이아웃 출처: styles_widget.css + store.css
 /// </summary>
 public static class CardRenderer
 {
-    // ── 캔버스 ────────────────────────────────────────────────────────────────
+    // ── 캔버스 크기 ────────────────────────────────────────────────────────────
     private const int W = 646;
-    private const int H = 190;   // iframe 전체 높이
+    private const int H = 190;
 
-    // ── 위젯 레이아웃 (styles_widget.css 정확 수치) ───────────────────────────
-    // #widget: height=146px content-box, padding=10px 15px → DOM h=166
-    private const float WidgetH     = 166f;  // 146 + 10×2
-    private const float PadH        = 15f;   // 좌우 패딩
-    private const float PadV        = 10f;   // 상하 패딩
-    private const float HeaderH     = 28f;   // h1 line-height
-    private const float CapsW       = 184f;
-    private const float CapsH       = 69f;
-    private const float CapsMargTop = 2f;    // capsule margin-top (within .desc)
-    private const float CapsMargRt  = 10f;   // capsule margin-right
+    // ── 위젯 레이아웃 상수 (styles_widget.css) ─────────────────────────────────
+    // #widget: height=146px content-box, padding=10px 15px → DOM h=166px
+    private const float WidgetH    = 166f;
+    private const float PadH       = 15f;   // 좌우 패딩
+    private const float PadV       = 10f;   // 상하 패딩
+    private const float HeaderH    = 28f;   // h1 line-height
 
-    // 파생 위치
-    // .desc: margin-top=10px → y = PadV + HeaderH + 10 = 48
-    private const float DescY    = PadV + HeaderH + 10f;        // 48
-    private const float CapsX    = PadH;                        // 15
-    private const float CapsY    = DescY + CapsMargTop;         // 50
-    private const float TextX    = CapsX + CapsW + CapsMargRt;  // 209
-    // .desc margin-right=10px → desc ends at W-PadH-10=621 → textW=621-209=412
-    private const float TextW    = W - PadH - 10f - TextX;      // 412
+    // .capsule: float:left, margin=2px 10px 10px 0, w=184, h=69
+    private const float CapsW      = 184f;
+    private const float CapsH      = 69f;
 
-    // 플랫폼 아이콘: position=absolute, bottom=13px, left=15px
-    // y_bottom = WidgetH - 13 = 153
-    private const float PlatIconBotY = WidgetH - 13f;           // 153
+    // .desc: margin-top=10px → y=48; capsule margin-top=2px → capsule y=50
+    private const float DescY      = PadV + HeaderH + 10f;          // 48
+    private const float CapsX      = PadH;                           // 15
+    private const float CapsY      = DescY + 2f;                     // 50
+    private const float TextX      = CapsX + CapsW + 10f;           // 209
+    private const float TextW      = W - PadH - 10f - TextX;        // 412
 
-    // 구매 영역: .game_purchase_action bottom=-20px, right=10px
-    // → element bottom = WidgetH + 20 = 186
-    // → .game_purchase_action_bg: height=32 content + padding=2px 2px 2px 0 → total=36px
-    // → container top = 186 - 36 = 150
-    // → blocks inside (after top padding 2px): y=152, h=32
-    // → right edge of container = W - 10 = 636
-    // → right edge of content (after right padding 2px) = 634
+    // .game_area_purchase_platform: absolute, bottom=13px, left=15px
+    private const float PlatIconBotY = WidgetH - 13f;               // 153
+
+    // .game_purchase_action: absolute, bottom=-20px, right=10px
+    //   → element bottom = WidgetH + 20 = 186
+    //   → .game_purchase_action_bg: h=32 content + padding=2 2 2 0 → total=36
+    //   → container top = 186 - 36 = 150
+    //   → blocks y=152 (top+2pad), h=32
+    //   → content right = W-10-2 = 634
     private const float PurchContY      = 150f;
     private const float PurchContH      = 36f;
     private const float PurchBlockY     = 152f;
     private const float PurchBlockH     = 32f;
-    private const float PurchContRight  = 636f;  // W - 10
-    private const float PurchBlockRight = 634f;  // 636 - 2 (right pad)
+    private const float PurchBlockMid   = PurchBlockY + PurchBlockH / 2f;  // 168
+    private const float PurchBlockRight = 634f;
 
-    // ── 정확한 색상 (styles_widget.css + store.css) ───────────────────────────
-    private static readonly Color BgStart      = Color.ParseHex("#3b4351");
-    private static readonly Color BgEnd        = Color.ParseHex("#282e39");
-    private static readonly Color BorderClr    = Color.ParseHex("#424c5c");
-    private static readonly Color TitleClr     = Color.ParseHex("#fefefe");
-    private static readonly Color OnSteamClr   = Color.ParseHex("#9e9e9e");
-    private static readonly Color DescClr      = Color.ParseHex("#c9c9c9");
-    private static readonly Color DiscPctBg    = Color.ParseHex("#4c6b22");
-    private static readonly Color DiscPctFg    = Color.ParseHex("#BEEE11");
-    private static readonly Color DiscPriceBg  = Color.ParseHex("#344654");
-    private static readonly Color OrigPriceClr = Color.ParseHex("#738895");
-    private static readonly Color FinPriceClr  = Color.ParseHex("#BEEE11");
-    private static readonly Color PurchBg      = Color.ParseHex("#000000");
-    private static readonly Color CartBgL      = Color.ParseHex("#6fa720");
-    private static readonly Color CartBgR      = Color.ParseHex("#588a1b");
-    private static readonly Color CartFg       = Color.ParseHex("#d2efa9");
-    private static readonly Color PlatClr      = Color.ParseHex("#a8a8a8");
-
+    // ── 공개 API ───────────────────────────────────────────────────────────────
     public static async Task RenderAsync(
         SteamGameData data,
         byte[]        capsuleBytes,
         string        outputPath,
         CancellationToken ct = default)
     {
-        FontFamily ff = ResolveFont();
-        using var card = new Image<Rgba32>(W, H);
+        var ff          = ResolveFont();
+        var capsBase64  = Convert.ToBase64String(capsuleBytes);
 
-        card.Mutate(ctx =>
-        {
-            // ── 1. 배경 그라디언트 (위젯 영역 y=0..166만) ────────────────────
-            // CSS: linear-gradient(130deg, #3b4351, #282e39)
-            // 130deg ≈ top-left → bottom-right 대각선
-            ctx.Fill(
-                new LinearGradientBrush(
-                    new PointF(0, 0), new PointF(W, WidgetH),
-                    GradientRepetitionMode.None,
-                    new ColorStop(0f, BgStart),
-                    new ColorStop(1f, BgEnd)),
-                new RectangleF(0, 0, W, WidgetH));
-            // y=166..190 은 iframe 배경색 (투명 유지)
-
-            // ── 2. 테두리 (border-top + border-left, 1px #424c5c) ─────────────
-            ctx.Fill(BorderClr, new RectangleF(0, 0, W, 1));
-            ctx.Fill(BorderClr, new RectangleF(0, 0, 1, WidgetH));
-
-            // ── 3. 헤더: "Buy [Name]" #fefefe + " on Steam" #9e9e9e, 21px ─────
-            // h1: font-size=21px, font-weight=normal, display=inline-block, line-height=28px
-            // h1.main_text: color=#fefefe, max-width=425px (ellipsis)
-            // h1.tail em: color=#9e9e9e, font-weight=300 (Light)
-            var titleFont = ff.CreateFont(21, FontStyle.Regular);
-            string buyText = $"Buy {data.Name}";
-            // max-width: 425px → truncate if needed
-            var buySize = TextMeasurer.MeasureSize(buyText, new TextOptions(titleFont));
-            while (buySize.Width > 425f && buyText.Length > 7)
-            {
-                buyText  = buyText[..^4] + "...";
-                buySize  = TextMeasurer.MeasureSize(buyText, new TextOptions(titleFont));
-            }
-            ctx.DrawText(buyText,     titleFont, TitleClr,   new PointF(PadH, PadV));
-            ctx.DrawText(" on Steam", titleFont, OnSteamClr, new PointF(PadH + buySize.Width, PadV));
-
-            // ── 4. 캡슐 이미지 (184×69, float:left, margin=2px 10px 10px 0) ──
-            using var cimg = Image.Load<Rgba32>(new MemoryStream(capsuleBytes));
-            float sc = Math.Max(CapsW / cimg.Width, CapsH / cimg.Height);
-            int   sw = (int)Math.Ceiling(cimg.Width  * sc);
-            int   sh = (int)Math.Ceiling(cimg.Height * sc);
-            cimg.Mutate(c => c.Resize(sw, sh));
-            int cropX = (sw - (int)CapsW) / 2;
-            int cropY = (sh - (int)CapsH) / 2;
-            if (sw > (int)CapsW || sh > (int)CapsH)
-                cimg.Mutate(c => c.Crop(new Rectangle(cropX, cropY, (int)CapsW, (int)CapsH)));
-            ctx.DrawImage(cimg, new Point((int)CapsX, (int)CapsY), 1f);
-
-            // ── 5. 설명 텍스트 (.desc, 13px #c9c9c9, line-height 16px) ────────
-            var descFont = ff.CreateFont(13, FontStyle.Regular);
-            ctx.DrawText(
-                new RichTextOptions(descFont)
-                {
-                    Origin         = new PointF(TextX, DescY),
-                    WrappingLength = TextW,
-                    LineSpacing    = 16f / 13f,   // line-height: 16px ÷ font-size: 13px
-                },
-                data.ShortDescription, DescClr);
-
-            // ── 6. 플랫폼 아이콘 (absolute bottom=13, left=15) ────────────────
-            // Windows 4-square 아이콘 (11×11px total: sq=5, gap=1)
-            const float sq = 5f, gap = 1f, iconH = sq + gap + sq;  // 11px
-            float iconTop = PlatIconBotY - iconH;                   // 153 - 11 = 142
-            ctx.Fill(PlatClr, new RectangleF(PadH,            iconTop,       sq, sq));
-            ctx.Fill(PlatClr, new RectangleF(PadH + sq + gap, iconTop,       sq, sq));
-            ctx.Fill(PlatClr, new RectangleF(PadH,            iconTop+sq+gap, sq, sq));
-            ctx.Fill(PlatClr, new RectangleF(PadH + sq + gap, iconTop+sq+gap, sq, sq));
-
-            // ── 7. 구매 영역 ───────────────────────────────────────────────────
-            RenderPurchaseArea(ctx, ff, data);
-        });
+        var sb = new StringBuilder(64_000);
+        BuildSvg(sb, ff, data, capsBase64);
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
-        await card.SaveAsPngAsync(outputPath, ct);
+        await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, ct);
     }
 
-    // ── 구매 영역 (.game_purchase_action_bg + 자식들) ─────────────────────────
-    private static void RenderPurchaseArea(
-        IImageProcessingContext ctx, FontFamily ff,
-        SteamGameData data)
+    // ── SVG 빌더 ───────────────────────────────────────────────────────────────
+    private static void BuildSvg(
+        StringBuilder sb, FontFamily ff,
+        SteamGameData data, string capsBase64)
     {
-        // Buy on Steam 버튼: font-size=14px, padding=0 11px, line-height=32px
-        const string btnLabel = "Buy on Steam";
-        var  btnFont  = ff.CreateFont(14, FontStyle.Regular);
-        var  btnTSize = TextMeasurer.MeasureSize(btnLabel, new TextOptions(btnFont));
-        float btnW    = btnTSize.Width + 22f;   // 11px × 2
+        // 구매 영역 레이아웃을 먼저 계산 (btnGrad의 x 좌표에 필요)
+        var pu = CalcPurchase(ff, data);
 
-        float totalW, startX;
+        // ── SVG 루트 ──────────────────────────────────────────────────────────
+        sb.AppendLine($"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">""");
+
+        // ── defs ──────────────────────────────────────────────────────────────
+        sb.AppendLine("  <defs>");
+
+        // 배경 그라디언트 — CSS: linear-gradient(130deg, #3b4351, #282e39)
+        // SVG userSpaceOnUse: 방향 벡터 sin(130°)=0.766, -cos(130°)=0.643
+        // 중심(323,83)에서 ±340 떨어진 두 점
+        sb.AppendLine("""    <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="63" y1="-135" x2="583" y2="301">""");
+        sb.AppendLine("""      <stop offset="0%" stop-color="#3b4351"/>""");
+        sb.AppendLine("""      <stop offset="100%" stop-color="#282e39"/>""");
+        sb.AppendLine("    </linearGradient>");
+
+        // 버튼 그라디언트 — CSS: linear-gradient(to right, #6fa720 5%, #588a1b 95%)
+        sb.AppendLine($"""    <linearGradient id="btn" gradientUnits="userSpaceOnUse" x1="{pu.BtnX:F0}" y1="0" x2="{pu.BtnX + pu.BtnW:F0}" y2="0">""");
+        sb.AppendLine("""      <stop offset="5%" stop-color="#6fa720"/>""");
+        sb.AppendLine("""      <stop offset="95%" stop-color="#588a1b"/>""");
+        sb.AppendLine("    </linearGradient>");
+
+        // 캡슐 이미지 클립패스
+        sb.AppendLine($"""    <clipPath id="cap"><rect x="{CapsX:F0}" y="{CapsY:F0}" width="{CapsW:F0}" height="{CapsH:F0}"/></clipPath>""");
+
+        sb.AppendLine("  </defs>");
+
+        // ── 배경 + 테두리 (border-top, border-left 각 1px) ────────────────────
+        sb.AppendLine($"""  <rect width="{W}" height="{WidgetH:F0}" fill="url(#bg)"/>""");
+        sb.AppendLine($"""  <rect width="{W}" height="1" fill="#424c5c"/>""");
+        sb.AppendLine($"""  <rect width="1" height="{WidgetH:F0}" fill="#424c5c"/>""");
+
+        // ── 헤더: "Buy [Name]" #fefefe + " on Steam" #9e9e9e ─────────────────
+        // h1: font-size=21px, line-height=28px, .header_tail: font-weight=300
+        string buyText = TruncateText($"Buy {data.Name}", ff, 21, FontStyle.Regular, 425f);
+        sb.AppendLine($"""  <text x="{PadH:F0}" y="{PadV:F0}" font-family="Segoe UI, Arial, sans-serif" font-size="21" dominant-baseline="hanging"><tspan fill="#fefefe">{Enc(buyText)}</tspan><tspan fill="#9e9e9e" font-weight="300"> on Steam</tspan></text>""");
+
+        // ── 캡슐 이미지 (cover/crop: preserveAspectRatio=xMidYMid slice) ──────
+        sb.AppendLine($"""  <image x="{CapsX:F0}" y="{CapsY:F0}" width="{CapsW:F0}" height="{CapsH:F0}" href="data:image/jpeg;base64,{capsBase64}" preserveAspectRatio="xMidYMid slice" clip-path="url(#cap)"/>""");
+
+        // ── 설명 텍스트 (word-wrapped, 13px, line-height=16px) ────────────────
+        var lines = WrapText(data.ShortDescription, ff, 13, FontStyle.Regular, TextW);
+        // 플랫폼 아이콘 위까지만 표시
+        int maxLines = (int)Math.Floor((PlatIconBotY - 11f - DescY) / 16f);
+        if (lines.Count > maxLines) lines = lines.Take(maxLines).ToList();
+
+        if (lines.Count > 0)
+        {
+            sb.AppendLine("""  <text font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#c9c9c9" dominant-baseline="hanging">""");
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (i == 0)
+                    sb.AppendLine($"""    <tspan x="{TextX:F0}" y="{DescY:F0}">{Enc(lines[i])}</tspan>""");
+                else
+                    sb.AppendLine($"""    <tspan x="{TextX:F0}" dy="16">{Enc(lines[i])}</tspan>""");
+            }
+            sb.AppendLine("  </text>");
+        }
+
+        // ── 플랫폼 아이콘 (Windows 4-square, bottom=13px → top=142) ──────────
+        float it = PlatIconBotY - 11f;  // 142
+        sb.AppendLine($"""  <rect x="{PadH:F0}"       y="{it:F0}"     width="5" height="5" fill="#a8a8a8"/>""");
+        sb.AppendLine($"""  <rect x="{PadH + 6f:F0}"  y="{it:F0}"     width="5" height="5" fill="#a8a8a8"/>""");
+        sb.AppendLine($"""  <rect x="{PadH:F0}"       y="{it + 6f:F0}" width="5" height="5" fill="#a8a8a8"/>""");
+        sb.AppendLine($"""  <rect x="{PadH + 6f:F0}"  y="{it + 6f:F0}" width="5" height="5" fill="#a8a8a8"/>""");
+
+        // ── 구매 영역 ─────────────────────────────────────────────────────────
+        BuildPurchaseSvg(sb, data, pu);
+
+        sb.AppendLine("</svg>");
+    }
+
+    // ── 구매 영역 레이아웃 계산 ────────────────────────────────────────────────
+    private record PurchaseLayout(
+        float StartX, float TotalW,
+        float BtnX,    float BtnW,
+        float PctX,    float PctW,
+        float PricesX, float PricesW,
+        bool  HasDiscount);
+
+    private static PurchaseLayout CalcPurchase(FontFamily ff, SteamGameData data)
+    {
+        var   btnFont = ff.CreateFont(14, FontStyle.Regular);
+        float btnTW   = TextMeasurer.MeasureSize("Buy on Steam", new TextOptions(btnFont)).Width;
+        float btnW    = btnTW + 22f;  // padding: 0 11px
 
         if (data.DiscountPct > 0)
         {
-            // ── discount_pct: font-size=25px, font-weight=500, padding=0 6px, h=32 ──
             string pctLabel = $"-{data.DiscountPct}%";
             var    pctFont  = ff.CreateFont(25, FontStyle.Bold);
-            var    pctTSize = TextMeasurer.MeasureSize(pctLabel, new TextOptions(pctFont));
-            float  pctW     = pctTSize.Width + 12f;   // 6px × 2
+            float  pctTW    = TextMeasurer.MeasureSize(pctLabel, new TextOptions(pctFont)).Width;
+            float  pctW     = pctTW + 12f;  // padding: 0 6px
 
-            // ── discount_prices: justify-content=center, align-items=end ─────
-            // original: font-size=11px, line-height=12px, color=#738895
-            // final:    font-size=15px, line-height=16px, color=#BEEE11  (store.css)
-            var  origFont  = ff.CreateFont(11, FontStyle.Regular);
-            var  finFont   = ff.CreateFont(15, FontStyle.Regular);
-            var  origTSize = TextMeasurer.MeasureSize(data.OriginalPrice, new TextOptions(origFont));
-            var  finTSize  = TextMeasurer.MeasureSize(data.Price,         new TextOptions(finFont));
-            // prices block width: 4px left-pad + max content + 8px right-pad
-            float pricesContentW = Math.Max(origTSize.Width, finTSize.Width);
-            float pricesW        = 4f + pricesContentW + 8f;
+            var   origFont = ff.CreateFont(11, FontStyle.Regular);
+            var   finFont  = ff.CreateFont(15, FontStyle.Regular);
+            float origTW   = TextMeasurer.MeasureSize(data.OriginalPrice, new TextOptions(origFont)).Width;
+            float finTW    = TextMeasurer.MeasureSize(data.Price,         new TextOptions(finFont)).Width;
+            float pricesW  = 4f + MathF.Max(origTW, finTW) + 8f;  // 4px left + content + 8px right
 
-            totalW = pctW + pricesW + btnW;
-            startX = PurchBlockRight - totalW;
-
-            // 흑색 컨테이너 (.game_purchase_action_bg: bg=#000, padding=2 2 2 0)
-            ctx.Fill(PurchBg,
-                new RectangleF(startX, PurchContY, totalW + 2f, PurchContH));
-
-            // discount_pct 블록 (bg=#4c6b22, color=#BEEE11)
-            float pctX = startX;
-            ctx.Fill(DiscPctBg, new RectangleF(pctX, PurchBlockY, pctW, PurchBlockH));
-            // line-height: 32px → text vertically centered
-            float pctTextY = PurchBlockY + (PurchBlockH - pctTSize.Height) / 2f;
-            ctx.DrawText(pctLabel, pctFont, DiscPctFg, new PointF(pctX + 6f, pctTextY));
-
-            // discount_prices 블록 (bg=#344654)
-            float pricesX = pctX + pctW;
-            ctx.Fill(DiscPriceBg, new RectangleF(pricesX, PurchBlockY, pricesW, PurchBlockH));
-            // justify-content: center → 두 줄 합계 높이를 32px 내 수직 중앙
-            float lineBlock = 12f + 16f;   // orig line-height + final line-height = 28px
-            float lineTopY  = PurchBlockY + (PurchBlockH - lineBlock) / 2f;  // 2px offset
-            // align-items: end → 우측 정렬 (prices block 오른쪽 - right-pad)
-            float origX = pricesX + pricesW - 8f - origTSize.Width;
-            float finX  = pricesX + pricesW - 8f - finTSize.Width;
-            ctx.DrawText(data.OriginalPrice, origFont, OrigPriceClr, new PointF(origX, lineTopY));
-            // 취소선 (::before border-bottom, skewY 생략 → 수평선으로 대체)
-            ctx.Fill(OrigPriceClr,
-                new RectangleF(origX, lineTopY + 6f - 0.75f, origTSize.Width, 1.5f));
-            ctx.DrawText(data.Price, finFont, FinPriceClr, new PointF(finX, lineTopY + 12f));
-
-            // Buy on Steam 버튼
-            float btnX = pricesX + pricesW;
-            RenderBuyButton(ctx, ff, btnFont, btnLabel, btnX, btnW);
+            float totalW = pctW + pricesW + btnW;
+            float startX = PurchBlockRight - totalW;
+            return new PurchaseLayout(
+                startX, totalW,
+                startX + pctW + pricesW, btnW,
+                startX, pctW,
+                startX + pctW, pricesW,
+                true);
         }
         else
         {
-            // 할인 없음: 가격 표시 + 버튼
-            var  priceFont  = ff.CreateFont(15, FontStyle.Regular);
-            var  priceTSize = TextMeasurer.MeasureSize(data.Price, new TextOptions(priceFont));
-            float priceW    = priceTSize.Width + 16f;
-            totalW = priceW + btnW;
-            startX = PurchBlockRight - totalW;
-
-            ctx.Fill(PurchBg,
-                new RectangleF(startX, PurchContY, totalW + 2f, PurchContH));
-            ctx.Fill(DiscPriceBg,
-                new RectangleF(startX, PurchBlockY, priceW, PurchBlockH));
-
-            float priceTextY = PurchBlockY + (PurchBlockH - priceTSize.Height) / 2f;
-            ctx.DrawText(data.Price, priceFont, FinPriceClr,
-                new PointF(startX + 8f, priceTextY));
-
-            RenderBuyButton(ctx, ff, btnFont, btnLabel, startX + priceW, btnW);
+            var   priceFont = ff.CreateFont(15, FontStyle.Regular);
+            float priceTW   = TextMeasurer.MeasureSize(data.Price, new TextOptions(priceFont)).Width;
+            float priceW    = priceTW + 16f;  // padding: 0 8px
+            float totalW    = priceW + btnW;
+            float startX    = PurchBlockRight - totalW;
+            return new PurchaseLayout(
+                startX, totalW,
+                startX + priceW, btnW,
+                0f, 0f,
+                startX, priceW,
+                false);
         }
     }
 
-    private static void RenderBuyButton(
-        IImageProcessingContext ctx, FontFamily ff,
-        Font btnFont, string label,
-        float x, float w)
+    // ── 구매 영역 SVG 출력 ────────────────────────────────────────────────────
+    private static void BuildPurchaseSvg(
+        StringBuilder sb, SteamGameData data, PurchaseLayout pu)
     {
-        // linear-gradient(to right, #6fa720 5%, #588a1b 95%)
-        ctx.Fill(
-            new LinearGradientBrush(
-                new PointF(x, PurchBlockY), new PointF(x + w, PurchBlockY),
-                GradientRepetitionMode.None,
-                new ColorStop(0.05f, CartBgL),
-                new ColorStop(0.95f, CartBgR)),
-            new RectangleF(x, PurchBlockY, w, PurchBlockH));
+        // 검정 컨테이너 (.game_purchase_action_bg)
+        sb.AppendLine($"""  <rect x="{pu.StartX:F0}" y="{PurchContY:F0}" width="{pu.TotalW + 2f:F0}" height="{PurchContH:F0}" fill="#000"/>""");
 
-        ctx.DrawText(
-            new RichTextOptions(btnFont)
-            {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center,
-                Origin = new PointF(x + w / 2f, PurchBlockY + PurchBlockH / 2f),
-            },
-            label, CartFg);
+        if (pu.HasDiscount)
+        {
+            // 할인율 블록 (bg=#4c6b22, fg=#BEEE11, 25px bold)
+            sb.AppendLine($"""  <rect x="{pu.PctX:F0}" y="{PurchBlockY:F0}" width="{pu.PctW:F0}" height="{PurchBlockH:F0}" fill="#4c6b22"/>""");
+            sb.AppendLine($"""  <text x="{pu.PctX + pu.PctW / 2f:F0}" y="{PurchBlockMid:F0}" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="bold" fill="#BEEE11">-{data.DiscountPct}%</text>""");
+
+            // 가격 블록 (bg=#344654)
+            // 두 줄 (orig 11px line-height=12, final 15px line-height=16) 합=28px
+            // 수직 중앙: lineTopY = 152 + (32-28)/2 = 154
+            float lineTopY = PurchBlockY + (PurchBlockH - 28f) / 2f;  // 154
+            float rightX   = pu.PricesX + pu.PricesW - 8f;
+
+            sb.AppendLine($"""  <rect x="{pu.PricesX:F0}" y="{PurchBlockY:F0}" width="{pu.PricesW:F0}" height="{PurchBlockH:F0}" fill="#344654"/>""");
+            // 원래 가격 (취소선, 11px, #738895)
+            sb.AppendLine($"""  <text x="{rightX:F0}" y="{lineTopY:F0}" text-anchor="end" dominant-baseline="hanging" font-family="Segoe UI, Arial, sans-serif" font-size="11" fill="#738895" text-decoration="line-through">{Enc(data.OriginalPrice)}</text>""");
+            // 최종 가격 (15px, #BEEE11)
+            sb.AppendLine($"""  <text x="{rightX:F0}" y="{lineTopY + 12f:F0}" text-anchor="end" dominant-baseline="hanging" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#BEEE11">{Enc(data.Price)}</text>""");
+        }
+        else
+        {
+            // 할인 없음: 가격 블록 (bg=#344654, 15px, #BEEE11, 수직 중앙)
+            sb.AppendLine($"""  <rect x="{pu.PricesX:F0}" y="{PurchBlockY:F0}" width="{pu.PricesW:F0}" height="{PurchBlockH:F0}" fill="#344654"/>""");
+            sb.AppendLine($"""  <text x="{pu.PricesX + pu.PricesW / 2f:F0}" y="{PurchBlockMid:F0}" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#BEEE11">{Enc(data.Price)}</text>""");
+        }
+
+        // Buy on Steam 버튼 (gradient, 14px, #d2efa9)
+        sb.AppendLine($"""  <rect x="{pu.BtnX:F0}" y="{PurchBlockY:F0}" width="{pu.BtnW:F0}" height="{PurchBlockH:F0}" fill="url(#btn)"/>""");
+        sb.AppendLine($"""  <text x="{pu.BtnX + pu.BtnW / 2f:F0}" y="{PurchBlockMid:F0}" text-anchor="middle" dominant-baseline="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" fill="#d2efa9">Buy on Steam</text>""");
     }
+
+    // ── 텍스트 유틸리티 ────────────────────────────────────────────────────────
+
+    /// <summary>텍스트가 maxWidth 초과 시 뒤에서 ... 로 잘라냅니다.</summary>
+    private static string TruncateText(
+        string text, FontFamily ff, float size, FontStyle style, float maxWidth)
+    {
+        var font = ff.CreateFont(size, style);
+        var opts = new TextOptions(font);
+        while (TextMeasurer.MeasureSize(text, opts).Width > maxWidth && text.Length > 4)
+            text = text[..^4] + "...";
+        return text;
+    }
+
+    /// <summary>단어 단위 줄바꿈 — 각 줄을 List로 반환합니다.</summary>
+    private static List<string> WrapText(
+        string text, FontFamily ff, float size, FontStyle style, float maxWidth)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return [];
+
+        var font  = ff.CreateFont(size, style);
+        var opts  = new TextOptions(font);
+        var lines = new List<string>();
+        var cur   = new StringBuilder();
+
+        foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string test = cur.Length == 0 ? word : cur + " " + word;
+            if (cur.Length > 0 && TextMeasurer.MeasureSize(test, opts).Width > maxWidth)
+            {
+                lines.Add(cur.ToString());
+                cur.Clear();
+            }
+            if (cur.Length > 0) cur.Append(' ');
+            cur.Append(word);
+        }
+        if (cur.Length > 0) lines.Add(cur.ToString());
+        return lines;
+    }
+
+    /// <summary>SVG 출력용 최소 HTML 이스케이프.</summary>
+    private static string Enc(string s) =>
+        s.Replace("&", "&amp;")
+         .Replace("<", "&lt;")
+         .Replace(">", "&gt;");
 
     // ── 폰트 탐색 ─────────────────────────────────────────────────────────────
     private static FontFamily ResolveFont()
