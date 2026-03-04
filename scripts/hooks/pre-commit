@@ -38,7 +38,7 @@ fi
 
 # ── 3. Steam 카드 렌더링 ────────────────────────────────────────────────────
 # 24시간 캐시 정책: 네트워크 오류 시 non-fatal (카드가 이미 있으면 구버전 유지)
-STEAM_CARD="$REPO_ROOT/docs/images/steam_card.png"
+STEAM_CARD="$REPO_ROOT/docs/images/steam_card.svg"
 echo "[pre-commit] Steam 카드 렌더링 중..."
 dotnet run --project "$REPO_ROOT/SteamCard/SteamCard.csproj" -c Release \
     -- "$STEAM_CARD" \
