@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using BloodshedModToolkit.Coop.Events;
 
 namespace BloodshedModToolkit.UI
@@ -10,6 +11,9 @@ namespace BloodshedModToolkit.UI
         public ChatWindow(IntPtr ptr) : base(ptr) { }
         public static ChatWindow? Instance { get; private set; }
         public static bool IsTyping { get; private set; }
+
+        // GC 방지 — IL2CPP에서 Action → UnityAction 암묵적 변환 시 필드 보관 필수
+        private Action<Scene, LoadSceneMode>? _onSceneLoaded;
 
         private struct ChatEntry { public string Sender; public string Text; public float Time; }
         private readonly List<ChatEntry> _messages = new(32);
@@ -21,8 +25,30 @@ namespace BloodshedModToolkit.UI
         private const float MsgH = 160f;
         private const float InputH = 28f;
 
-        void Awake() { Instance = this; }
-        void OnDestroy() { Instance = null; IsTyping = false; }
+        void Awake()
+        {
+            Instance = this;
+            _onSceneLoaded = OnSceneLoaded;
+            SceneManager.sceneLoaded += _onSceneLoaded;
+        }
+
+        void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= _onSceneLoaded;
+            _onSceneLoaded = null;
+            Instance  = null;
+            IsTyping  = false;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // 씬 전환 시 채팅 강제 종료 — IsTyping stuck 방지
+            if (IsTyping)
+            {
+                Plugin.Log.LogInfo("[Chat] 씬 전환 감지 — 채팅 입력 자동 종료");
+                CancelChat();
+            }
+        }
 
         void Update()
         {

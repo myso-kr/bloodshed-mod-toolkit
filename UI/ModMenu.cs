@@ -785,6 +785,7 @@ namespace BloodshedModToolkit.UI
                 else if (ValidateSceneLoad(_debugSceneInput, out string reason))
                 {
                     _debugSceneValidationError = "";
+                    _visible = false;   // IMGUI 마우스 흡수 방지 — 씬 전환 전 메뉴 닫기
                     Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{_debugSceneInput}'");
                     UnityEngine.SceneManagement.SceneManager.LoadScene(_debugSceneInput);
                 }
