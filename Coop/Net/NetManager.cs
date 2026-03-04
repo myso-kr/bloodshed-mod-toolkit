@@ -401,6 +401,10 @@ namespace BloodshedModToolkit.Coop.Net
                 CoopState.Peers.Add(hostId);
                 _lastHeartbeat[hostId] = Time.time;
             }
+            // OnP2PSessionRequest의 IL2CPP SteamID 레이아웃 불일치 우회:
+            // Host가 첫 패킷을 보낼 때 Guest 측 세션이 수락되지 않아 드롭될 수 있으므로
+            // GetLobbyOwner로 얻은 올바른 hostId로 명시적 수락 (Host 측 ScanAndRegisterLobbyMembers와 동일한 패턴)
+            SteamNetworking.AcceptP2PSessionWithUser(hostId);
             CoopState.IsConnected = true;
             SendReliable(hostId,
                 HandshakePacket.Encode(CoopState.CoopVersion, (ulong)myId, isHost: false));
