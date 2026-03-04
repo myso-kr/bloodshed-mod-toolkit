@@ -1,5 +1,6 @@
 using HarmonyLib;
 using com8com1.SCFPS;
+using BloodshedModToolkit.Tweaks;
 
 namespace BloodshedModToolkit.Cheats
 {
@@ -19,6 +20,40 @@ namespace BloodshedModToolkit.Cheats
         {
             if (CheatState.RapidFire)
                 __instance.CooldownEnd = 0f;
+        }
+    }
+
+    /// <summary>
+    /// 무기 Animator 배속 동기화 —
+    /// 속사/발사속도 배율이 활성 중일 때 Weapon.animator.speed 를 게임플레이 배율에
+    /// 맞춰 조정합니다. 애니메이션이 게임플레이보다 느리면 상태머신이 다음 발사를
+    /// 블락하므로, 배속을 일치시켜야 속사가 올바르게 동작합니다.
+    ///
+    /// 우선순위: RapidFire(100×) &gt; WeaponFireRateMult(&gt;1) &gt; 원본 유지(1×)
+    /// </summary>
+    [HarmonyPatch(typeof(Weapon), "Update")]
+    public static class WeaponAnimSpeedPatch
+    {
+        static void Postfix(Weapon __instance)
+        {
+            if (__instance.animator == null) return;
+
+            float mult;
+            if (CheatState.RapidFire)
+            {
+                mult = 100f;
+            }
+            else
+            {
+                mult = TweakState.Current.WeaponFireRateMult;
+                if (mult <= 1f) return; // 배율 없으면 원본 속도 유지
+            }
+
+            __instance.animator.speed = mult;
+
+            // strReloadSpeed 파라미터가 있으면 장전 애니메이션 속도도 동기화
+            if (!string.IsNullOrEmpty(__instance.strReloadSpeed))
+                __instance.animator.SetFloat(__instance.strReloadSpeed, mult);
         }
     }
 }

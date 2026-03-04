@@ -393,6 +393,7 @@ namespace UnityEngine
         public bool                      applyRootMotion { get; set; }
         public AnimatorCullingMode        cullingMode     { get; set; }
         public bool                       isHuman         { get; }
+        public float                      speed           { get; set; } = 1f;
         public AnimatorControllerParameter[] parameters  => Array.Empty<AnimatorControllerParameter>();
         public void  SetFloat(string name,   float value) { }
         public void  SetBool(string name,    bool  value) { }

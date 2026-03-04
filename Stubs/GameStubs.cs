@@ -134,10 +134,12 @@ namespace com8com1.SCFPS
     public class Weapon : MonoBehaviour
     {
         public Weapon(IntPtr ptr) : base(ptr) { }
-        public WeaponData?  weaponData         { get; set; }
-        public bool         isReloading        { get; set; }
-        public Coroutine?   coroutineReloading { get; set; }
-        public int          mag                { get; set; }
+        public WeaponData?                    weaponData         { get; set; }
+        public bool                           isReloading        { get; set; }
+        public Coroutine?                     coroutineReloading { get; set; }
+        public int                            mag                { get; set; }
+        public UnityEngine.Animator?          animator           { get; set; }
+        public string                         strReloadSpeed     { get; set; } = "";
     }
 
     public class WeaponItem : MonoBehaviour
