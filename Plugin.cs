@@ -25,6 +25,9 @@ namespace BloodshedModToolkit
             CheatState.Initialize();
             Tweaks.TweakState.Initialize();
 
+            // 백그라운드 버전 체크 (GitHub Releases API)
+            UpdateChecker.StartAsync();
+
             var harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
             harmony.PatchAll();
 
@@ -71,6 +74,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.162";
+        public const string PLUGIN_VERSION = "1.0.163";
     }
 }

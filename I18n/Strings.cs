@@ -95,6 +95,11 @@ namespace BloodshedModToolkit.I18n
         /// <summary>{0} = 추적 수</summary>
         public string BotTracking     => G(nameof(BotTracking));
         public string BotDisabledNote => G(nameof(BotDisabledNote));
+
+        // ── 업데이트 알림 ──────────────────────────────────────────────────────────
+        /// <summary>업데이트 알림 텍스트. {0}=현재버전, {1}=최신버전</summary>
+        public string UpdateAvailable => G(nameof(UpdateAvailable));
+        public string UpdateDismiss   => G(nameof(UpdateDismiss));
     }
 
     /// <summary>

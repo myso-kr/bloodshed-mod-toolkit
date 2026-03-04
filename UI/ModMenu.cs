@@ -33,6 +33,7 @@ namespace BloodshedModToolkit.UI
             };
             OverlayManager.Register(new StatusPanel());
             OverlayManager.Register(new DpsPanel());
+            OverlayManager.Register(new UpdateNoticePanel());
             _onSceneLoaded = OnSceneLoaded;
             SceneManager.sceneLoaded += _onSceneLoaded;
         }

@@ -2,7 +2,7 @@ Unicode True
 SetCompressor /SOLID lzma
 
 !define APPNAME    "Bloodshed Mod Toolkit"
-!define VERSION    "1.0.162"
+!define VERSION    "1.0.163"
 !define BEPINEX_URL "https://builds.bepinex.dev/projects/bepinex_be/697/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.697%2B1cd1765.zip"
 !define GITHUB_REPO "myso-kr/bloodshed-mod-toolkit"
 !define MOD_DLL_URL "https://github.com/${GITHUB_REPO}/releases/latest/download/BloodshedModToolkit.dll"
@@ -14,6 +14,8 @@ RequestExecutionLevel admin
 
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
+!include "StrFunc.nsh"
+${StrTok}
 
 Var hPathText
 Var hBrowseBtn
@@ -24,6 +26,8 @@ Var hStatus
 Var GamePath
 Var DoInstallBepInEx
 Var DoInstallModDll
+Var InstalledVer
+Var LatestVer
 
 Page custom MainPage MainPageLeave
 
@@ -220,6 +224,53 @@ Function MainPageLeave
 
     ; - 5. Mod DLL -
     ${If} $DoInstallModDll == ${BST_CHECKED}
+
+        ; -- 버전 체크: 설치된 버전 vs GitHub 최신 버전 --
+        !insertmacro SetStatus "Checking version..."
+        FileOpen $0 "$TEMP\bmti_vercheck.ps1" w
+        FileWrite $0 "$$dll = '$GamePath\BepInEx\plugins\BloodshedModToolkit.dll'$\n"
+        FileWrite $0 "$$inst = ''$\n"
+        FileWrite $0 "if (Test-Path $$dll) {$\n"
+        FileWrite $0 "    try { $$inst = [Reflection.Assembly]::LoadFile($$dll).GetName().Version.ToString(3) } catch {}$\n"
+        FileWrite $0 "}$\n"
+        FileWrite $0 "$$latest = ''$\n"
+        FileWrite $0 "try {$\n"
+        FileWrite $0 "    $$r = Invoke-WebRequest -Uri 'https://api.github.com/repos/${GITHUB_REPO}/releases/latest' -UseBasicParsing$\n"
+        FileWrite $0 "    $$latest = ($$r.Content | ConvertFrom-Json).tag_name.TrimStart('v')$\n"
+        FileWrite $0 "} catch {}$\n"
+        FileWrite $0 "[Console]::Write($$inst + '|' + $$latest)$\n"
+        FileClose $0
+        nsExec::ExecToStack "powershell -NoProfile -ExecutionPolicy Bypass -File $\"$TEMP\bmti_vercheck.ps1$\""
+        Pop $0  ; exit code
+        Pop $1  ; "installedVer|latestVer"
+        Delete "$TEMP\bmti_vercheck.ps1"
+
+        ; parse pipe-delimited result
+        StrCpy $InstalledVer ""
+        StrCpy $LatestVer    ""
+        ${StrTok} $InstalledVer "$1" "|" "0" "1"
+        ${StrTok} $LatestVer    "$1" "|" "1" "1"
+
+        ; 이미 최신 버전이면 재설치 여부 확인
+        ${If} $InstalledVer != ""
+        ${AndIf} $LatestVer  != ""
+        ${AndIf} $InstalledVer == $LatestVer
+            MessageBox MB_YESNO|MB_ICONINFORMATION \
+                "BloodshedModToolkit v$InstalledVer is already up to date.$\nReinstall anyway?" \
+                IDYES VersionCheckContinue IDNO VersionCheckSkip
+            VersionCheckSkip:
+            Goto ModDllDone
+        ${EndIf}
+
+        ; 업데이트 가능한 경우 알림 (설치 계속 진행)
+        ${If} $InstalledVer != ""
+        ${AndIf} $LatestVer  != ""
+        ${AndIf} $InstalledVer != $LatestVer
+            MessageBox MB_OK|MB_ICONINFORMATION \
+                "Update available: v$InstalledVer $\x2192 v$LatestVer$\nInstalling latest version..."
+        ${EndIf}
+
+        VersionCheckContinue:
         !insertmacro SetStatus "Downloading mod DLL..."
         FileOpen $0 "$TEMP\bmti_dlmod.ps1" w
         FileWrite $0 "Invoke-WebRequest -Uri '${MOD_DLL_URL}' -OutFile '$TEMP\BloodshedModToolkit.dll' -UseBasicParsing$\n"
@@ -238,6 +289,8 @@ Function MainPageLeave
         CopyFiles "$TEMP\BloodshedModToolkit.dll" "$GamePath\BepInEx\plugins\"
         Delete "$TEMP\BloodshedModToolkit.dll"
         !insertmacro SetProgress 90
+
+        ModDllDone:
     ${EndIf}
 
     ; - 6. Done -
