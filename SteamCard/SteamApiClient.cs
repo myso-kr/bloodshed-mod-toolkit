@@ -119,15 +119,19 @@ public sealed class SteamApiClient : IDisposable
     }
 
     /// <summary>
-    /// Steam 헤더 이미지를 다운로드합니다 (header.jpg 460×215, 항상 존재).
+    /// Steam 라이브러리 히어로 이미지를 다운로드합니다 (library_hero.jpg 3840×1240).
+    /// 없으면 header.jpg (460×215) 로 폴백.
     /// </summary>
     public async Task<byte[]> DownloadCapsuleAsync(CancellationToken ct = default)
     {
-        // capsule_231x87.jpg 는 일부 게임에만 존재 → header.jpg 사용 (460×215, 보편적)
-        var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/header.jpg";
-        using var response = await _http.GetAsync(url, ct);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsByteArrayAsync(ct);
+        foreach (var filename in new[] { "library_hero.jpg", "header.jpg" })
+        {
+            var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/{filename}";
+            using var response = await _http.GetAsync(url, ct);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadAsByteArrayAsync(ct);
+        }
+        throw new InvalidOperationException("Steam 이미지를 다운로드할 수 없습니다.");
     }
 
     public void Dispose() => _http.Dispose();
