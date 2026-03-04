@@ -4,7 +4,7 @@ description: >-
   Full feature list: God Mode, infinite gems, speed hack, 4-player Steam co-op,
   5 difficulty presets, 9 balance sliders, AI bots, hotkeys.
 lang: en
-image: /bloodshed-mod-toolkit/images/og_banner_power.jpg
+image: /images/og_banner_power.jpg
 ---
 
 # Features

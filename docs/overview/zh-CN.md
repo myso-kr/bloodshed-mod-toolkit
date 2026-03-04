@@ -4,7 +4,7 @@ description: >-
   Bloodshed Mod工具集: 无敌模式、无限宝石、Steam P2P 4人联机、
   难度调整、AI机器人。一键F5全搞定。
 lang: zh-CN
-image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
+image: /images/og_banner_hero.jpg
 ---
 
 # Bloodshed Mod Toolkit

@@ -4,7 +4,7 @@ description: >-
   全機能リスト: 無敵モード、ジェム無限、移動速度倍率、Steam 4人Co-op、
   5プリセット・9バランススライダー、AIボット、ホットキー。
 lang: ja
-image: /bloodshed-mod-toolkit/images/og_banner_power.jpg
+image: /images/og_banner_power.jpg
 ---
 
 # 機能

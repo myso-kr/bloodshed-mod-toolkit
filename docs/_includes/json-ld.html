@@ -14,9 +14,9 @@
 
 {%- comment -%} Page OG image (absolute URL) {%- endcomment -%}
 {%- if page.image -%}
-  {%- assign _og_img = page.image | prepend: site.url -%}
+  {%- assign _og_img = page.image | prepend: site.baseurl | prepend: site.url -%}
 {%- else -%}
-  {%- assign _og_img = "/images/banner_hero.png" | prepend: site.baseurl | prepend: site.url -%}
+  {%- assign _og_img = "/images/og_banner_hero.jpg" | prepend: site.baseurl | prepend: site.url -%}
 {%- endif -%}
 
 {%- comment -%} Domain label for BreadcrumbList {%- endcomment -%}

@@ -17,15 +17,15 @@ defaults:
   - scope:
       path: ""
     values:
-      image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
+      image: /images/og_banner_hero.jpg
   - scope:
       path: "features"
     values:
-      image: /bloodshed-mod-toolkit/images/og_banner_power.jpg
+      image: /images/og_banner_power.jpg
   - scope:
       path: "overview"
     values:
-      image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
+      image: /images/og_banner_hero.jpg
 
 # Twitter card
 twitter:
