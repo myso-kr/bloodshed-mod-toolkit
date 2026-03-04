@@ -52,8 +52,9 @@
   <div class="scanlines" aria-hidden="true"></div>
 
   {%- assign pl = page.lang | default: "en" -%}
-  {%- assign pd = page.dir | remove_first: '/' | remove_last: '/' -%}
-  {%- if pd == "" -%}{%- assign lt = "overview" -%}{%- else -%}{%- assign lt = pd -%}{%- endif -%}
+  {%- assign _url_parts = page.url | split: '/' -%}
+  {%- assign lt = _url_parts[1] -%}
+  {%- if lt == "" or lt == nil -%}{%- assign lt = "overview" -%}{%- endif -%}
 
   {%- if pl == "ko" -%}
     {%- assign tab_labels = "개요,기능,설치,기술 노트,라이선스" | split: "," -%}
