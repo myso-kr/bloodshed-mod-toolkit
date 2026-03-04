@@ -11,6 +11,8 @@
 ![Tweaks](https://img.shields.io/badge/Tweaks-9_Sliders-ea580c)
 ![AI Bots](https://img.shields.io/badge/AI_Bots-up_to_3-52525b)
 ![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
+[![GitHub Stars](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=flat&logo=github&logoColor=white&label=Stars&color=f9c74f)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 
 **Languages:** **English** · [한국어](README.ko.md) · [日本語](README.ja.md) · [中文](README.zh-CN.md)
 
@@ -29,6 +31,9 @@ The developer wrapped up active development, but the players didn't leave.
 unlocking one more character, finding one more broken synergy.
 
 This toolkit started because I wanted co-op. Then I wanted tweaks. Then I wanted to see what happened when you cranked enemy spawns to ×4 and turned on god mode at the same time. Now it does all of that — and it ships as a single F5 keypress.
+
+[![Download Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=Download+Latest&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![Star on GitHub](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=Star+on+GitHub&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 
 ---
 
@@ -275,6 +280,12 @@ The author is not responsible for any consequences arising from misuse.
 [MIT](LICENSE)
 
 ---
+
+If this mod improved your Bloodshed run — a ⭐ star helps others find it.
+
+[![Star on GitHub](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=Star+on+GitHub&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![Download Latest](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=Download+Latest&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![Report a Bug](https://img.shields.io/badge/Report+a+Bug-dc2626?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/issues/new)
 
 > If you haven't played Bloodshed yet — do that first.
 

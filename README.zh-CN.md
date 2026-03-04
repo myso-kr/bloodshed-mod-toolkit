@@ -11,6 +11,8 @@
 ![Tweaks](https://img.shields.io/badge/Tweaks-9_Sliders-ea580c)
 ![AI Bots](https://img.shields.io/badge/AI_Bots-up_to_3-52525b)
 ![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
+[![GitHub Stars](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=flat&logo=github&logoColor=white&label=Stars&color=f9c74f)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 
 **Languages:** [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · **中文**
 
@@ -28,6 +30,9 @@
 **Steam 好评率 85%。** 一个小而倔强的社区，不断地再跑一次任务，再解锁一个角色，再找一个破坏性的协同效果。
 
 这个工具集起源于想玩联机。然后需要调整数值。然后想看看把刷怪数量拉到 ×4 同时开无敌会发生什么。现在它全都能做 — 按一下 F5 就行。
+
+[![下载最新版本](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=下载最新版本&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![在GitHub上点Star](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=在GitHub上点Star&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 
 ---
 
@@ -274,6 +279,12 @@ Co-op 功能仅与**通过 Steam 直接邀请的好友**连接。
 [MIT](LICENSE)
 
 ---
+
+如果这个 Mod 让你的 Bloodshed 体验更好 — ⭐ Star 一下，帮助更多人发现它。
+
+[![在GitHub上点Star](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=在GitHub上点Star&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![下载最新版本](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=下载最新版本&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![提交Bug报告](https://img.shields.io/badge/提交Bug报告-dc2626?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/issues/new)
 
 > 如果你还没玩过 Bloodshed — 先去玩。
 

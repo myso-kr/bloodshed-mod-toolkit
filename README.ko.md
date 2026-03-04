@@ -11,6 +11,8 @@
 ![Tweaks](https://img.shields.io/badge/Tweaks-9_Sliders-ea580c)
 ![AI Bots](https://img.shields.io/badge/AI_Bots-up_to_3-52525b)
 ![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
+[![GitHub Stars](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=flat&logo=github&logoColor=white&label=Stars&color=f9c74f)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 
 **Languages:** [English](README.md) · **한국어** · [日本語](README.ja.md) · [中文](README.zh-CN.md)
 
@@ -28,6 +30,9 @@
 **Steam 긍정 평가 85%.** 미션 하나를 더 돌고, 캐릭터 하나를 더 해금하고, 브로큰 시너지를 하나 더 찾아내는 작고 끈질긴 커뮤니티.
 
 이 툴킷은 코-업이 하고 싶어서 시작됐다. 그다음엔 트윅이 필요했고, 그다음엔 스폰 수를 ×4로 올리고 무적을 켜면 어떻게 되는지 보고 싶었다. 지금은 그걸 전부 한다 — F5 하나로.
+
+[![최신 릴리스 다운로드](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=최신+버전+다운로드&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![GitHub에서 스타 주기](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=GitHub+스타+주기&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 
 ---
 
@@ -274,6 +279,12 @@ dotnet build -c Release
 [MIT](LICENSE)
 
 ---
+
+이 모드가 Bloodshed를 더 즐겁게 만들었다면 — ⭐ 스타 하나가 큰 힘이 됩니다.
+
+[![GitHub 스타 주기](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=GitHub+스타+주기&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![최신 버전 다운로드](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=최신+버전+다운로드&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
+[![버그 제보](https://img.shields.io/badge/버그+제보-dc2626?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/issues/new)
 
 > Bloodshed를 아직 플레이해본 적 없다면 — 먼저 그걸 하세요.
 
