@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # pre-commit hook
-# 1) stub 빌드로 컴파일 에러 차단
-# 2) 빌드 성공 시 patch 버전 자동 증가 → 버전 파일을 커밋에 포함
-# 3) Steam 카드 PNG 갱신 (24시간 캐시, 네트워크 오류 시 non-fatal)
+# 소스 변경(*.cs, *.csproj 등) 포함 시:
+#   1) stub 빌드로 컴파일 에러 차단
+#   2) patch 버전 자동 증가 → 버전 파일을 커밋에 포함
+# 항상:
+#   3) Steam 카드 PNG 갱신 (24시간 캐시, 네트워크 오류 시 non-fatal)
 # 설치: scripts/Install-Hooks.ps1 실행
 
 set -euo pipefail
@@ -10,33 +12,33 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx}"
 
-# ── 1. 컴파일 검사 ────────────────────────────────────────────────────────────
-echo "[pre-commit] 컴파일 검사 중 (stub 빌드)..."
+# ── 소스 변경 여부 판단 ────────────────────────────────────────────────────────
+# 자동 증가 대상 버전 파일 3개는 제외하고, 빌드에 영향을 주는 파일이 있는지 확인
+SRC_STAGED=$(git diff --cached --name-only | \
+    grep -vE "^(BloodshedModToolkit\.csproj|Plugin\.cs|Installer/bloodshed\.nsi)$" | \
+    grep -E "\.(cs|csproj|props|targets|nsi)$" | \
+    head -1 || true)
 
-dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
-    "-p:UseStubs=true" \
-    "-p:BepInExPath=$BEPINEX_PATH" \
-    --no-incremental \
-    -v minimal
+if [ -n "$SRC_STAGED" ]; then
+    # ── 1. 컴파일 검사 ─────────────────────────────────────────────────────────
+    echo "[pre-commit] 컴파일 검사 중 (stub 빌드)..."
+    dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
+        "-p:UseStubs=true" \
+        "-p:BepInExPath=$BEPINEX_PATH" \
+        --no-incremental \
+        -v minimal
 
-# ── 2. patch 버전 자동 증가 ──────────────────────────────────────────────────
-# 버전 파일 3개(csproj/nsi/Plugin.cs) 외 실질 변경이 없으면 버전 증가를 건너뜁니다.
-# 이렇게 하지 않으면 "chore: bump version" 커밋 자체가 또 버전을 올려 무한 루프가 됩니다.
-NON_VERSION=$(git diff --cached --name-only | \
-    grep -vE "^(BloodshedModToolkit\.csproj|Installer/bloodshed\.nsi|Plugin\.cs)$" || true)
-
-if [ -z "$NON_VERSION" ]; then
-    echo "[pre-commit] 버전 파일만 변경됨 — 버전 증가 건너뜀"
-else
+    # ── 2. patch 버전 자동 증가 ────────────────────────────────────────────────
     echo "[pre-commit] 버전 자동 증가 (patch)..."
     pwsh -NonInteractive -File "$REPO_ROOT/scripts/Bump-Version.ps1" -Bump Patch
-    # 버전 파일을 현재 커밋에 포함
     git add "$REPO_ROOT/BloodshedModToolkit.csproj" \
             "$REPO_ROOT/Installer/bloodshed.nsi" \
             "$REPO_ROOT/Plugin.cs"
+else
+    echo "[pre-commit] 소스 변경 없음 — 빌드/버전 증가 건너뜀"
 fi
 
-# ── 3. Steam 카드 렌더링 ────────────────────────────────────────────────────
+# ── 3. Steam 카드 렌더링 ───────────────────────────────────────────────────────
 # 24시간 캐시 정책: 네트워크 오류 시 non-fatal (카드가 이미 있으면 구버전 유지)
 STEAM_CARD="$REPO_ROOT/docs/images/steam_card.svg"
 echo "[pre-commit] Steam 카드 렌더링 중..."

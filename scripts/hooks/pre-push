@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # pre-push hook
-# 1) 실제 interop DLL 로 전체 빌드
-# 2) BepInEx/plugins/ 로컬 배포
-# 3) GitHub Release 자동 생성 (Publish-Release.ps1 -SkipBuild)
+# push 범위 커밋에 소스 변경(*.cs, *.csproj 등) 포함 시:
+#   1) 실제 interop DLL 로 전체 빌드
+#   2) BepInEx/plugins/ 로컬 배포
+#   3) GitHub Release 자동 생성 (Publish-Release.ps1 -SkipBuild)
 # 설치: scripts/Install-Hooks.ps1 실행
 
 set -euo pipefail
@@ -11,16 +12,39 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 BEPINEX_PATH="${BEPINEX_PATH:-D:/SteamLibrary/steamapps/common/Bloodshed/BepInEx}"
 PLUGINS_DIR="$BEPINEX_PATH/plugins"
 DLL="$REPO_ROOT/bin/Release/net6.0/BloodshedModToolkit.dll"
+ZERO_SHA="0000000000000000000000000000000000000000"
 
-# stdin 에서 push 대상 ref 를 읽어 태그 push 이면 즉시 종료
-# (Publish-Release.ps1 이 git push origin <tag> 를 호출할 때 재귀 트리거 방지)
-while IFS=' ' read -r _local_ref _local_sha remote_ref _remote_sha; do
-    if [[ "$remote_ref" == refs/tags/* ]]; then
-        exit 0
+# ── stdin 에서 push 정보 읽기 ─────────────────────────────────────────────────
+# 태그 push이면 즉시 종료 (Publish-Release.ps1의 git push <tag> 재귀 방지)
+PUSH_INFO=$(cat)
+if echo "$PUSH_INFO" | grep -q "refs/tags/"; then
+    exit 0
+fi
+
+# ── 소스 변경 여부 확인 (push 범위의 커밋 전체) ──────────────────────────────
+SRC_CHANGED=""
+while IFS=' ' read -r _local_ref local_sha _remote_ref remote_sha; do
+    if [ "$remote_sha" = "$ZERO_SHA" ]; then
+        # 새 브랜치: 직전 커밋과 비교
+        found=$(git diff --name-only "${local_sha}^" "$local_sha" 2>/dev/null | \
+            grep -E "\.(cs|csproj|props|targets|nsi)$" | head -1 || true)
+    else
+        # 기존 브랜치: 원격 HEAD에서 로컬 HEAD까지의 모든 변경
+        found=$(git diff --name-only "$remote_sha" "$local_sha" | \
+            grep -E "\.(cs|csproj|props|targets|nsi)$" | head -1 || true)
     fi
-done
+    if [ -n "$found" ]; then
+        SRC_CHANGED="$found"
+        break
+    fi
+done <<< "$PUSH_INFO"
 
-# interop DLL 없으면 게임 미실행 상태 — 전체 과정 건너뜀
+if [ -z "$SRC_CHANGED" ]; then
+    echo "[pre-push] 소스 변경 없음 — 빌드/배포/Release 건너뜀"
+    exit 0
+fi
+
+# ── interop DLL 확인 ──────────────────────────────────────────────────────────
 if [ ! -f "$BEPINEX_PATH/interop/Assembly-CSharp.dll" ]; then
     echo "[pre-push] ⚠ BepInEx/interop/ 없음 — 게임을 한 번 실행한 뒤 다시 push하세요."
     echo "[pre-push]   로컬 배포 및 GitHub Release 생략."
@@ -33,6 +57,7 @@ dotnet build "$REPO_ROOT/BloodshedModToolkit.csproj" -c Release \
     "-p:BepInExPath=$BEPINEX_PATH" \
     --no-incremental \
     -v minimal
+
 makensis_path=""
 for p in "C:/Program Files (x86)/NSIS/makensis.exe" "C:/Program Files/NSIS/makensis.exe"; do
     if [ -f "$p" ]; then makensis_path="$p"; break; fi
@@ -44,13 +69,13 @@ else
     echo "[pre-push] ⚠ NSIS not found — installer build skipped. Install: https://nsis.sourceforge.io/"
 fi
 
-# ── 2. 로컬 배포 ─────────────────────────────────────────────────────────────
+# ── 2. 로컬 배포 ──────────────────────────────────────────────────────────────
 if [ -d "$PLUGINS_DIR" ]; then
     cp "$DLL" "$PLUGINS_DIR/"
     echo "[pre-push] 로컬 배포: $PLUGINS_DIR/BloodshedModToolkit.dll"
 fi
 
-# ── 3. GitHub Release ────────────────────────────────────────────────────────
+# ── 3. GitHub Release ─────────────────────────────────────────────────────────
 echo "[pre-push] GitHub Release 생성 중..."
 pwsh -NonInteractive -File "$REPO_ROOT/scripts/Publish-Release.ps1" \
     -SkipBuild \
