@@ -66,6 +66,7 @@ namespace com8com1.SCFPS
         public ShotAction(IntPtr ptr) : base(ptr) { }
 
         public float CooldownEnd   { get; set; }
+        public float shotDelay     { get; set; }
         public bool  IsOnCooldown  => UnityEngine.Time.time < CooldownEnd;
 
         public void    SetCooldownEnd(float value)          => CooldownEnd = value;
@@ -138,6 +139,7 @@ namespace com8com1.SCFPS
         public bool                           isReloading        { get; set; }
         public Coroutine?                     coroutineReloading { get; set; }
         public int                            mag                { get; set; }
+        public float                          shotDelay          { get; set; }
         public UnityEngine.Animator?          animator           { get; set; }
         public string                         strReloadSpeed     { get; set; } = "";
     }
