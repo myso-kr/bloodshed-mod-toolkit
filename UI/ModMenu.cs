@@ -665,18 +665,15 @@ namespace BloodshedModToolkit.UI
                 return false;
             }
 
-            // 2. Character — ss.selectedCharacterData는 기본값이 있을 수 있으므로 신뢰하지 않음
-            //    DEBUG 패널 명시 선택만 허용 — csm.selectedCharacter는 save data 기본값이 있어 신뢰 불가
-            var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            var charData = _debugSelectedChar;
-            if (charData == null)
+            // 2. Character — DEBUG 패널 명시 선택만 허용 (save data 기본값 오염 방지)
+            if (_debugSelectedChar == null)
             {
                 reason = "Character: 캐릭터 미선택\nDEBUG 패널 CHARACTER SELECT에서 선택 필요";
                 return false;
             }
 
-            // 3. Mission ↔ Scene
-            var mission = _debugSelectedMission ?? ss?.selectedMission;
+            // 3. Mission ↔ Scene — DEBUG 패널 명시 선택만 허용 (ss.selectedMission 폴백 제거)
+            var mission = _debugSelectedMission;
             if (mission == null)
             {
                 reason = "Mission: 미션 미선택\nDEBUG 패널 MISSION SELECT에서 선택 필요";
