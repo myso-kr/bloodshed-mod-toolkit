@@ -8,7 +8,6 @@
 using System.Diagnostics;
 using SteamCard;
 
-// ── 인수 파싱 ─────────────────────────────────────────────────────────────────
 bool force = args.Contains("--force");
 string? explicitPath = args.FirstOrDefault(a => !a.StartsWith("--"));
 
@@ -16,7 +15,6 @@ string repoRoot   = ResolveRepoRoot();
 string outputPath = explicitPath
     ?? Path.Combine(repoRoot, "docs", "images", "steam_card.png");
 
-// ── 캐시 검사 (--force 없으면 24시간 캐시) ───────────────────────────────────
 if (!force && File.Exists(outputPath))
 {
     var age = DateTime.UtcNow - File.GetLastWriteTimeUtc(outputPath);
@@ -30,46 +28,48 @@ if (!force && File.Exists(outputPath))
 
 Console.WriteLine($"[SteamCard] 출력: {outputPath}");
 
-// ── Steam API 조회 + 캡슐 이미지 병렬 다운로드 ─────────────────────────────
-using var cts    = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+using var cts    = new CancellationTokenSource(TimeSpan.FromSeconds(25));
 using var client = new SteamApiClient();
 
 SteamGameData data;
-byte[]        capsule;
+byte[]        hero;
+byte[]?       logo;
 
 try
 {
     var sw = Stopwatch.StartNew();
 
-    var dataTask    = client.FetchAsync(cts.Token);
-    var capsuleTask = client.DownloadCapsuleAsync(cts.Token);
-    await Task.WhenAll(dataTask, capsuleTask);
+    var dataTask = client.FetchAsync(cts.Token);
+    var heroTask = client.DownloadHeroAsync(cts.Token);
+    var logoTask = client.DownloadLogoAsync(cts.Token);
+    await Task.WhenAll(dataTask, heroTask, logoTask);
 
-    data    = dataTask.Result;
-    capsule = capsuleTask.Result;
+    data = dataTask.Result;
+    hero = heroTask.Result;
+    logo = logoTask.Result;
 
     string priceInfo = data.DiscountPct > 0
         ? $"{data.Price} (was {data.OriginalPrice}, -{data.DiscountPct}%)"
         : data.Price;
 
-    Console.WriteLine($"[SteamCard] {data.Name}  |  {priceInfo}  |  {data.ReviewPct}% ({data.ReviewLabel})  [{sw.ElapsedMilliseconds}ms]");
+    Console.WriteLine(
+        $"[SteamCard] {data.Name}  |  {priceInfo}  |  {data.ReviewPct}% ({data.ReviewLabel})" +
+        $"  |  logo={logo is not null}  [{sw.ElapsedMilliseconds}ms]");
 }
 catch (OperationCanceledException)
 {
-    Console.Error.WriteLine("[SteamCard] ⚠ Steam API 타임아웃 — 카드 생성을 건너뜁니다.");
+    Console.Error.WriteLine("[SteamCard] ⚠ 타임아웃 — 카드 생성 생략.");
     return;
 }
 catch (Exception ex)
 {
-    Console.Error.WriteLine($"[SteamCard] ⚠ Steam API 오류: {ex.GetType().Name}: {ex.Message}");
-    Console.Error.WriteLine("[SteamCard]   네트워크 연결을 확인하세요. 카드 생성 생략.");
+    Console.Error.WriteLine($"[SteamCard] ⚠ 오류: {ex.GetType().Name}: {ex.Message}");
     return;
 }
 
-// ── 카드 렌더링 ───────────────────────────────────────────────────────────────
 try
 {
-    await CardRenderer.RenderAsync(data, capsule, outputPath, cts.Token);
+    await CardRenderer.RenderAsync(data, hero, logo, outputPath, cts.Token);
     Console.WriteLine($"[SteamCard] 저장 완료: {outputPath}");
 }
 catch (Exception ex)
@@ -77,14 +77,11 @@ catch (Exception ex)
     Console.Error.WriteLine($"[SteamCard] ⚠ 렌더링 실패: {ex.Message}");
 }
 
-// ── 리포 루트 탐지 ────────────────────────────────────────────────────────────
 static string ResolveRepoRoot()
 {
-    // 전략 1: CWD에 .csproj 있으면 그게 루트
     if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "BloodshedModToolkit.csproj")))
         return Directory.GetCurrentDirectory();
 
-    // 전략 2: 실행 파일 위치에서 위로 탐색
     var dir = new DirectoryInfo(AppContext.BaseDirectory);
     while (dir is not null)
     {
@@ -93,22 +90,18 @@ static string ResolveRepoRoot()
         dir = dir.Parent;
     }
 
-    // 전략 3: git rev-parse
     try
     {
         var psi = new ProcessStartInfo("git", "rev-parse --show-toplevel")
         {
-            RedirectStandardOutput = true,
-            UseShellExecute  = false,
-            CreateNoWindow   = true
+            RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true
         };
         using var proc = Process.Start(psi)!;
         string? root = proc.StandardOutput.ReadLine()?.Trim();
         proc.WaitForExit();
-        if (!string.IsNullOrEmpty(root) && Directory.Exists(root))
-            return root;
+        if (!string.IsNullOrEmpty(root) && Directory.Exists(root)) return root;
     }
-    catch { /* git 미설치 환경 */ }
+    catch { }
 
     return Directory.GetCurrentDirectory();
 }

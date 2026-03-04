@@ -118,11 +118,8 @@ public sealed class SteamApiClient : IDisposable
         }
     }
 
-    /// <summary>
-    /// Steam 라이브러리 히어로 이미지를 다운로드합니다 (library_hero.jpg 3840×1240).
-    /// 없으면 header.jpg (460×215) 로 폴백.
-    /// </summary>
-    public async Task<byte[]> DownloadCapsuleAsync(CancellationToken ct = default)
+    /// <summary>library_hero.jpg (3840×1240) 다운로드. 없으면 header.jpg 폴백.</summary>
+    public async Task<byte[]> DownloadHeroAsync(CancellationToken ct = default)
     {
         foreach (var filename in new[] { "library_hero.jpg", "header.jpg" })
         {
@@ -131,8 +128,21 @@ public sealed class SteamApiClient : IDisposable
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadAsByteArrayAsync(ct);
         }
-        throw new InvalidOperationException("Steam 이미지를 다운로드할 수 없습니다.");
+        throw new InvalidOperationException("Steam hero 이미지를 다운로드할 수 없습니다.");
     }
+
+    /// <summary>logo.png 다운로드. 없으면 null 반환 (선택적 레이어).</summary>
+    public async Task<byte[]?> DownloadLogoAsync(CancellationToken ct = default)
+    {
+        var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/logo.png";
+        using var response = await _http.GetAsync(url, ct);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
+
+    // 이전 이름 호환 (Program.cs 에서 사용 중)
+    public Task<byte[]> DownloadCapsuleAsync(CancellationToken ct = default)
+        => DownloadHeroAsync(ct);
 
     public void Dispose() => _http.Dispose();
 }
