@@ -187,3 +187,101 @@ SearchTypes(types, "Mission 타입 목록", new Regex(@"mission|Mission", RegexO
 SearchMembers(types, "씬 이름 관련 멤버",
     new Regex(@"scene|Scene|level|Level|sceneName|sceneToLoad|missionScene|levelScene|buildIndex",
               RegexOptions.IgnoreCase));
+
+// ════════════════════════════════════════════════════════════════════════════
+// 11. MissionAsset 컬렉션 보유 타입 탐색 — Graveyard 포함 배열/dict 소유자 찾기
+// ════════════════════════════════════════════════════════════════════════════
+Console.WriteLine("\n\n### MissionAsset 배열/리스트를 가진 멤버 전수 탐색 ###");
+foreach (var t in types.OrderBy(x => x.Name))
+{
+    try
+    {
+        var members = t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+            .Where(m => m.DeclaringType?.FullName == t.FullName);
+        foreach (var m in members)
+        {
+            try
+            {
+                Type? memberType = m switch
+                {
+                    FieldInfo    fi => fi.FieldType,
+                    PropertyInfo pi => pi.PropertyType,
+                    _              => null
+                };
+                if (memberType == null) continue;
+                string typeName = memberType.Name + (memberType.IsGenericType
+                    ? "<" + string.Join(",", memberType.GetGenericArguments().Select(a => a.Name)) + ">"
+                    : "");
+                // MissionAsset 배열, List, Il2CppArray 포함 여부 확인
+                bool hasMission = typeName.Contains("MissionAsset")
+                    || (memberType.IsArray && memberType.GetElementType()?.Name == "MissionAsset")
+                    || (memberType.IsGenericType && memberType.GetGenericArguments().Any(a => a.Name == "MissionAsset"));
+                if (hasMission)
+                    Console.WriteLine($"  [{t.Name}]  {(m is FieldInfo ? "field" : "prop")}  {typeName}  {m.Name}");
+            }
+            catch { }
+        }
+    }
+    catch { }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 12. EpisodeAsset 전체 덤프
+// ════════════════════════════════════════════════════════════════════════════
+var epType = types.FirstOrDefault(x => x.Name == "EpisodeAsset");
+if (epType != null)
+    DumpType(epType, "EpisodeAsset — 전체");
+else
+    Console.WriteLine("\n[NOT FOUND] EpisodeAsset");
+
+// ════════════════════════════════════════════════════════════════════════════
+// 13. 미션 매니저 / 맵 / 셀렉션 관련 타입 덤프
+// ════════════════════════════════════════════════════════════════════════════
+foreach (var name in new[] {
+    "MetaGameMissionSelectionManager", "MissionMapManager",
+    "MissionSelectionMapManager", "MissionMapInit",
+    "GameDataManager",
+    "GameSettings", "PersistentData", "Balancing" })
+{
+    var t = types.FirstOrDefault(x => x.Name == name);
+    if (t != null) DumpType(t, name);
+    else Console.WriteLine($"\n[NOT FOUND] {name}");
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 14. "missions" / "playlist" / "episode" 이름 멤버 전수 검색
+// ════════════════════════════════════════════════════════════════════════════
+SearchMembers(types, "missions/episode/playlist 멤버",
+    new Regex(@"missions|Missions|episode|Episode|playlist|Playlist|missionList|MissionList|allMissions|missionData",
+              RegexOptions.IgnoreCase));
+
+// ════════════════════════════════════════════════════════════════════════════
+// 15. GameDataManager 타입 상세 — availableMissions 반환 타입 풀네임 확인
+// ════════════════════════════════════════════════════════════════════════════
+Console.WriteLine("\n\n### GameDataManager 타입 상세 ###");
+var gdmType2 = types.FirstOrDefault(x => x.Name == "GameDataManager");
+if (gdmType2 != null)
+{
+    // 상속 계층
+    Console.WriteLine("상속 계층:");
+    var bt = gdmType2;
+    while (bt != null) { Console.WriteLine($"  {bt.FullName}  [{bt.Assembly?.GetName().Name}]"); bt = bt.BaseType; }
+
+    // availableMissions / availablePlayableCharacters 타입 풀네임
+    foreach (var pname in new[] { "availableMissions", "availablePlayableCharacters",
+                                   "availableEpisodes" })
+    {
+        var p = gdmType2.GetProperty(pname,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        if (p != null)
+        {
+            Console.Write($"\n{pname}: {p.PropertyType.FullName}");
+            if (p.PropertyType.IsGenericType)
+            {
+                Console.Write("  Generic args: ");
+                Console.Write(string.Join(", ", p.PropertyType.GetGenericArguments().Select(a => a.FullName)));
+            }
+            Console.WriteLine();
+        }
+    }
+}

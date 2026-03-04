@@ -358,39 +358,42 @@ namespace BloodshedModToolkit.UI.Tabs
         }
 
         /// <summary>
-        /// MissionAsset을 스캔하여 에셋명(고유 키), 표시명, 씬명(strScene)을 캐싱.
-        /// 이름이 숫자로 시작하는 표준 미션만 포함 (CustomSession_*, DEMO_* 제외).
+        /// MissionAsset을 스캔하여 에셋명(고유 키), 표시명, 씬명을 캐싱.
+        /// 필터 기준: ResolveSceneName이 _knownScenes의 씬명을 반환하는 경우만 포함.
+        /// (CustomSession_*, DEMO_* 등 알 수 없는 씬은 자동 제외)
         /// </summary>
         private void ScanMissions()
         {
             var raw  = ModMenuContext.FindAllAssets<MissionAsset>();
             var temp = new List<(MissionAsset, string, string, string)>(raw.Length);
+            var skipped = new List<string>();
             foreach (var m in raw)
             {
                 if (m == null) continue;
                 string assetName;
                 try { assetName = m.name; } catch { continue; }
-                if (string.IsNullOrEmpty(assetName) || !char.IsDigit(assetName[0])) continue;
+                if (string.IsNullOrEmpty(assetName)) continue;
+
+                string rawScene;
+                try { rawScene = m.strScene ?? ""; } catch { rawScene = ""; }
+
+                // _sceneGroups 기준으로 실제 씬명 결정 — 알려진 씬이 없으면 제외
+                string sceneName = ResolveSceneName(assetName, rawScene);
+                if (sceneName.Length == 0) { skipped.Add(assetName); continue; }
 
                 string displayName;
                 try { displayName = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : assetName; }
                 catch { displayName = assetName; }
 
-                string rawScene;
-                try { rawScene = m.strScene ?? ""; } catch { rawScene = ""; }
-
-                // _sceneGroups 기준으로 실제 씬명 결정 (ground truth 검증)
-                string sceneName = ResolveSceneName(assetName, rawScene);
-
                 temp.Add((m, assetName, displayName, sceneName));
             }
             _debugMissionList = temp.ToArray();
             Plugin.Log.LogInfo($"[Debug] 미션 스캔: raw={raw.Length} standard={_debugMissionList.Length}");
-            if (_debugMissionList.Length > 0)
-            {
-                foreach (var (_, a, d, sn) in _debugMissionList)
-                    Plugin.Log.LogDebug($"  mission: assetName='{a}' strScene-resolved='{sn}' display='{d}'");
-            }
+            Plugin.Log.LogInfo($"[Debug] 미션 스캔: raw={raw.Length} included={_debugMissionList.Length} skipped={skipped.Count}");
+            foreach (var (_, a, d, sn) in _debugMissionList)
+                Plugin.Log.LogDebug($"  [OK]   assetName='{a}' scene='{sn}' display='{d}'");
+            foreach (var s in skipped)
+                Plugin.Log.LogDebug($"  [SKIP] assetName='{s}' (알려진 씬 없음)");
         }
 
         private void SelectCharacter(ModMenuContext ctx, PlayableCharacterData cd, string name)
