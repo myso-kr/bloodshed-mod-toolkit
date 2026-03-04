@@ -64,15 +64,29 @@ namespace BloodshedModToolkit.UI.Tabs
         /// <summary>
         /// MissionAsset → 실제 씬명 결정.
         /// ① strScene이 _knownScenes에 있으면 바로 사용
-        /// ② 없으면 assetName에서 _Mission_ 제거 후 확인 (01_Mission_Forest → 01_Forest)
-        /// ③ 그래도 없으면 빈 문자열 반환 (Quick Load 비활성화)
+        /// ② strScene에서 숫자 prefix(NN_) 제거 후 확인 ("01_Graveyard" → "Graveyard")
+        /// ③ assetName에서 _Mission_ 제거 후 확인 ("01_Mission_Forest" → "01_Forest")
+        /// ④ assetName 자체가 씬명인 경우 ("Graveyard" → "Graveyard")
+        /// ⑤ 모두 실패 시 빈 문자열 반환 (Quick Load 비활성화)
         /// </summary>
         private static string ResolveSceneName(string assetName, string strScene)
         {
-            if (!string.IsNullOrEmpty(strScene) && _knownScenes.Contains(strScene))
-                return strScene;
+            if (!string.IsNullOrEmpty(strScene))
+            {
+                // ① 직접 일치
+                if (_knownScenes.Contains(strScene))
+                    return strScene;
 
-            // 01_Mission_Forest → 01_Forest 패턴
+                // ② NN_ prefix 제거: "01_Graveyard" → "Graveyard"
+                if (strScene.Length > 3 && char.IsDigit(strScene[0]) && char.IsDigit(strScene[1]) && strScene[2] == '_')
+                {
+                    string stripped = strScene.Substring(3);
+                    if (_knownScenes.Contains(stripped))
+                        return stripped;
+                }
+            }
+
+            // ③ assetName에서 _Mission_ 제거: "01_Mission_Forest" → "01_Forest"
             if (assetName.Contains("_Mission_"))
             {
                 string derived = assetName.Replace("_Mission_", "_");
@@ -80,7 +94,7 @@ namespace BloodshedModToolkit.UI.Tabs
                     return derived;
             }
 
-            // assetName 자체가 씬명인 경우 (Graveyard 등)
+            // ④ assetName 자체가 씬명인 경우
             if (_knownScenes.Contains(assetName))
                 return assetName;
 
