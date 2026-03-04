@@ -5,6 +5,25 @@ using UnityEngine;
 
 namespace com8com1.SCFPS
 {
+    public class PlayableCharacterData : UnityEngine.ScriptableObject
+    {
+        public PlayableCharacterData(IntPtr ptr) : base(ptr) { }
+        // name 은 UnityEngine.Object 에서 상속 (= ScriptableObject asset 이름)
+    }
+
+    public class MissionAsset : UnityEngine.ScriptableObject
+    {
+        public MissionAsset(IntPtr ptr) : base(ptr) { }
+        public string strMissionTitle { get; set; } = "";
+        // name 은 UnityEngine.Object 에서 상속
+    }
+
+    public class EpisodeAsset : UnityEngine.ScriptableObject
+    {
+        public EpisodeAsset(IntPtr ptr) : base(ptr) { }
+        public string strEpisodeTitle { get; set; } = "";
+    }
+
     public class PlayerStats : MonoBehaviour
     {
         public PlayerStats(IntPtr ptr) : base(ptr) { }
@@ -141,6 +160,81 @@ namespace com8com1.SCFPS
     {
         public GameSettings(IntPtr ptr) : base(ptr) { }
         public LocalizationManager.Language languageText { get; set; }
+    }
+
+    /// <summary>
+    /// MetaGame 씬의 최상위 화면 전환 매니저.
+    /// goMetaGame* 필드는 각 화면 root GameObject 참조.
+    /// goMetaGameStatisticsMenu / FillCharacterRoster는 실제 interop에 없어 제외.
+    /// </summary>
+    public class MetaGameManager : MonoBehaviour
+    {
+        public MetaGameManager(IntPtr ptr) : base(ptr) { }
+
+        public GameObject? goMetaGameMainMenu           { get; set; }
+        public GameObject? goMetaGameEpisodeSelection   { get; set; }
+        public GameObject? goMetaGameMissionSelection   { get; set; }
+        public GameObject? goMetaGameCharacterSelection { get; set; }
+        public GameObject? goMetaGameMissionStart       { get; set; }
+        public GameObject? goMetaGameCustomSession      { get; set; }
+        public GameObject? goSelectSavegameNote         { get; set; }
+
+        public void OpenMetaGameMainMenu()   { }
+        public void UpdateMetaGameContent()  { }
+        public void MarkNewMetaGameItems()   { }
+        public void ReturnToMetaGame()       { }
+    }
+
+    /// <summary>
+    /// 캐릭터 로스터 UI 매니저. FillCharacterRoster()로 캐릭터 목록을 갱신.
+    /// </summary>
+    public class CharacterRosterManager : MonoBehaviour
+    {
+        public CharacterRosterManager(IntPtr ptr) : base(ptr) { }
+        public void FillCharacterRoster() { }
+    }
+
+    /// <summary>
+    /// MetaGame 내 미션 선택 UI 매니저 (Mission list / info panel).
+    /// 세이브 슬롯/미션 선택 상태는 SaveDataManager / SessionSettings가 보유.
+    /// </summary>
+    public class MetaGameMissionSelectionManager : MonoBehaviour
+    {
+        public MetaGameMissionSelectionManager(IntPtr ptr) : base(ptr) { }
+        public void ReturnToMissionSelectionPanel() { }
+        public void BuildMissionInfoPanel(MissionAsset mission) { }
+    }
+
+    /// <summary>
+    /// MetaGame 내 캐릭터 선택 UI 매니저.
+    /// </summary>
+    public class MetaGameCharacterSelectionManager : MonoBehaviour
+    {
+        public MetaGameCharacterSelectionManager(IntPtr ptr) : base(ptr) { }
+        public PlayableCharacterData? selectedCharacter { get; set; }
+        public void SetSelectedCharacter(PlayableCharacterData data) { }
+        public void FillCharacterList() { }
+    }
+
+    /// <summary>
+    /// 세이브 슬롯 + 진행 데이터 매니저.
+    /// </summary>
+    public class SaveDataManager : MonoBehaviour
+    {
+        public SaveDataManager(IntPtr ptr) : base(ptr) { }
+        public int activeSaveSlot { get; set; }
+        public void SetActiveSaveSlot(int slot) { }
+    }
+
+    /// <summary>
+    /// 미션 시작 시 선택된 에피소드/미션/캐릭터 상태를 보유하는 컴포넌트.
+    /// </summary>
+    public class SessionSettings : MonoBehaviour
+    {
+        public SessionSettings(IntPtr ptr) : base(ptr) { }
+        public EpisodeAsset?          selectedEpisode       { get; set; }
+        public MissionAsset?          selectedMission       { get; set; }
+        public PlayableCharacterData? selectedCharacterData { get; set; }
     }
 }
 

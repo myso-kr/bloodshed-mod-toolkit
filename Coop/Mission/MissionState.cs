@@ -6,6 +6,11 @@ namespace BloodshedModToolkit.Coop.Mission
     {
         Idle,
         WaitingForHost,
+        /// <summary>
+        /// Guest가 캐릭터 선택 없이 미션 씬에 진입했음 — MetaGame으로 리다이렉트된 상태.
+        /// MetaGame에서 캐릭터를 선택하고 게임을 시작하면 다음 씬 진입이 허가된다.
+        /// </summary>
+        NeedsCharacterSelect,
         Permitted,
     }
 
@@ -25,6 +30,13 @@ namespace BloodshedModToolkit.Coop.Mission
         // Host: 게스트별 입장 확인 (로깅용)
         public static Dictionary<ulong, bool> GuestReadyMap { get; } = new();
 
+        /// <summary>
+        /// Guest가 MetaGame → LoadingScreen 전환을 완료했음을 나타내는 플래그.
+        /// 세이브 파일 선택 + 캐릭터 선택 + Start 클릭이 모두 완료된 경우에만 true가 된다.
+        /// 미션 씬 진입 시 소비(false로 리셋)된다.
+        /// </summary>
+        public static bool GuestCharacterSelected { get; set; }
+
         public static void Reset()
         {
             Status                = MissionStatus.Idle;
@@ -32,7 +44,9 @@ namespace BloodshedModToolkit.Coop.Mission
             PendingBuildIndex     = -1;
             HostCurrentScene      = "";
             HostCurrentBuildIndex = -1;
+            GuestCharacterSelected = false;
             GuestReadyMap.Clear();
+            SceneTracker.Reset();
         }
     }
 }

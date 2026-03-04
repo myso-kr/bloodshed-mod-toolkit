@@ -83,7 +83,14 @@ namespace UnityEngine
         public T[] GetComponentsInChildren<T>()                   where T : Component => Array.Empty<T>();
         public T[] GetComponentsInChildren<T>(bool includeInactive) where T : Component => Array.Empty<T>();
         public T?  AddComponent<T>()                              where T : Component => null!;
+        public static GameObject?  Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType type) => null!;
+    }
+
+    public class ScriptableObject : Object
+    {
+        public ScriptableObject(IntPtr ptr) : base(ptr) { }
+        public ScriptableObject() : base(IntPtr.Zero) { }
     }
 
     public struct Vector2
@@ -457,6 +464,9 @@ namespace UnityEngine.SceneManagement
     {
         public string name;
         public int    buildIndex;
+        public bool   isLoaded;
+        public bool   IsValid() => buildIndex >= 0 && name != null;
+        public UnityEngine.GameObject[] GetRootGameObjects() => System.Array.Empty<UnityEngine.GameObject>();
     }
 
     public enum LoadSceneMode { Single, Additive }
@@ -466,8 +476,16 @@ namespace UnityEngine.SceneManagement
         // IL2CPP interop에서 UnityAction<T1,T2>은 System.Action<T1,T2>의 암묵적 변환을 지원하므로
         // CI 스텁에서는 System.Action 이벤트로 선언합니다.
         public static event System.Action<Scene, LoadSceneMode>? sceneLoaded;
-        public static Scene GetActiveScene() => default;
-        public static void LoadScene(string sceneName) { }
-        public static void LoadScene(int sceneBuildIndex) { }
+        public static event System.Action<Scene>?                sceneUnloaded;
+        public static event System.Action<Scene, Scene>?         activeSceneChanged;
+
+        public static int   sceneCount                        => 0;
+        public static Scene GetActiveScene()                  => default;
+        public static Scene GetSceneAt(int index)             => default;
+        public static Scene GetSceneByName(string name)       => default;
+
+        public static void LoadScene(string sceneName)        { }
+        public static void LoadScene(int sceneBuildIndex)     { }
+        public static void LoadScene(string sceneName, LoadSceneMode mode) { }
     }
 }

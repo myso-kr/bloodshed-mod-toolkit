@@ -12,8 +12,9 @@ namespace BloodshedModToolkit.Coop.Events
     /// </summary>
     static class SceneLoadGuestBlockPatch
     {
-        private static bool IsSystemScene(string name)
-            => name.StartsWith("00_") || name.Length == 0;
+        // MetaGame은 캐릭터 선택 화면이므로 항상 허용 (NeedsCharacterSelect 리다이렉트용)
+        private static bool IsAllowedScene(string name)
+            => name.StartsWith("00_") || name.Length == 0 || name == MissionState.MetaGameScene;
 
         [HarmonyPatch(typeof(SceneManager), nameof(SceneManager.LoadScene),
                       new[] { typeof(string) })]
@@ -21,11 +22,12 @@ namespace BloodshedModToolkit.Coop.Events
         {
             static bool Prefix(string sceneName)
             {
-                if (IsSystemScene(sceneName)) return true;
+                if (IsAllowedScene(sceneName)) return true;
 
                 if (CoopState.IsConnected && !CoopState.IsHost)
                 {
-                    if (MissionState.Status == MissionStatus.Permitted) return true;
+                    if (MissionState.Status == MissionStatus.Permitted ||
+                        MissionState.Status == MissionStatus.NeedsCharacterSelect) return true;
                     Plugin.Log.LogWarning(
                         $"[SceneBlock] Guest 직접 씬 로드 차단: '{sceneName}' (Status={MissionState.Status})");
                     return false;
@@ -45,7 +47,8 @@ namespace BloodshedModToolkit.Coop.Events
 
                 if (CoopState.IsConnected && !CoopState.IsHost)
                 {
-                    if (MissionState.Status == MissionStatus.Permitted) return true;
+                    if (MissionState.Status == MissionStatus.Permitted ||
+                        MissionState.Status == MissionStatus.NeedsCharacterSelect) return true;
                     Plugin.Log.LogWarning(
                         $"[SceneBlock] Guest 직접 씬 로드 차단: buildIndex={sceneBuildIndex}");
                     return false;

@@ -22,7 +22,7 @@ namespace BloodshedModToolkit.UI
         public ModMenu(System.IntPtr ptr) : base(ptr) { }
 
         // ── 탭 / 윈도우 상태 ─────────────────────────────────────────────────────
-        private enum Tab { Cheats, Tweaks, Coop, Bots }
+        private enum Tab { Cheats, Tweaks, Coop, Bots, Debug }
         private Tab  _activeTab  = Tab.Cheats;
         private bool _visible    = false;
         private Rect _windowRect = new Rect(20, 20, 390, 470);
@@ -32,9 +32,37 @@ namespace BloodshedModToolkit.UI
         private Vector2 _scrollTweaks = Vector2.zero;
         private Vector2 _scrollCoop   = Vector2.zero;
         private Vector2 _scrollBots   = Vector2.zero;
+        private Vector2 _scrollDebug  = Vector2.zero;
 
         // ── Co-op UI 상태 ─────────────────────────────────────────────────────────
-        private string _lobbyIdInput = "";
+        private string _lobbyIdInput    = "";
+        private string _debugSceneInput = "";
+
+        // ── Debug META SELECTION 캐시 ─────────────────────────────────────────────
+        private string _debugMetaSaveSlot = "?";
+        private string _debugMetaMission  = "?";
+        private string _debugMetaChar     = "?";
+        private SaveDataManager? _debugSdm;
+
+        // ── Debug 씬 로드 검증 오류 ───────────────────────────────────────────────
+        private string _debugSceneValidationError = "";
+
+        private static readonly Dictionary<string, string[]> _sceneMissionHints =
+            new(System.StringComparer.OrdinalIgnoreCase)
+        {
+            { "Graveyard",           new[] { "graveyard" } },
+            { "Village",             new[] { "village" } },
+            { "01_Forest",           new[] { "forest" } },
+            { "01_AltarOfSacrifice", new[] { "altar", "sacrifice" } },
+            { "01_Challenge_Flynn",  new[] { "flynn" } },
+            { "01_Challenge_Jared",  new[] { "jared" } },
+            { "02_Boat",             new[] { "boat" } },
+            { "02_StiltVillage",     new[] { "stilt", "harbour" } },
+            { "02_CultistTemple",    new[] { "cultist", "temple" } },
+            { "02_Boss",             new[] { "boss", "goddess" } },
+            { "02_Challenge_Maze",   new[] { "maze" } },
+            { "02_Challenge_Final",  new[] { "final" } },
+        };
 
         // ── 슬라이더 디바운스 타이머 (Time.time 기준 예약 시각, 0 = 예약 없음) ──────
         // 드래그 중 매 OnGUI 이벤트마다 RefreshEnemySpeeds/RecalculateStats 를 반복
@@ -243,6 +271,10 @@ namespace BloodshedModToolkit.UI
                     _activeTab == Tab.Bots ? _stTabActive! : _stTabInactive!,
                     GUILayout.Height(26)))
                 _activeTab = Tab.Bots;
+            if (GUILayout.Button("DEBUG",
+                    _activeTab == Tab.Debug ? _stTabActive! : _stTabInactive!,
+                    GUILayout.Height(26)))
+                _activeTab = Tab.Debug;
             GUILayout.EndHorizontal();
 
             GUILayout.Space(3);
@@ -250,7 +282,8 @@ namespace BloodshedModToolkit.UI
             if      (_activeTab == Tab.Cheats) DrawCheatsTab(l);
             else if (_activeTab == Tab.Tweaks) DrawTweaksTab(l);
             else if (_activeTab == Tab.Coop)   DrawCoopTab(l);
-            else                               DrawBotsTab();
+            else if (_activeTab == Tab.Bots)   DrawBotsTab();
+            else                               DrawDebugTab();
 
             // 타이틀바 영역만 드래그 허용
             GUI.DragWindow(new Rect(0, 0, _windowRect.width, 22));
@@ -460,30 +493,13 @@ namespace BloodshedModToolkit.UI
                 GUILayout.Space(4);
                 SectionHeader("MISSION GATE");
 
-                // Debug 게스트 모드 토글 (Host 전용 디버깅 기능)
                 if (CoopState.IsHost)
-                {
-                    bool dbg = CoopState.DebugGuestMode;
-                    string dbgLabel = dbg ? "[ DEBUG GUEST: ON  ]" : "[ DEBUG GUEST: OFF ]";
-                    if (GUILayout.Button(dbgLabel, dbg ? _stPresetOn! : _stPresetOff!))
-                    {
-                        CoopState.DebugGuestMode = !dbg;
-                        if (!CoopState.DebugGuestMode)
-                            MissionState.Status = MissionStatus.Idle;  // 디버그 해제 시 초기화
-                    }
-                    GUILayout.Space(2);
-                }
-
-                // 게스트 뷰 조건: 실제 게스트 OR Host가 Debug 게스트 모드 활성화
-                bool showGuestView = !CoopState.IsHost || CoopState.DebugGuestMode;
-
-                if (!showGuestView)
                 {
                     int ready = 0;
                     foreach (var v in MissionState.GuestReadyMap.Values) if (v) ready++;
                     GUILayout.Label($"GUESTS READY: {ready} / {CoopState.Peers.Count}", _stSliderName!);
                 }
-                else  // showGuestView
+                else
                 {
                     switch (MissionState.Status)
                     {
@@ -493,6 +509,10 @@ namespace BloodshedModToolkit.UI
                         case MissionStatus.WaitingForHost:
                             GUILayout.Label("씬 로드 완료 — 호스트 신호 대기 중", _stSliderName!);
                             GUILayout.Label($"({MissionState.PendingSceneName})", _stSliderName!);
+                            break;
+                        case MissionStatus.NeedsCharacterSelect:
+                            GUILayout.Label("캐릭터를 선택하고 게임을 시작하세요", _stSliderName!);
+                            GUILayout.Label($"Target: {MissionState.PendingSceneName}", _stSliderName!);
                             break;
                         case MissionStatus.Permitted:
                             GUILayout.Label("미션 로딩 중...", _stSliderName!);
@@ -575,6 +595,205 @@ namespace BloodshedModToolkit.UI
             }
             else
                 GUILayout.Label(l.BotDisabledNote, _stSliderName!);
+
+            GUILayout.EndScrollView();
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // DEBUG 탭
+        // ════════════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// 미션 씬 진입 전 SaveSlot·Character·Mission 일치 여부를 검증.
+        /// 비미션 씬이면 항상 통과. 실패 시 reason에 오류 메시지 반환.
+        /// </summary>
+        private bool ValidateSceneLoad(string sceneName, out string reason)
+        {
+            // 비미션 씬 — 검증 불필요
+            if (!_sceneMissionHints.ContainsKey(sceneName))
+            {
+                reason = "";
+                return true;
+            }
+
+            // 1. SaveSlot
+            var sdm = UnityEngine.Object.FindObjectOfType<SaveDataManager>();
+            if (sdm == null)
+            {
+                reason = "SaveSlot: SaveDataManager 미발견 (MetaGame 씬에서 REFRESH 필요)";
+                return false;
+            }
+            int slot = (int)sdm.activeSaveSlot;
+            if (slot < 0 || slot > 2)
+            {
+                reason = $"SaveSlot: 유효하지 않은 슬롯 ({slot}), Slot 0~2 중 선택 필요";
+                return false;
+            }
+
+            // 2. Character
+            var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
+            var csm = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
+            string charName = csm?.selectedCharacter?.name
+                           ?? ss?.selectedCharacterData?.name
+                           ?? "";
+            if (charName.Length == 0)
+            {
+                reason = "Character: 캐릭터가 선택되지 않았습니다";
+                return false;
+            }
+
+            // 3. Mission ↔ Scene
+            var mission = ss?.selectedMission;
+            if (mission == null)
+            {
+                reason = "Mission: 미션이 선택되지 않았습니다";
+                return false;
+            }
+
+            if (_sceneMissionHints.TryGetValue(sceneName, out var hints))
+            {
+                string mName = (mission.name ?? "").ToLower();
+                bool match = System.Array.Exists(hints, h => mName.Contains(h));
+                if (!match)
+                {
+                    reason = $"Mission 불일치: '{mission.name}' → '{sceneName}'\n" +
+                             $"예상 키워드: [{string.Join(", ", hints)}]";
+                    return false;
+                }
+            }
+
+            reason = "";
+            return true;
+        }
+
+        private void RefreshMetaSelection()
+        {
+            _debugSdm = UnityEngine.Object.FindObjectOfType<SaveDataManager>();
+            var ss    = UnityEngine.Object.FindObjectOfType<SessionSettings>();
+            var csm   = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
+            _debugMetaSaveSlot = _debugSdm != null ? _debugSdm.activeSaveSlot.ToString() : "N/A";
+            _debugMetaMission  = ss?.selectedMission?.strMissionTitle
+                                  ?? ss?.selectedMission?.name
+                                  ?? "(none)";
+            _debugMetaChar     = csm?.selectedCharacter?.name
+                                  ?? ss?.selectedCharacterData?.name
+                                  ?? "(none)";
+        }
+        private static readonly (string Group, (string Scene, string Label)[] Entries)[] _sceneGroups =
+        {
+            ("Nav", new[] { ("MetaGame", "MetaGame") }),
+            ("Dev", new[] { ("SampleScene", "Sample") }),
+            ("P",   new[] { ("Graveyard", "Graveyard"), ("Village", "Village") }),
+            ("E1",  new[] { ("01_Forest", "Forest"), ("01_AltarOfSacrifice", "Altar"),
+                            ("01_Challenge_Flynn", "Flynn"), ("01_Challenge_Jared", "Jared") }),
+            ("E2",  new[] { ("02_Boat", "Boat"), ("02_StiltVillage", "Stilt"),
+                            ("02_CultistTemple", "Temple"), ("02_Boss", "Boss"),
+                            ("02_Challenge_Maze", "Maze"), ("02_Challenge_Final", "Final") }),
+        };
+
+        private void DrawDebugTab()
+        {
+            _scrollDebug = GUILayout.BeginScrollView(_scrollDebug, GUILayout.ExpandHeight(true));
+
+            // ── CURRENT STATE ────────────────────────────────────────────────
+            SectionHeader("CURRENT STATE");
+            var cur = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            GUILayout.Label($"Active : {cur.name} (idx={cur.buildIndex})", _stSliderName!);
+            GUILayout.Label($"From   : {(SceneTracker.FromSceneName.Length > 0 ? SceneTracker.FromSceneName + $"(idx={SceneTracker.FromSceneBuildIndex})" : "(none)")}", _stSliderName!);
+            GUILayout.Label($"Status : {MissionState.Status}", _stSliderName!);
+            GUILayout.Label($"Pending: {(MissionState.PendingSceneName.Length > 0 ? MissionState.PendingSceneName : "(none)")}", _stSliderName!);
+            GUILayout.Label($"CharSel: {MissionState.GuestCharacterSelected}", _stSliderName!);
+            GUILayout.Label($"Coop   : Enabled={CoopState.IsEnabled} Host={CoopState.IsHost} Connected={CoopState.IsConnected}", _stSliderName!);
+
+            // ── LOADED SCENES ────────────────────────────────────────────────
+            SectionHeader("LOADED SCENES");
+            var scenes = SceneTracker.LoadedScenes;
+            if (scenes.Count == 0)
+                GUILayout.Label("  (none)", _stSliderName!);
+            else
+                foreach (var s in scenes)
+                    GUILayout.Label(
+                        $"  {(s.IsAdditive ? "[+]" : "[ ]")} {s.Name} (idx={s.BuildIndex})",
+                        _stSliderName!);
+
+            // ── META SELECTION ───────────────────────────────────────────────
+            SectionHeader("META SELECTION");
+            GUILayout.Label($"SaveSlot: {_debugMetaSaveSlot}", _stSliderName!);
+            GUILayout.Label($"Mission : {_debugMetaMission}", _stSliderName!);
+            GUILayout.Label($"Char    : {_debugMetaChar}", _stSliderName!);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("REFRESH", _stActionBtn!))
+                RefreshMetaSelection();
+            if (_debugSdm != null)
+            {
+                for (int slot = 0; slot < 3; slot++)
+                {
+                    bool active = _debugMetaSaveSlot == slot.ToString();
+                    int s = slot;
+                    if (GUILayout.Button($"Slot {s}", active ? _stPresetOn! : _stPresetOff!))
+                    {
+                        _debugSdm.SetActiveSaveSlot(s);
+                        _debugMetaSaveSlot = s.ToString();
+                    }
+                }
+            }
+            GUILayout.EndHorizontal();
+
+            // ── FORCE SCENE LOAD ────────────────────────────────────────────
+            SectionHeader("FORCE SCENE LOAD");
+            GUILayout.Label("씬 이름 (클립보드 붙여넣기):", _stSliderName!);
+            GUILayout.Label(
+                _debugSceneInput.Length > 0 ? _debugSceneInput : "(empty)",
+                _stSliderValue!);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("PASTE", _stActionBtn!))
+                _debugSceneInput = GUIUtility.systemCopyBuffer?.Trim() ?? "";
+            if (_debugSceneInput.Length > 0 && GUILayout.Button("CLEAR", _stResetBtn!))
+                _debugSceneInput = "";
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(2);
+            foreach (var (group, entries) in _sceneGroups)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(group + ":", _stSliderName!, GUILayout.Width(28f));
+                foreach (var (scene, label) in entries)
+                {
+                    bool active = _debugSceneInput == scene;
+                    if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
+                        _debugSceneInput = scene;
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(4);
+
+            // 검증 오류 표시
+            if (_debugSceneValidationError.Length > 0)
+            {
+                var errStyle = new GUIStyle(_stSliderName!)
+                    { normal = { textColor = new Color(1f, 0.2f, 0.2f) }, wordWrap = true };
+                GUILayout.Label(_debugSceneValidationError, errStyle);
+            }
+
+            if (GUILayout.Button("LOAD SCENE", _stActionBtn!))
+            {
+                if (_debugSceneInput.Length == 0)
+                {
+                    _debugSceneValidationError = "씬 이름이 비어있습니다";
+                    Plugin.Log.LogWarning("[Debug] 씬 이름이 비어있습니다");
+                }
+                else if (ValidateSceneLoad(_debugSceneInput, out string reason))
+                {
+                    _debugSceneValidationError = "";
+                    Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{_debugSceneInput}'");
+                    UnityEngine.SceneManagement.SceneManager.LoadScene(_debugSceneInput);
+                }
+                else
+                {
+                    _debugSceneValidationError = reason;
+                    Plugin.Log.LogWarning($"[Debug] 씬 로드 검증 실패: {reason}");
+                }
+            }
 
             GUILayout.EndScrollView();
         }

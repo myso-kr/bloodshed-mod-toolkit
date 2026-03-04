@@ -43,31 +43,57 @@ namespace BloodshedModToolkit.UI
         void OnGUI()
         {
             if (!CoopState.IsConnected || CoopState.IsHost) return;
-            if (MissionState.Status != MissionStatus.WaitingForHost) return;
-            if (SceneManager.GetActiveScene().name == Coop.Mission.MissionState.MetaGameScene) return;
 
-            EnsureStyles();
+            var status    = MissionState.Status;
+            var sceneName = SceneManager.GetActiveScene().name;
 
-            // CheatMenu(depth=0) 뒤에서 게임 화면을 덮도록 depth를 높게 설정
-            GUI.depth = 10;
+            if (status == MissionStatus.WaitingForHost &&
+                sceneName != Coop.Mission.MissionState.MetaGameScene)
+            {
+                // 전체 화면 차단 오버레이 — 호스트 신호 대기
+                EnsureStyles();
+                GUI.depth = 10;
 
-            // 전체 화면 불투명 검정 배경
-            GUI.color = new Color(0f, 0f, 0f, 0.92f);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = Color.white;
+                GUI.color = new Color(0f, 0f, 0f, 0.92f);
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+                GUI.color = Color.white;
 
-            float cx = Screen.width  * 0.5f;
-            float cy = Screen.height * 0.5f;
+                float cx = Screen.width  * 0.5f;
+                float cy = Screen.height * 0.5f;
 
-            GUI.Label(new Rect(cx - 220f, cy - 36f, 440f, 40f),
-                "Waiting for host to start...", _stTitle!);
+                GUI.Label(new Rect(cx - 220f, cy - 36f, 440f, 40f),
+                    "Waiting for host to start...", _stTitle!);
 
-            string scene = MissionState.PendingSceneName;
-            if (scene.Length > 0)
-                GUI.Label(new Rect(cx - 220f, cy + 12f, 440f, 24f),
-                    $"Scene: {scene}", _stSub!);
+                string pending = MissionState.PendingSceneName;
+                if (pending.Length > 0)
+                    GUI.Label(new Rect(cx - 220f, cy + 12f, 440f, 24f),
+                        $"Scene: {pending}", _stSub!);
 
-            GUI.depth = 0;
+                GUI.depth = 0;
+            }
+            else if (status == MissionStatus.NeedsCharacterSelect &&
+                     sceneName == Coop.Mission.MissionState.MetaGameScene)
+            {
+                // MetaGame 상단 배너 — 캐릭터 선택 안내 (게임 UI를 가리지 않도록 좁게)
+                EnsureStyles();
+                GUI.depth = 5;
+
+                float bh = 48f;
+                GUI.color = new Color(0.8f, 0.35f, 0f, 0.88f);
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, bh), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+
+                float cx = Screen.width * 0.5f;
+                GUI.Label(new Rect(cx - 260f, 4f,  520f, 24f),
+                    "Co-op: Select your character and start the mission", _stTitle!);
+
+                string target = MissionState.PendingSceneName;
+                if (target.Length > 0)
+                    GUI.Label(new Rect(cx - 260f, 26f, 520f, 20f),
+                        $"Target scene: {target}", _stSub!);
+
+                GUI.depth = 0;
+            }
         }
     }
 }
