@@ -1,6 +1,6 @@
 # Bloodshed Mod Toolkit
 
-[![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
+[![Bloodshed on Steam](docs/images/steam_card.png)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)

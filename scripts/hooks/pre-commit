@@ -2,6 +2,7 @@
 # pre-commit hook
 # 1) stub 빌드로 컴파일 에러 차단
 # 2) 빌드 성공 시 patch 버전 자동 증가 → 버전 파일을 커밋에 포함
+# 3) Steam 카드 PNG 갱신 (24시간 캐시, 네트워크 오류 시 non-fatal)
 # 설치: scripts/Install-Hooks.ps1 실행
 
 set -euo pipefail
@@ -34,6 +35,15 @@ else
             "$REPO_ROOT/Installer/bloodshed.nsi" \
             "$REPO_ROOT/Plugin.cs"
 fi
+
+# ── 3. Steam 카드 렌더링 ────────────────────────────────────────────────────
+# 24시간 캐시 정책: 네트워크 오류 시 non-fatal (카드가 이미 있으면 구버전 유지)
+STEAM_CARD="$REPO_ROOT/docs/images/steam_card.png"
+echo "[pre-commit] Steam 카드 렌더링 중..."
+dotnet run --project "$REPO_ROOT/SteamCard/SteamCard.csproj" -c Release \
+    -- "$STEAM_CARD" \
+    && git add "$STEAM_CARD" \
+    || echo "[pre-commit] ⚠ Steam 카드 생성 실패 — 네트워크 미연결? 계속 진행합니다."
 
 echo "[pre-commit] OK"
 exit 0

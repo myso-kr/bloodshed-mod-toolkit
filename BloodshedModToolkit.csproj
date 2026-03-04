@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 단일 버전 진실 원천 — Bump-Version.ps1 로만 수정할 것 -->
-    <Version>1.0.144</Version>
+    <Version>1.0.145</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -116,10 +116,11 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Inspector/Installer는 항상 제외, Stubs는 로컬 빌드 시에만 제외 (CI에서는 SDK 기본 glob으로 포함됨) -->
+  <!-- Inspector/Installer/SteamCard는 항상 제외, Stubs는 로컬 빌드 시에만 제외 (CI에서는 SDK 기본 glob으로 포함됨) -->
   <ItemGroup>
     <Compile Remove="Inspector\**" />
     <Compile Remove="Installer\**" />
+    <Compile Remove="SteamCard\**" />
     <EmbeddedResource Remove="Installer\**" />
     <None Remove="Installer\**" />
   </ItemGroup>

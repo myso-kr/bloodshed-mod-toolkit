@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>SteamCard</AssemblyName>
+    <RootNamespace>SteamCard</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- PNG 렌더링 -->
+    <PackageReference Include="SixLabors.ImageSharp"         Version="3.1.5" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.4" />
+  </ItemGroup>
+</Project>
