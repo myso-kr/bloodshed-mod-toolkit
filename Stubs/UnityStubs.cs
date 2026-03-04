@@ -27,6 +27,7 @@ namespace UnityEngine
         public int GetInstanceID() => 0;
         public T?   GetComponent<T>()                           where T : Component => null!;
         public T?   GetComponentInChildren<T>()                 where T : Component => null!;
+        public T?   GetComponentInParent<T>()                   where T : Component => null!;
         public T[]  GetComponentsInChildren<T>()                where T : Component => Array.Empty<T>();
         public T[]  GetComponentsInChildren<T>(bool includeInactive) where T : Component => Array.Empty<T>();
     }
@@ -44,7 +45,9 @@ namespace UnityEngine
         public Quaternion rotation           { get; set; }
         public Quaternion localRotation      { get; set; }
         public Vector3    localEulerAngles   { get; set; }
+        public Vector3    eulerAngles        { get; set; }
         public void SetParent(Transform parent) { }
+        public void SetParent(Transform parent, bool worldPositionStays) { }
     }
 
     public class MonoBehaviour : Behaviour

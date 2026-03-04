@@ -13,7 +13,7 @@
 ![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
 [![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 
-**Languages:** **English** · [한국어](README.ko.md) · [日本語](README.ja.md) · [中文](README.zh-CN.md)
+**Languages:** **English** · [한국어](docs/overview/ko.md) · [日本語](docs/overview/ja.md) · [中文](docs/overview/zh-CN.md)
 
 ---
 
