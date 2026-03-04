@@ -267,7 +267,7 @@ Function MainPageLeave
         ${AndIf} $LatestVer  != ""
         ${AndIf} $InstalledVer != $LatestVer
             MessageBox MB_OK|MB_ICONINFORMATION \
-                "Update available: v$InstalledVer $\x2192 v$LatestVer$\nInstalling latest version..."
+                "Update available: v$InstalledVer -> v$LatestVer$\nInstalling latest version..."
         ${EndIf}
 
         VersionCheckContinue:
