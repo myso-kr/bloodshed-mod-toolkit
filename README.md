@@ -2,8 +2,15 @@
 
 [![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
-[![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?color=dc2626&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
+![Platform](https://img.shields.io/badge/Windows-x64-0078D6?logo=windows&logoColor=white)
+[![BepInEx](https://img.shields.io/badge/BepInEx-6.x_IL2CPP-7c3aed?logo=unity&logoColor=white)](https://builds.bepinex.dev/projects/bepinex_be)
+![CO-OP](https://img.shields.io/badge/CO--OP-4_Players-1b2838?logo=steam&logoColor=white)
+![God Mode](https://img.shields.io/badge/God_Mode-ON-dc2626)
+![Tweaks](https://img.shields.io/badge/Tweaks-9_Sliders-ea580c)
+![AI Bots](https://img.shields.io/badge/AI_Bots-up_to_3-52525b)
+![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
 
 **Languages:** **English** · [한국어](README.ko.md) · [日本語](README.ja.md) · [中文](README.zh-CN.md)
 
