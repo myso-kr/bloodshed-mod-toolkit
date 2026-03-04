@@ -11,6 +11,9 @@ namespace BloodshedModToolkit.Coop.Mission
 
     public static class MissionState
     {
+        /// <summary>캐릭터 선택·미션 준비 화면 씬 이름 — 게스트가 자유롭게 이용하는 씬.</summary>
+        public const string MetaGameScene = "MetaGame";
+
         public static MissionStatus Status            { get; set; } = MissionStatus.Idle;
         public static string        PendingSceneName  { get; set; } = "";
         public static int           PendingBuildIndex { get; set; } = -1;

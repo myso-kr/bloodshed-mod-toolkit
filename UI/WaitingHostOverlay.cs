@@ -44,7 +44,7 @@ namespace BloodshedModToolkit.UI
         {
             if (!CoopState.IsConnected || CoopState.IsHost) return;
             if (MissionState.Status != MissionStatus.WaitingForHost) return;
-            if (SceneManager.GetActiveScene().name == "MetaGame") return;
+            if (SceneManager.GetActiveScene().name == Coop.Mission.MissionState.MetaGameScene) return;
 
             EnsureStyles();
 

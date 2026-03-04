@@ -22,7 +22,7 @@ namespace BloodshedModToolkit.Coop.Sync
             var current = SceneManager.GetActiveScene();
             bool alreadyInScene = current.name == sceneName
                                 || current.buildIndex == buildIndex;
-            bool inMetaGame = current.name == "MetaGame";
+            bool inMetaGame = current.name == Mission.MissionState.MetaGameScene;
 
             if (alreadyInScene)
             {

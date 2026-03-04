@@ -54,7 +54,7 @@ namespace BloodshedModToolkit.Coop.Mission
                 // WaveGroupStartPatch(DebugGuestMode 경로)가 웨이브를 차단한다.
                 if (CoopState.DebugGuestMode)
                 {
-                    if (scene.name == "MetaGame")
+                    if (scene.name == MissionState.MetaGameScene)
                     {
                         Plugin.Log.LogInfo("[MissionGate] Debug 모드 — MetaGame(준비화면) 통과");
                         return;
@@ -83,7 +83,7 @@ namespace BloodshedModToolkit.Coop.Mission
 
             // MetaGame(저장파일 선택·미션 지역 선택·캐릭터 선택·게임 시작 등 모든 준비 단계)
             // WaitingForHost 상태가 남아있어도 강제 해제 — 게스트가 자유롭게 이용
-            if (scene.name == "MetaGame")
+            if (scene.name == MissionState.MetaGameScene)
             {
                 if (MissionState.Status == MissionStatus.WaitingForHost)
                     MissionState.Status = MissionStatus.Idle;
