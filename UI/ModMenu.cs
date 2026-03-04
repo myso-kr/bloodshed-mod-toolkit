@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Steamworks;
 using com8com1.SCFPS;
 using Enemies.EnemyAi;
@@ -53,6 +54,9 @@ namespace BloodshedModToolkit.UI
 
         // ── Debug 씬 로드 검증 오류 ───────────────────────────────────────────────
         private string _debugSceneValidationError = "";
+
+        // GC 방지 — SceneManager.sceneLoaded IL2CPP delegate
+        private System.Action<Scene, LoadSceneMode>? _onSceneLoaded;
 
         private static readonly Dictionary<string, string[]> _sceneMissionHints =
             new(System.StringComparer.OrdinalIgnoreCase)
@@ -180,6 +184,29 @@ namespace BloodshedModToolkit.UI
         {
             OverlayManager.Register(new StatusPanel());
             OverlayManager.Register(new DpsPanel());
+            _onSceneLoaded = OnSceneLoaded;
+            SceneManager.sceneLoaded += _onSceneLoaded;
+        }
+
+        void OnDestroy()
+        {
+            SceneManager.sceneLoaded -= _onSceneLoaded;
+            _onSceneLoaded = null;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            // MetaGame 재진입 시 DEBUG 선택 초기화 — 이전 세션 캐릭터/미션 오염 방지
+            if (scene.name == MissionState.MetaGameScene)
+            {
+                _debugSelectedChar    = null;
+                _debugSelectedMission = null;
+                _debugScanned         = false;
+                _debugMetaChar        = "?";
+                _debugMetaMission     = "?";
+                _debugSceneValidationError = "";
+                Plugin.Log.LogInfo("[ModMenu] MetaGame 재진입 — DEBUG 선택 초기화");
+            }
         }
 
         void Update()
@@ -639,10 +666,9 @@ namespace BloodshedModToolkit.UI
             }
 
             // 2. Character — ss.selectedCharacterData는 기본값이 있을 수 있으므로 신뢰하지 않음
-            //    DEBUG 패널 명시 선택 또는 MetaGame UI 선택(csm)만 허용
+            //    DEBUG 패널 명시 선택만 허용 — csm.selectedCharacter는 save data 기본값이 있어 신뢰 불가
             var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            var csm = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
-            var charData = _debugSelectedChar ?? csm?.selectedCharacter;
+            var charData = _debugSelectedChar;
             if (charData == null)
             {
                 reason = "Character: 캐릭터 미선택\nDEBUG 패널 CHARACTER SELECT에서 선택 필요";
