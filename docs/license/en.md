@@ -4,12 +4,6 @@ description: MIT License for Bloodshed Mod Toolkit by myso-kr.
 lang: en
 ---
 
-[← Overview](../overview/en.md) · [Features](../features/en.md) · [Installation](../installation/en.md) · [Technical](../technical/en.md)
-
-**Language:** **English** · [한국어](ko.md) · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # License
 
 MIT License

@@ -47,6 +47,12 @@ namespace BloodshedModToolkit
             AddComponent<BotManager>();
             AddComponent<RemotePlayerRenderer>();
 
+            // Task 3 — 공격 이펙트 MonoBehaviour 등록
+            ClassInjector.RegisterTypeInIl2Cpp<AutoDestroy>();
+            ClassInjector.RegisterTypeInIl2Cpp<BulletTracerEffect>();
+            ClassInjector.RegisterTypeInIl2Cpp<ProceduralExplosion>();
+            ClassInjector.RegisterTypeInIl2Cpp<LauncherProjectileEffect>();
+
             // Phase 9 — 미션 진입 게이트
             AddComponent<MissionGateBehaviour>();
 
@@ -65,6 +71,6 @@ namespace BloodshedModToolkit
     {
         public const string PLUGIN_GUID    = "com.bloodshed.modtoolkit";
         public const string PLUGIN_NAME    = "Bloodshed Mod Toolkit";
-        public const string PLUGIN_VERSION = "1.0.156";
+        public const string PLUGIN_VERSION = "1.0.157";
     }
 }

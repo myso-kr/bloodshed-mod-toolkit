@@ -7,12 +7,6 @@ lang: ko
 image: /bloodshed-mod-toolkit/images/banner_hero.png
 ---
 
-[기능](../features/ko.md) · [설치](../installation/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
-
-**언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # Bloodshed Mod Toolkit
 
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)

@@ -1,0 +1,395 @@
+/* ============================================================
+   Bloodshed Mod Toolkit — Game-themed site CSS
+   Dark roguelike FPS aesthetic: blood red, ember orange, void black
+   ============================================================ */
+
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --blood:   #dc2626;
+  --ember:   #ea580c;
+  --bg:      #0a0a0a;
+  --surface: #111827;
+  --border:  #1f2937;
+  --muted:   #6b7280;
+  --text:    #e5e7eb;
+  --nav-h:   96px;
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Pixel grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(220,38,38,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220,38,38,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* CRT scanlines */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.07) 3px,
+    rgba(0,0,0,0.07) 4px
+  );
+}
+
+/* ── Navbar ─────────────────────────────────────────────────── */
+#navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 20px rgba(220,38,38,0.12);
+}
+
+.navbar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* Top row: logo + language switcher */
+.navbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.site-logo {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.site-logo:hover { color: var(--blood); }
+
+/* Language switcher */
+.lang-switcher {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.lang-btn {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.18s;
+}
+.lang-btn:hover {
+  color: var(--text);
+  border-color: var(--blood);
+  background: rgba(220,38,38,0.08);
+}
+.lang-active {
+  color: var(--blood) !important;
+  border-color: var(--blood) !important;
+  background: rgba(220,38,38,0.12) !important;
+  box-shadow: 0 0 6px rgba(220,38,38,0.3);
+}
+
+/* Domain tabs row */
+.domain-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0.25rem 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.domain-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.18s;
+}
+.nav-tab:hover {
+  color: var(--text);
+  border-bottom-color: var(--ember);
+}
+.nav-tab-active {
+  color: var(--blood) !important;
+  border-bottom-color: var(--blood) !important;
+  font-weight: 700;
+}
+
+/* ── Content ────────────────────────────────────────────────── */
+.content-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+/* ── Markdown ────────────────────────────────────────────────── */
+.md-content {
+  /* Suppress the redundant h1 that duplicates page.title */
+  /* The first h1 in content is intentional — we keep it styled */
+}
+
+/* h1 */
+.md-content h1 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  border-bottom: 2px solid var(--blood);
+  padding-bottom: 0.4rem;
+  margin: 0 0 1.5rem;
+  line-height: 1.15;
+}
+
+/* h2 */
+.md-content h2 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  border-left: 3px solid var(--blood);
+  padding-left: 0.75rem;
+  margin: 2.2rem 0 0.9rem;
+  line-height: 1.2;
+}
+
+/* h3 */
+.md-content h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  letter-spacing: 0.05em;
+  color: var(--ember);
+  margin: 1.8rem 0 0.6rem;
+}
+
+/* h4 */
+.md-content h4 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 1.4rem 0 0.4rem;
+}
+
+/* Paragraphs */
+.md-content p {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #d1d5db;
+}
+
+/* Links */
+.md-content a {
+  color: var(--blood);
+  text-decoration: underline;
+  text-decoration-color: rgba(220,38,38,0.4);
+  transition: color 0.15s, text-shadow 0.15s;
+}
+.md-content a:hover {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(220,38,38,0.5);
+  text-decoration-color: var(--blood);
+}
+
+/* Lists */
+.md-content ul,
+.md-content ol {
+  margin: 0.5rem 0 1rem 1.5rem;
+  padding: 0;
+}
+.md-content li {
+  margin-bottom: 0.3rem;
+  line-height: 1.65;
+}
+.md-content ul li::marker { color: var(--blood); }
+.md-content ol li::marker { color: var(--blood); }
+
+/* Blockquote */
+.md-content blockquote {
+  margin: 1.2rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--ember);
+  background: rgba(234,88,12,0.07);
+  border-radius: 0 4px 4px 0;
+  color: #d1d5db;
+  font-style: italic;
+}
+.md-content blockquote p { margin: 0; }
+
+/* Inline code */
+.md-content code:not(pre code) {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82em;
+  background: #1f2937;
+  color: #f87171;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+/* Code block */
+.md-content pre {
+  background: #0f172a;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blood);
+  border-radius: 4px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  margin: 1.2rem 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.md-content pre code {
+  font-family: 'JetBrains Mono', monospace;
+  color: #93c5fd;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Horizontal rule */
+.md-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* Tables */
+.md-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2rem 0;
+  font-size: 0.9rem;
+}
+.md-content thead th {
+  background: var(--surface);
+  border-bottom: 2px solid var(--blood);
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.md-content tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.12s;
+}
+.md-content tbody tr:hover { background: rgba(220,38,38,0.04); }
+.md-content tbody td {
+  padding: 0.5rem 0.75rem;
+  color: #d1d5db;
+  vertical-align: top;
+}
+
+/* Images */
+.md-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0.5rem 0;
+}
+
+/* Badge images — inline with text */
+.md-content p img,
+.md-content a img {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0.15rem 0.2rem;
+  border-radius: 3px;
+  filter: brightness(1.05) contrast(1.05);
+}
+
+/* Strong / em */
+.md-content strong { color: var(--text); font-weight: 700; }
+.md-content em { color: #a1a1aa; }
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.site-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 1.1rem 1.25rem;
+}
+.footer-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.footer-link {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.footer-link:hover { color: var(--blood); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .navbar-top { flex-wrap: wrap; gap: 0.4rem; }
+  .site-logo  { font-size: 1rem; }
+  .md-content h1 { font-size: 1.8rem; }
+  .footer-inner { justify-content: center; text-align: center; }
+}

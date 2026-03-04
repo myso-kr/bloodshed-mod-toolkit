@@ -6,7 +6,6 @@ url: "https://myso-kr.github.io"
 baseurl: "/bloodshed-mod-toolkit"
 lang: en
 
-theme: minima
 permalink: pretty
 
 plugins:

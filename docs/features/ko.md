@@ -7,12 +7,6 @@ lang: ko
 image: /bloodshed-mod-toolkit/images/banner_power.png
 ---
 
-[← 개요](../overview/ko.md) · [설치](../installation/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
-
-**언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # 기능
 
 ![banner](../images/banner_power.png)

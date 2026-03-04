@@ -7,12 +7,6 @@ lang: en
 image: /bloodshed-mod-toolkit/images/banner_power.png
 ---
 
-[← Overview](../overview/en.md) · [Installation](../installation/en.md) · [Technical](../technical/en.md) · [License](../license/en.md)
-
-**Language:** **English** · [한국어](ko.md) · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # Features
 
 ![banner](../images/banner_power.png)

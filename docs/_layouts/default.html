@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: 'en' }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ page.title | default: site.title }}</title>
+
+  {%- seo -%}
+  {%- include custom-head.html -%}
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
+
+  <!-- Tailwind Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            game:    ['Saira Condensed', 'sans-serif'],
+            display: ['Rajdhani', 'sans-serif'],
+            code:    ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            blood:  '#dc2626',
+            ember:  '#ea580c',
+            steam:  '#1b2838',
+            bg:     '#0a0a0a',
+            surface:'#111827',
+            border: '#1f2937',
+            muted:  '#6b7280',
+            text:   '#e5e7eb',
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Game CSS -->
+  <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/game.css" />
+</head>
+
+<body class="bg-bg text-text font-display">
+
+  <!-- Scanlines overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  {%- assign pl = page.lang | default: "en" -%}
+  {%- assign pd = page.dir | remove_first: '/' | remove_last: '/' -%}
+  {%- if pd == "" -%}{%- assign lt = "overview" -%}{%- else -%}{%- assign lt = pd -%}{%- endif -%}
+
+  {%- if pl == "ko" -%}
+    {%- assign tab_labels = "개요,기능,설치,기술 노트,라이선스" | split: "," -%}
+    {%- assign lang_label = "KO" -%}
+  {%- elsif pl == "ja" -%}
+    {%- assign tab_labels = "概要,機能,インストール,技術ノート,ライセンス" | split: "," -%}
+    {%- assign lang_label = "JA" -%}
+  {%- elsif pl == "zh-CN" -%}
+    {%- assign tab_labels = "概述,功能,安装,技术说明,许可证" | split: "," -%}
+    {%- assign lang_label = "ZH" -%}
+  {%- else -%}
+    {%- assign tab_labels = "Overview,Features,Installation,Technical,License" | split: "," -%}
+    {%- assign lang_label = "EN" -%}
+  {%- endif -%}
+  {%- assign tab_slugs = "overview,features,installation,technical,license" | split: "," -%}
+
+  <!-- NAVBAR -->
+  <header id="navbar">
+    <div class="navbar-inner">
+
+      <!-- Logo + Language Switcher row -->
+      <div class="navbar-top">
+        <a href="{{ site.baseurl }}/overview/{{ pl }}/" class="site-logo" aria-label="{{ site.title }}">
+          <i class="fa-solid fa-skull text-blood mr-2 text-sm"></i>BLOODSHED<span class="text-blood">.</span>MOD
+        </a>
+
+        <nav class="lang-switcher" aria-label="Language">
+          {%- assign langs     = "en,ko,ja,zh-CN" | split: "," -%}
+          {%- assign lang_keys = "EN,KO,JA,ZH"   | split: "," -%}
+          {%- for l in langs -%}
+            {%- assign lk = lang_keys[forloop.index0] -%}
+            <a href="{{ site.baseurl }}/{{ lt }}/{{ l }}/"
+               class="lang-btn{% if l == pl %} lang-active{% endif %}"
+               {% if l == pl %}aria-current="true"{% endif %}>{{ lk }}</a>
+          {%- endfor -%}
+        </nav>
+      </div>
+
+      <!-- Domain Tabs row -->
+      <nav class="domain-tabs" aria-label="Sections">
+        {%- for slug in tab_slugs -%}
+          {%- assign label = tab_labels[forloop.index0] -%}
+          <a href="{{ site.baseurl }}/{{ slug }}/{{ pl }}/"
+             class="nav-tab{% if slug == lt %} nav-tab-active{% endif %}"
+             {% if slug == lt %}aria-current="page"{% endif %}>{{ label }}</a>
+        {%- endfor -%}
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content-wrap">
+    <article class="md-content">
+      {{ content }}
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="text-muted text-sm">
+        <i class="fa-brands fa-github mr-1"></i>
+        <a href="https://github.com/myso-kr/bloodshed-mod-toolkit" class="footer-link">bloodshed-mod-toolkit</a>
+        &mdash; MIT &copy; 2024 myso-kr
+      </span>
+      <span class="text-muted text-sm">
+        <a href="https://store.steampowered.com/app/2747550/Bloodshed/" class="footer-link">
+          <i class="fa-brands fa-steam mr-1"></i>Bloodshed on Steam
+        </a>
+      </span>
+    </div>
+  </footer>
+
+</body>
+</html>

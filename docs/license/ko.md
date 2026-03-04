@@ -4,12 +4,6 @@ description: Bloodshed Mod Toolkit MIT 라이선스 한국어 번역 (참고용)
 lang: ko
 ---
 
-[← 개요](../overview/ko.md) · [기능](../features/ko.md) · [설치](../installation/ko.md) · [기술 노트](../technical/ko.md)
-
-**언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # 라이선스
 
 MIT 라이선스

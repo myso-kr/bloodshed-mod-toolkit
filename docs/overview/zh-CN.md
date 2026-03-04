@@ -7,12 +7,6 @@ lang: zh-CN
 image: /bloodshed-mod-toolkit/images/banner_hero.png
 ---
 
-[功能](../features/zh-CN.md) · [安装](../installation/zh-CN.md) · [技术说明](../technical/zh-CN.md) · [许可证](../license/zh-CN.md)
-
-**语言:** [English](en.md) · [한국어](ko.md) · [日本語](ja.md) · **中文**
-
----
-
 # Bloodshed Mod Toolkit
 
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)

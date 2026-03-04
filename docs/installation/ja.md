@@ -6,12 +6,6 @@ description: >-
 lang: ja
 ---
 
-[← 概要](../overview/ja.md) · [機能](../features/ja.md) · [技術ノート](../technical/ja.md) · [ライセンス](../license/ja.md)
-
-**言語:** [English](en.md) · [한국어](ko.md) · **日本語** · [中文](zh-CN.md)
-
----
-
 # インストール
 
 ## 必要環境

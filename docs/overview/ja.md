@@ -7,12 +7,6 @@ lang: ja
 image: /bloodshed-mod-toolkit/images/banner_hero.png
 ---
 
-[機能](../features/ja.md) · [インストール](../installation/ja.md) · [技術ノート](../technical/ja.md) · [ライセンス](../license/ja.md)
-
-**言語:** [English](en.md) · [한국어](ko.md) · **日本語** · [中文](zh-CN.md)
-
----
-
 # Bloodshed Mod Toolkit
 
 [![Bloodshed on Steam](../images/steam_card.svg)](https://store.steampowered.com/app/2747550/Bloodshed/)

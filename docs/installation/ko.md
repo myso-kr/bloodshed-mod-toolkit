@@ -6,12 +6,6 @@ description: >-
 lang: ko
 ---
 
-[← 개요](../overview/ko.md) · [기능](../features/ko.md) · [기술 노트](../technical/ko.md) · [라이선스](../license/ko.md)
-
-**언어:** [English](en.md) · **한국어** · [日本語](ja.md) · [中文](zh-CN.md)
-
----
-
 # 설치
 
 ## 요구사항
