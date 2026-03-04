@@ -4,7 +4,7 @@ description: >-
   Bloodshed Modツールキット: 無敵モード、ジェム無限、Steam P2P 4人Co-op、
   難易度トウィーク、AIボット。F5一発で全部。
 lang: ja
-image: /bloodshed-mod-toolkit/images/banner_hero.png
+image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
 ---
 
 # Bloodshed Mod Toolkit

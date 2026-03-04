@@ -4,7 +4,7 @@ description: >-
   Bloodshed 모드 툴킷: 무적 모드, 무한 젬, Steam P2P 4인 코-업,
   난이도 트윅, AI 봇. F5 하나로 전부.
 lang: ko
-image: /bloodshed-mod-toolkit/images/banner_hero.png
+image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
 ---
 
 # Bloodshed Mod Toolkit

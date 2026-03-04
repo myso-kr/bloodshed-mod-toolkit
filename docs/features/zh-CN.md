@@ -4,7 +4,7 @@ description: >-
   完整功能列表: 无敌模式、无限宝石、移速倍率、Steam 4人联机、
   5个难度预设、9个平衡滑块、AI机器人、快捷键。
 lang: zh-CN
-image: /bloodshed-mod-toolkit/images/banner_power.png
+image: /bloodshed-mod-toolkit/images/og_banner_power.jpg
 ---
 
 # 功能

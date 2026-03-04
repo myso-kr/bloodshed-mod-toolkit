@@ -4,7 +4,7 @@ description: >-
   Bloodshed mod toolkit: God Mode, infinite gems, 4-player Steam P2P co-op,
   difficulty tweaks, AI bots. All in one F5 keypress.
 lang: en
-image: /bloodshed-mod-toolkit/images/banner_hero.png
+image: /bloodshed-mod-toolkit/images/og_banner_hero.jpg
 ---
 
 # Bloodshed Mod Toolkit

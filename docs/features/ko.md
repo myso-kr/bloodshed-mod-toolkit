@@ -4,7 +4,7 @@ description: >-
   전체 기능 목록: 무적 모드, 무한 젬, 이동속도 배율, Steam 4인 코-업,
   5가지 난이도 프리셋, 9개 밸런스 슬라이더, AI 봇, 단축키.
 lang: ko
-image: /bloodshed-mod-toolkit/images/banner_power.png
+image: /bloodshed-mod-toolkit/images/og_banner_power.jpg
 ---
 
 # 기능
