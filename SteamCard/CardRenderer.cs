@@ -7,13 +7,18 @@ using SixLabors.ImageSharp.Processing;
 namespace SteamCard;
 
 /// <summary>
-/// 646×190 Steam 위젯 iframe 표준 크기 카드 렌더러.
+/// 646×190 Steam 위젯 iframe 디자인 복원 렌더러.
 ///
-/// 레이어 구조:
-///   1) library_hero.jpg — 전체 배경 (center-crop, full bleed)
-///   2) 좌→우 그라디언트 오버레이 (x=130 투명 → x=218 불투명)
-///   3) logo.png — 좌측 영역 수직 중앙 배치
-///   4) 우측 텍스트: 게임명 / 가격 / 리뷰 / Add to Cart 버튼
+/// 공식 CSS(styles_widget.css / store.css)에서 추출한 실제 값 사용:
+///   - 배경: linear-gradient(130deg, #3b4351, #282e39)
+///   - 이미지: capsule_184x69 (float left)
+///   - 헤더: "Buy [Name]" #fefefe + " on Steam" #9e9e9e  (21px Regular)
+///   - 설명: 13px #c9c9c9, 캡슐 우측 흘러감
+///   - 구매 영역(우하단): [discount_pct][discount_prices][Buy on Steam]
+///       - discount_pct  : bg #4c6b22, fg #BEEE11, 25px, h=32
+///       - discount_prices: bg #344654, 원가 #738895 11px / 최종가 #BEEE11 14px
+///       - 버튼           : gradient #6fa720→#588a1b, text #d2efa9 14px
+///   - 플랫폼 아이콘: 좌하단 Windows 4-square
 /// </summary>
 public static class CardRenderer
 {
@@ -22,35 +27,34 @@ public static class CardRenderer
     private const int H = 190;
 
     // ── 레이아웃 ──────────────────────────────────────────────────────────────
-    private const int GradStartX = 128;   // 그라디언트 시작 (투명)
-    private const int GradEndX   = 220;   // 그라디언트 종료 (불투명)
-    private const int TextX      = 226;   // 텍스트/솔리드 시작 x
-    private const int TextPad    = 12;    // 텍스트 내부 여백
-    private const int LogoMaxW   = 172;   // 로고 최대 너비
-    private const int LogoMaxH   = 106;   // 로고 최대 높이
+    private const int PadH    = 15;   // 좌우 여백
+    private const int PadV    = 10;   // 상하 여백
+    private const int CapsW   = 184;  // capsule_184x69 너비
+    private const int CapsH   = 69;   // capsule_184x69 높이
+    private const int CapsGap = 10;   // 캡슐 우측 여백
+    private const int HeaderH = 28;   // h1 line-height
 
-    // ── 버튼 ──────────────────────────────────────────────────────────────────
-    private const int BtnW = 206;
-    private const int BtnH = 26;
-
-    // ── Steam 다크 팔레트 ─────────────────────────────────────────────────────
-    private static readonly Color BgOverlay  = Color.ParseHex("#1b2838");
-    private static readonly Color Separator  = Color.ParseHex("#2a475e");
-    private static readonly Color AccentBlue = Color.ParseHex("#66c0f4");
-    private static readonly Color DiscountBg = Color.ParseHex("#4c6b22");
-    private static readonly Color DiscountFg = Color.ParseHex("#a4d007");
-    private static readonly Color TextWhite  = Color.ParseHex("#ffffff");
-    private static readonly Color TextDim    = Color.ParseHex("#7a8b96");
-    private static readonly Color ReviewPos  = Color.ParseHex("#57cbde");
-    private static readonly Color ReviewMix  = Color.ParseHex("#c9b27c");
-    private static readonly Color ReviewNeg  = Color.ParseHex("#c24d2c");
-    private static readonly Color CartBg     = Color.ParseHex("#4d7a16");
-    private static readonly Color CartTop    = Color.ParseHex("#71c102");  // 상단 하이라이트
+    // ── 공식 Steam 위젯 색상 (styles_widget.css / store.css) ──────────────────
+    private static readonly Color BgStart       = Color.ParseHex("#3b4351");
+    private static readonly Color BgEnd         = Color.ParseHex("#282e39");
+    private static readonly Color BorderColor   = Color.ParseHex("#424c5c");
+    private static readonly Color TitleFg       = Color.ParseHex("#fefefe");
+    private static readonly Color OnSteamFg     = Color.ParseHex("#9e9e9e");
+    private static readonly Color DescFg        = Color.ParseHex("#c9c9c9");
+    private static readonly Color DiscPctBg     = Color.ParseHex("#4c6b22");
+    private static readonly Color DiscPctFg     = Color.ParseHex("#BEEE11");
+    private static readonly Color DiscPriceBg   = Color.ParseHex("#344654");
+    private static readonly Color OrigPriceFg   = Color.ParseHex("#738895");
+    private static readonly Color FinalPriceFg  = Color.ParseHex("#BEEE11");
+    private static readonly Color PurchaseBg    = Color.ParseHex("#000000");
+    private static readonly Color CartBgStart   = Color.ParseHex("#6fa720");
+    private static readonly Color CartBgEnd     = Color.ParseHex("#588a1b");
+    private static readonly Color CartFg        = Color.ParseHex("#d2efa9");
+    private static readonly Color PlatformFg    = Color.ParseHex("#a0a0a0");
 
     public static async Task RenderAsync(
         SteamGameData data,
-        byte[]        heroBytes,
-        byte[]?       logoBytes,
+        byte[]        capsuleBytes,
         string        outputPath,
         CancellationToken ct = default)
     {
@@ -59,164 +63,174 @@ public static class CardRenderer
 
         card.Mutate(ctx =>
         {
-            // ── 1. 배경: library_hero.jpg center-crop ─────────────────────────
-            using var bg = Image.Load<Rgba32>(new MemoryStream(heroBytes));
-            float scale  = Math.Max((float)W / bg.Width, (float)H / bg.Height);
-            int   sw     = (int)Math.Ceiling(bg.Width  * scale);
-            int   sh     = (int)Math.Ceiling(bg.Height * scale);
-            bg.Mutate(b => b.Resize(sw, sh));
-            int cropX = (sw - W) / 2;
-            int cropY = (sh - H) / 2;
-            if (sw > W || sh > H)
-                bg.Mutate(b => b.Crop(new Rectangle(cropX, cropY, W, H)));
-            ctx.DrawImage(bg, Point.Empty, 1f);
-
-            // ── 2. 좌→우 그라디언트 오버레이 ─────────────────────────────────
-            var grad = new LinearGradientBrush(
-                new PointF(GradStartX, 0), new PointF(GradEndX, 0),
+            // ── 1. 배경 그라디언트 (130deg ≈ 대각선) ──────────────────────────
+            var bgGrad = new LinearGradientBrush(
+                new PointF(0, 0), new PointF(W, H),
                 GradientRepetitionMode.None,
-                new ColorStop(0f,   Color.FromRgba(0x1b, 0x28, 0x38, 0)),
-                new ColorStop(0.6f, Color.FromRgba(0x1b, 0x28, 0x38, 195)),
-                new ColorStop(1f,   Color.FromRgba(0x1b, 0x28, 0x38, 250))
+                new ColorStop(0f, BgStart),
+                new ColorStop(1f, BgEnd)
             );
-            ctx.Fill(grad, new RectangleF(GradStartX, 0, W - GradStartX, H));
-            ctx.Fill(BgOverlay, new RectangleF(TextX, 0, W - TextX, H));
+            ctx.Fill(bgGrad, new RectangleF(0, 0, W, H));
 
-            // ── 3. 게임 로고 (좌측 영역 수직 중앙) ───────────────────────────
-            if (logoBytes is not null)
-            {
-                using var logo = Image.Load<Rgba32>(new MemoryStream(logoBytes));
-                float logoScale = Math.Min(
-                    (float)LogoMaxW / logo.Width,
-                    (float)LogoMaxH / logo.Height);
-                if (logoScale < 1f)
-                    logo.Mutate(l => l.Resize(
-                        (int)(logo.Width  * logoScale),
-                        (int)(logo.Height * logoScale)));
+            // ── 2. 테두리 (상단 + 좌측, 1px #424c5c) ─────────────────────────
+            ctx.Fill(BorderColor, new RectangleF(0, 0, W, 1));
+            ctx.Fill(BorderColor, new RectangleF(0, 0, 1, H));
 
-                // 좌측 존(0..GradEndX) 수직 중앙
-                int logoX = (GradEndX - logo.Width) / 2;
-                int logoY = (H - logo.Height) / 2;
-                ctx.DrawImage(logo, new Point(Math.Max(0, logoX), Math.Max(0, logoY)), 1f);
-            }
+            // ── 3. 헤더: "Buy [Name]" (white) + " on Steam" (gray) ───────────
+            var titleFont    = ff.CreateFont(21, FontStyle.Regular);
+            string buyText   = $"Buy {data.Name}";
+            var    buySize   = TextMeasurer.MeasureSize(buyText, new TextOptions(titleFont));
+            ctx.DrawText(buyText,     titleFont, TitleFg,   new PointF(PadH, PadV));
+            ctx.DrawText(" on Steam", titleFont, OnSteamFg, new PointF(PadH + buySize.Width, PadV));
 
-            // ── 4. 우측 텍스트 영역 ───────────────────────────────────────────
-            float tx = TextX + TextPad;
-            float tw = W - tx - TextPad;
+            // ── 4. 캡슐 이미지 (184×69, 헤더 아래) ───────────────────────────
+            float capsY = PadV + HeaderH + 4;
+            using var cimg = Image.Load<Rgba32>(new MemoryStream(capsuleBytes));
+            // 184×69에 맞게 center-crop
+            float sc = Math.Max((float)CapsW / cimg.Width, (float)CapsH / cimg.Height);
+            int   sw = (int)Math.Ceiling(cimg.Width  * sc);
+            int   sh = (int)Math.Ceiling(cimg.Height * sc);
+            cimg.Mutate(c => c.Resize(sw, sh));
+            int cx = (sw - CapsW) / 2, cy = (sh - CapsH) / 2;
+            if (sw > CapsW || sh > CapsH)
+                cimg.Mutate(c => c.Crop(new Rectangle(cx, cy, CapsW, CapsH)));
+            ctx.DrawImage(cimg, new Point(PadH, (int)capsY), 1f);
 
-            // 게임명
-            var titleFont = ff.CreateFont(16, FontStyle.Bold);
-            ctx.DrawText(data.Name, titleFont, TextWhite, new PointF(tx, 13));
+            // ── 5. 설명 텍스트 (캡슐 우측, 13px #c9c9c9) ─────────────────────
+            float descX = PadH + CapsW + CapsGap;
+            float descW = W - descX - PadH;
+            string desc = data.ShortDescription;
+            if (desc.Length > 160) desc = desc[..157] + "...";
+            var descFont = ff.CreateFont(13, FontStyle.Regular);
+            ctx.DrawText(
+                new RichTextOptions(descFont)
+                {
+                    Origin          = new PointF(descX, capsY + 2),
+                    WrappingLength  = descW,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                },
+                desc, DescFg);
 
-            // 구분선 1
-            ctx.Fill(Separator, new RectangleF(tx, 39, tw, 1));
+            // ── 6. 플랫폼 아이콘 (좌하단, Windows 4-square) ───────────────────
+            float iconY = H - PadV - 11;
+            const float sq = 5f, gap = 1f;
+            ctx.Fill(PlatformFg, new RectangleF(PadH,          iconY,       sq, sq));
+            ctx.Fill(PlatformFg, new RectangleF(PadH + sq + gap, iconY,     sq, sq));
+            ctx.Fill(PlatformFg, new RectangleF(PadH,          iconY+sq+gap, sq, sq));
+            ctx.Fill(PlatformFg, new RectangleF(PadH + sq + gap, iconY+sq+gap, sq, sq));
 
-            // 가격 행
-            RenderPriceRow(ctx, ff, data, tx, 46);
-
-            // 구분선 2
-            ctx.Fill(Separator, new RectangleF(tx, 82, tw, 1));
-
-            // 리뷰 행
-            RenderReviewRow(ctx, ff, data, tx, 89);
-
-            // Add to Cart 버튼 (하단 고정)
-            RenderCartButton(ctx, ff, tx, H - BtnH - 10);
+            // ── 7. 구매 영역 (우하단, 32px 고정 높이) ─────────────────────────
+            const float purchH = 32f;
+            float       purchY = H - PadV - purchH;
+            RenderPurchaseArea(ctx, ff, data, purchY, purchH);
         });
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         await card.SaveAsPngAsync(outputPath, ct);
     }
 
-    // ── 가격 행 ───────────────────────────────────────────────────────────────
-    private static void RenderPriceRow(
+    // ── 구매 영역 ─────────────────────────────────────────────────────────────
+    private static void RenderPurchaseArea(
         IImageProcessingContext ctx, FontFamily ff,
-        SteamGameData data, float tx, float y)
+        SteamGameData data, float y, float h)
     {
+        const string btnLabel = "Buy on Steam";
+        var btnFont  = ff.CreateFont(14, FontStyle.Regular);
+        var btnSize  = TextMeasurer.MeasureSize(btnLabel, new TextOptions(btnFont));
+        float btnW   = btnSize.Width + 22;   // 11px padding × 2
+
         if (data.DiscountPct > 0)
         {
-            // [-XX%] 배지 — 폰트 사이즈 기반 고정 높이로 배경 잘림 방지
-            string badge    = $"-{data.DiscountPct}%";
-            var    badgeFont = ff.CreateFont(11, FontStyle.Bold);
-            var    bSize     = TextMeasurer.MeasureSize(badge, new TextOptions(badgeFont));
-            float  bh        = (float)Math.Ceiling(badgeFont.Size * 2.2f);   // 고정 높이
-            float  bw        = bSize.Width + 16;
-            float  textOffY  = (bh - bSize.Height) / 2f;
+            // ── 할인 배지 블록 ────────────────────────────────────────────────
+            string pctLabel = $"-{data.DiscountPct}%";
+            var pctFont = ff.CreateFont(25, FontStyle.Bold);
+            var pctSize = TextMeasurer.MeasureSize(pctLabel, new TextOptions(pctFont));
+            float pctW  = pctSize.Width + 12;   // 6px padding × 2
 
-            ctx.Fill(DiscountBg, new RectangleF(tx, y, bw, bh));
-            ctx.DrawText(badge, badgeFont, DiscountFg, new PointF(tx + 8, y + textOffY));
+            // ── 가격 블록 ─────────────────────────────────────────────────────
+            var origFont = ff.CreateFont(11, FontStyle.Regular);
+            var origSize = TextMeasurer.MeasureSize(data.OriginalPrice, new TextOptions(origFont));
+            var finFont  = ff.CreateFont(14, FontStyle.Bold);
+            var finSize  = TextMeasurer.MeasureSize(data.Price,          new TextOptions(finFont));
+            float priceContentW = Math.Max(origSize.Width, finSize.Width);
+            float priceW = priceContentW + 14;  // 6px left + 8px right
 
-            // 취소선 원가
-            float   sx       = tx + bw + 8;
-            var     origFont = ff.CreateFont(11, FontStyle.Regular);
-            var     oSize    = TextMeasurer.MeasureSize(data.OriginalPrice, new TextOptions(origFont));
-            float   origOffY = (bh - oSize.Height) / 2f;
-            ctx.DrawText(data.OriginalPrice, origFont, TextDim, new PointF(sx, y + origOffY));
-            ctx.Fill(TextDim, new RectangleF(sx, y + bh / 2f, oSize.Width, 1));
+            float totalW = pctW + priceW + btnW;
+            float x0     = W - PadH - totalW;
 
-            // 할인가 (크게)
-            var priceFont = ff.CreateFont(18, FontStyle.Bold);
-            var pSize     = TextMeasurer.MeasureSize(data.Price, new TextOptions(priceFont));
-            float priceOffY = (bh - pSize.Height) / 2f;
-            ctx.DrawText(data.Price, priceFont, AccentBlue,
-                         new PointF(sx + oSize.Width + 10, y + priceOffY));
+            // 블랙 컨테이너 (전체 purchase 영역)
+            ctx.Fill(PurchaseBg, new RectangleF(x0, y, totalW, h));
+
+            // 할인율 블록 (#4c6b22)
+            ctx.Fill(DiscPctBg, new RectangleF(x0, y, pctW, h));
+            float pctTY = y + (h - pctSize.Height) / 2f;
+            ctx.DrawText(pctLabel, pctFont, DiscPctFg, new PointF(x0 + 6, pctTY));
+
+            // 가격 블록 (#344654)
+            float px = x0 + pctW;
+            ctx.Fill(DiscPriceBg, new RectangleF(px, y, priceW, h));
+            // 원가 (취소선)
+            float origTY = y + 5;
+            ctx.DrawText(data.OriginalPrice, origFont, OrigPriceFg, new PointF(px + 6, origTY));
+            ctx.Fill(OrigPriceFg, new RectangleF(px + 6, origTY + origSize.Height / 2f + 1, origSize.Width, 1));
+            // 최종가
+            float finTY = y + h - finSize.Height - 3;
+            ctx.DrawText(data.Price, finFont, FinalPriceFg, new PointF(px + 6, finTY));
+
+            // Buy on Steam 버튼 (그라디언트)
+            float bx = px + priceW;
+            RenderBuyButton(ctx, ff, btnLabel, btnFont, bx, y, btnW, h);
         }
         else
         {
-            var priceFont = ff.CreateFont(18, FontStyle.Bold);
-            ctx.DrawText(data.Price, priceFont, AccentBlue, new PointF(tx, y));
+            // 할인 없음: 가격 블록 + 버튼
+            var   priceFont = ff.CreateFont(14, FontStyle.Bold);
+            var   priceSize = TextMeasurer.MeasureSize(data.Price, new TextOptions(priceFont));
+            float priceW    = priceSize.Width + 16;
+            float totalW    = priceW + btnW;
+            float x0        = W - PadH - totalW;
+
+            ctx.Fill(PurchaseBg,   new RectangleF(x0,         y, totalW, h));
+            ctx.Fill(DiscPriceBg,  new RectangleF(x0,         y, priceW, h));
+            ctx.DrawText(
+                new RichTextOptions(priceFont)
+                {
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment   = VerticalAlignment.Center,
+                    Origin = new PointF(x0 + priceW / 2f, y + h / 2f),
+                },
+                data.Price, FinalPriceFg);
+
+            RenderBuyButton(ctx, ff, btnLabel, btnFont, x0 + priceW, y, btnW, h);
         }
     }
 
-    // ── 리뷰 행 ───────────────────────────────────────────────────────────────
-    private static void RenderReviewRow(
+    private static void RenderBuyButton(
         IImageProcessingContext ctx, FontFamily ff,
-        SteamGameData data, float tx, float y)
+        string label, Font font,
+        float x, float y, float w, float h)
     {
-        Color rColor = data.ReviewPct >= 70 ? ReviewPos
-                     : data.ReviewPct >= 40 ? ReviewMix
-                     :                        ReviewNeg;
-
-        const float dotSize = 9f;
-        ctx.Fill(rColor, new RectangleF(tx, y + 5, dotSize, dotSize));
-
-        var pctFont = ff.CreateFont(13, FontStyle.Bold);
-        ctx.DrawText($"{data.ReviewPct}% Positive", pctFont, rColor,
-                     new PointF(tx + dotSize + 7, y));
-
-        var subFont = ff.CreateFont(10, FontStyle.Regular);
+        var grad = new LinearGradientBrush(
+            new PointF(x, y), new PointF(x + w, y),
+            GradientRepetitionMode.None,
+            new ColorStop(0.05f, CartBgStart),
+            new ColorStop(0.95f, CartBgEnd)
+        );
+        ctx.Fill(grad, new RectangleF(x, y, w, h));
         ctx.DrawText(
-            $"{data.ReviewLabel}   ·   {data.TotalReviews:N0} reviews",
-            subFont, TextDim, new PointF(tx + dotSize + 7, y + 19));
-    }
-
-    // ── Add to Cart 버튼 ──────────────────────────────────────────────────────
-    private static void RenderCartButton(
-        IImageProcessingContext ctx, FontFamily ff,
-        float tx, float y)
-    {
-        // 버튼 배경
-        ctx.Fill(CartBg, new RectangleF(tx, y, BtnW, BtnH));
-        // 상단 1px 하이라이트 (Steam 버튼 특유의 그라디언트 느낌)
-        ctx.Fill(CartTop, new RectangleF(tx, y, BtnW, 2));
-
-        // 중앙 정렬 텍스트
-        var btnFont = ff.CreateFont(11, FontStyle.Bold);
-        ctx.DrawText(
-            new RichTextOptions(btnFont)
+            new RichTextOptions(font)
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment   = VerticalAlignment.Center,
-                Origin = new PointF(tx + BtnW / 2f, y + BtnH / 2f + 1),
+                Origin = new PointF(x + w / 2f, y + h / 2f),
             },
-            "Add to Cart", TextWhite);
+            label, CartFg);
     }
 
     // ── 폰트 탐색 ─────────────────────────────────────────────────────────────
     private static FontFamily ResolveFont()
     {
-        string[] candidates =
-            ["Segoe UI", "Roboto", "Arial", "DejaVu Sans", "Liberation Sans"];
+        string[] candidates = ["Segoe UI", "Roboto", "Arial", "DejaVu Sans", "Liberation Sans"];
         foreach (var name in candidates)
             if (SystemFonts.TryGet(name, out FontFamily ff))
                 return ff;

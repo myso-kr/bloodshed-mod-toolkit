@@ -32,21 +32,18 @@ using var cts    = new CancellationTokenSource(TimeSpan.FromSeconds(25));
 using var client = new SteamApiClient();
 
 SteamGameData data;
-byte[]        hero;
-byte[]?       logo;
+byte[]        capsule;
 
 try
 {
     var sw = Stopwatch.StartNew();
 
-    var dataTask = client.FetchAsync(cts.Token);
-    var heroTask = client.DownloadHeroAsync(cts.Token);
-    var logoTask = client.DownloadLogoAsync(cts.Token);
-    await Task.WhenAll(dataTask, heroTask, logoTask);
+    var dataTask    = client.FetchAsync(cts.Token);
+    var capsuleTask = client.DownloadCapsuleSmallAsync(cts.Token);
+    await Task.WhenAll(dataTask, capsuleTask);
 
-    data = dataTask.Result;
-    hero = heroTask.Result;
-    logo = logoTask.Result;
+    data    = dataTask.Result;
+    capsule = capsuleTask.Result;
 
     string priceInfo = data.DiscountPct > 0
         ? $"{data.Price} (was {data.OriginalPrice}, -{data.DiscountPct}%)"
@@ -54,7 +51,7 @@ try
 
     Console.WriteLine(
         $"[SteamCard] {data.Name}  |  {priceInfo}  |  {data.ReviewPct}% ({data.ReviewLabel})" +
-        $"  |  logo={logo is not null}  [{sw.ElapsedMilliseconds}ms]");
+        $"  [{sw.ElapsedMilliseconds}ms]");
 }
 catch (OperationCanceledException)
 {
@@ -69,7 +66,7 @@ catch (Exception ex)
 
 try
 {
-    await CardRenderer.RenderAsync(data, hero, logo, outputPath, cts.Token);
+    await CardRenderer.RenderAsync(data, capsule, outputPath, cts.Token);
     Console.WriteLine($"[SteamCard] 저장 완료: {outputPath}");
 }
 catch (Exception ex)

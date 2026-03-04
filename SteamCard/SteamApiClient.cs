@@ -15,22 +15,21 @@ public sealed class SteamApiClient : IDisposable
     public SteamApiClient()
     {
         _http = new HttpClient();
-        // Steam API는 Accept-Language 헤더가 없으면 가끔 403 반환
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Mozilla/5.0 BloodshedModToolkit-SteamCard/1.0");
         _http.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         _http.Timeout = TimeSpan.FromSeconds(15);
     }
 
-    /// <summary>가격, 할인율, 리뷰 점수를 병렬로 조회합니다.</summary>
+    /// <summary>가격, 할인율, 리뷰 점수, 짧은 설명을 병렬로 조회합니다.</summary>
     public async Task<SteamGameData> FetchAsync(CancellationToken ct = default)
     {
         var detailsTask = FetchAppDetailsAsync(ct);
         var reviewsTask = FetchReviewSummaryAsync(ct);
         await Task.WhenAll(detailsTask, reviewsTask);
 
-        var (name, price, originalPrice, discountPct) = detailsTask.Result;
-        var (positive, total)                          = reviewsTask.Result;
+        var (name, shortDesc, price, originalPrice, discountPct) = detailsTask.Result;
+        var (positive, total)                                     = reviewsTask.Result;
 
         int reviewPct = total > 0 ? (int)Math.Round(positive * 100.0 / total) : 0;
         string reviewLabel = reviewPct switch
@@ -44,44 +43,42 @@ public sealed class SteamApiClient : IDisposable
             _     => "Overwhelmingly Negative"
         };
 
-        return new SteamGameData(name, price, originalPrice, discountPct,
+        return new SteamGameData(name, shortDesc, price, originalPrice, discountPct,
                                  reviewPct, reviewLabel, total);
     }
 
     // ── appdetails ────────────────────────────────────────────────────────────
-    private async Task<(string name, string price, string originalPrice, int discount)>
+    private async Task<(string name, string shortDesc, string price, string originalPrice, int discount)>
         FetchAppDetailsAsync(CancellationToken ct)
     {
-        // cc=kr: 로컬 IP 기반 자동 감지에 의존하지 않고 cc를 명시하지 않으면
-        // Steam이 IP 기반으로 통화를 자동 선택합니다.
         var url = $"https://store.steampowered.com/api/appdetails?appids={AppId}";
         var json = await GetJsonAsync(url, ct);
 
-        if (json is null) return ("Bloodshed", "N/A", "N/A", 0);
+        if (json is null) return ("Bloodshed", "", "N/A", "N/A", 0);
 
         var app = json[$"{AppId}"]?.AsObject();
         if (app is null || !(app["success"]?.GetValue<bool>() ?? false))
-            return ("Bloodshed", "N/A", "N/A", 0);
+            return ("Bloodshed", "", "N/A", "N/A", 0);
 
         var data = app["data"]?.AsObject();
-        if (data is null) return ("Bloodshed", "N/A", "N/A", 0);
+        if (data is null) return ("Bloodshed", "", "N/A", "N/A", 0);
 
-        string name = data["name"]?.GetValue<string>() ?? "Bloodshed";
+        string name      = data["name"]?.GetValue<string>()              ?? "Bloodshed";
+        string shortDesc = data["short_description"]?.GetValue<string>() ?? "";
 
         var po = data["price_overview"]?.AsObject();
-        if (po is null) return (name, "Free", "Free", 0);
+        if (po is null) return (name, shortDesc, "Free", "Free", 0);
 
-        string finalFmt   = po["final_formatted"]?.GetValue<string>()   ?? "N/A";
-        string initialFmt = po["initial_formatted"]?.GetValue<string>()  ?? finalFmt;
-        int    discount   = po["discount_percent"]?.GetValue<int>()      ?? 0;
+        string finalFmt   = po["final_formatted"]?.GetValue<string>()  ?? "N/A";
+        string initialFmt = po["initial_formatted"]?.GetValue<string>() ?? finalFmt;
+        int    discount   = po["discount_percent"]?.GetValue<int>()     ?? 0;
 
-        return (name, finalFmt, initialFmt, discount);
+        return (name, shortDesc, finalFmt, initialFmt, discount);
     }
 
     // ── appreviews ────────────────────────────────────────────────────────────
     private async Task<(int positive, int total)> FetchReviewSummaryAsync(CancellationToken ct)
     {
-        // num_per_page=0 일부 환경에서 404 → 1로 고정
         var url = $"https://store.steampowered.com/appreviews/{AppId}" +
                   $"?json=1&num_per_page=1&language=all&purchase_type=all";
         var json = await GetJsonAsync(url, ct);
@@ -118,41 +115,36 @@ public sealed class SteamApiClient : IDisposable
         }
     }
 
-    /// <summary>library_hero.jpg (3840×1240) 다운로드. 없으면 header.jpg 폴백.</summary>
-    public async Task<byte[]> DownloadHeroAsync(CancellationToken ct = default)
+    /// <summary>
+    /// capsule_184x69.jpg 다운로드. 없으면 header.jpg → library_hero.jpg 폴백.
+    /// 위젯 공식 이미지 (float-left, 184×69).
+    /// </summary>
+    public async Task<byte[]> DownloadCapsuleSmallAsync(CancellationToken ct = default)
     {
-        foreach (var filename in new[] { "library_hero.jpg", "header.jpg" })
+        foreach (var filename in new[] { "capsule_184x69.jpg", "header.jpg", "library_hero.jpg" })
         {
             var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/{filename}";
-            using var response = await _http.GetAsync(url, ct);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadAsByteArrayAsync(ct);
+            try
+            {
+                using var response = await _http.GetAsync(url, ct);
+                if (response.IsSuccessStatusCode)
+                    return await response.Content.ReadAsByteArrayAsync(ct);
+            }
+            catch { }
         }
-        throw new InvalidOperationException("Steam hero 이미지를 다운로드할 수 없습니다.");
+        throw new InvalidOperationException("Steam 캡슐 이미지를 다운로드할 수 없습니다.");
     }
-
-    /// <summary>logo.png 다운로드. 없으면 null 반환 (선택적 레이어).</summary>
-    public async Task<byte[]?> DownloadLogoAsync(CancellationToken ct = default)
-    {
-        var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/logo.png";
-        using var response = await _http.GetAsync(url, ct);
-        if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadAsByteArrayAsync(ct);
-    }
-
-    // 이전 이름 호환 (Program.cs 에서 사용 중)
-    public Task<byte[]> DownloadCapsuleAsync(CancellationToken ct = default)
-        => DownloadHeroAsync(ct);
 
     public void Dispose() => _http.Dispose();
 }
 
 public record SteamGameData(
     string Name,
-    string Price,           // e.g. "$3.29"
-    string OriginalPrice,   // e.g. "$14.29"
-    int    DiscountPct,     // e.g. 77
-    int    ReviewPct,       // e.g. 85
-    string ReviewLabel,     // e.g. "Very Positive"
-    int    TotalReviews     // e.g. 1234
+    string ShortDescription,  // appdetails.short_description
+    string Price,             // e.g. "₩ 3,330"
+    string OriginalPrice,     // e.g. "₩ 14,500"
+    int    DiscountPct,       // e.g. 77
+    int    ReviewPct,         // e.g. 86
+    string ReviewLabel,       // e.g. "Very Positive"
+    int    TotalReviews       // e.g. 1477
 );
