@@ -274,6 +274,7 @@ namespace UnityEngine
         // 실제 UnityEngine.GUI.WindowFunction 과 동일한 중첩 delegate
         public delegate void WindowFunction(int id);
 
+        public static bool    enabled { get; set; } = true;
         public static Color   color { get; set; }
         public static int     depth { get; set; }
         public static GUISkin skin  => new GUISkin();

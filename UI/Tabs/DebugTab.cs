@@ -151,6 +151,17 @@ namespace BloodshedModToolkit.UI.Tabs
                     e => SelectMission(ctx, e.Data, e.AssetName, e.DisplayName));
             }
 
+            // ── MISSION QUICK LOAD ────────────────────────────────────────────
+            GUILayout.Space(2);
+            bool hasMission = _debugSelectedMissionAssetName.Length > 0;
+            GUI.enabled = hasMission;
+            string quickLoadLabel = hasMission
+                ? $"\u25b6  {_debugSelectedMissionName}  [{_debugSelectedMissionAssetName}]"
+                : "\u25b6  (미션을 먼저 선택하세요)";
+            if (GUILayout.Button(quickLoadLabel, ctx.StActionBtn!))
+                TryLoadScene(ctx, _debugSelectedMissionAssetName);
+            GUI.enabled = true;
+
             // ── FORCE SCENE LOAD ─────────────────────────────────────────────
             ctx.SectionHeader("FORCE SCENE LOAD");
             GUILayout.Label("씬 이름 (클립보드 붙여넣기):", ctx.StSliderName!);
@@ -194,21 +205,27 @@ namespace BloodshedModToolkit.UI.Tabs
                     _debugSceneValidationError = "씬 이름이 비어있습니다";
                     Plugin.Log.LogWarning("[Debug] 씬 이름이 비어있습니다");
                 }
-                else if (ValidateSceneLoad(_debugSceneInput, out string reason))
-                {
-                    _debugSceneValidationError = "";
-                    ApplyDebugSelections(ctx);
-                    Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{_debugSceneInput}'");
-                    SceneManager.LoadScene(_debugSceneInput);
-                }
                 else
-                {
-                    _debugSceneValidationError = reason;
-                    Plugin.Log.LogWarning($"[Debug] 씬 로드 검증 실패: {reason}");
-                }
+                    TryLoadScene(ctx, _debugSceneInput);
             }
 
             GUILayout.EndScrollView();
+        }
+
+        private void TryLoadScene(ModMenuContext ctx, string sceneName)
+        {
+            if (ValidateSceneLoad(sceneName, out string reason))
+            {
+                _debugSceneValidationError = "";
+                ApplyDebugSelections(ctx);
+                Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{sceneName}'");
+                SceneManager.LoadScene(sceneName);
+            }
+            else
+            {
+                _debugSceneValidationError = reason;
+                Plugin.Log.LogWarning($"[Debug] 씬 로드 검증 실패: {reason}");
+            }
         }
 
         /// <summary>
