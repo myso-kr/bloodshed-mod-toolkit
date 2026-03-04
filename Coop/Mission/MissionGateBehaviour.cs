@@ -81,15 +81,28 @@ namespace BloodshedModToolkit.Coop.Mission
             // Guest 경로 — 시스템 씬은 무시
             if (scene.buildIndex <= 0 || scene.name.StartsWith("00_")) return;
 
-            // MetaGame은 캐릭터 선택 화면 — 게스트가 자유롭게 이용하므로 상태 변경 없음
+            // MetaGame(저장파일 선택·미션 지역 선택·캐릭터 선택·게임 시작 등 모든 준비 단계)
+            // WaitingForHost 상태가 남아있어도 강제 해제 — 게스트가 자유롭게 이용
             if (scene.name == "MetaGame")
             {
+                if (MissionState.Status == MissionStatus.WaitingForHost)
+                    MissionState.Status = MissionStatus.Idle;
                 Plugin.Log.LogInfo("[MissionGate] Guest MetaGame 도착 — 캐릭터 선택 대기 중");
                 return;
             }
 
             if (MissionState.Status == MissionStatus.Permitted)
             {
+                // Host가 지정한 씬과 다른 씬에 진입한 경우 → Host 씬으로 리다이렉트
+                if (MissionState.PendingSceneName.Length > 0 &&
+                    scene.name != MissionState.PendingSceneName)
+                {
+                    Plugin.Log.LogInfo(
+                        $"[MissionGate] 씬 불일치 '{scene.name}' ≠ '{MissionState.PendingSceneName}'" +
+                        $" — Host 씬으로 리다이렉트");
+                    SceneManager.LoadScene(MissionState.PendingSceneName);
+                    return;
+                }
                 MissionState.Status = MissionStatus.Idle;
                 Plugin.Log.LogInfo($"[MissionGate] 허가된 씬 진입 완료 '{scene.name}' — 상태 Idle");
             }

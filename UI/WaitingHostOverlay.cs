@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Mission;
 
@@ -43,6 +44,7 @@ namespace BloodshedModToolkit.UI
         {
             if (!CoopState.IsConnected || CoopState.IsHost) return;
             if (MissionState.Status != MissionStatus.WaitingForHost) return;
+            if (SceneManager.GetActiveScene().name == "MetaGame") return;
 
             EnsureStyles();
 
