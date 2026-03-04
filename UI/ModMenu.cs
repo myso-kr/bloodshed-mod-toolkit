@@ -49,6 +49,7 @@ namespace BloodshedModToolkit.UI
         private com8com1.SCFPS.MissionAsset?           _debugSelectedMission = null;
         private com8com1.SCFPS.PlayableCharacterData[] _debugCharList        = System.Array.Empty<com8com1.SCFPS.PlayableCharacterData>();
         private com8com1.SCFPS.MissionAsset[]          _debugMissionList     = System.Array.Empty<com8com1.SCFPS.MissionAsset>();
+        private bool _debugScanned = false;  // 최초 1회 자동 스캔 완료 여부
 
         // ── Debug 씬 로드 검증 오류 ───────────────────────────────────────────────
         private string _debugSceneValidationError = "";
@@ -60,14 +61,16 @@ namespace BloodshedModToolkit.UI
             { "Village",             new[] { "village" } },
             { "01_Forest",           new[] { "forest" } },
             { "01_AltarOfSacrifice", new[] { "altar", "sacrifice" } },
-            { "01_Challenge_Flynn",  new[] { "flynn" } },
-            { "01_Challenge_Jared",  new[] { "jared" } },
+            { "01_Challenge_Flynn",      new[] { "flynn" } },
+            { "01_Challenge_Jared",      new[] { "jared" } },
+            { "01_Challenge_Seraphina",  new[] { "seraphina" } },
             { "02_Boat",             new[] { "boat" } },
             { "02_StiltVillage",     new[] { "stilt", "harbour" } },
             { "02_CultistTemple",    new[] { "cultist", "temple" } },
             { "02_Boss",             new[] { "boss", "goddess" } },
             { "02_Challenge_Maze",   new[] { "maze" } },
             { "02_Challenge_Final",  new[] { "final" } },
+            { "03_SkyCathedral",     new[] { "skycathedral", "sky" } },
         };
 
         // ── 슬라이더 디바운스 타이머 (Time.time 기준 예약 시각, 0 = 예약 없음) ──────
@@ -672,6 +675,7 @@ namespace BloodshedModToolkit.UI
 
         private void RefreshMetaSelection()
         {
+            _debugScanned = false;  // 다음 DrawDebugTab에서 캐릭터·미션 재스캔
             _debugSdm = UnityEngine.Object.FindObjectOfType<SaveDataManager>();
             var ss    = UnityEngine.Object.FindObjectOfType<SessionSettings>();
             var csm   = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
@@ -692,20 +696,34 @@ namespace BloodshedModToolkit.UI
 
         private void ScanCharacters()
         {
-            _debugCharList = Resources.FindObjectsOfTypeAll<PlayableCharacterData>()
-                             ?? System.Array.Empty<PlayableCharacterData>();
-            Plugin.Log.LogInfo($"[Debug] 캐릭터 스캔: {_debugCharList.Length}개 발견");
-            foreach (var c in _debugCharList)
-                Plugin.Log.LogInfo($"[Debug]   char: '{c.name}'");
+            var raw = Resources.FindObjectsOfTypeAll<PlayableCharacterData>()
+                      ?? System.Array.Empty<PlayableCharacterData>();
+            // 이름 기준 중복 제거 (동일 asset이 복수 로드되는 경우 방어)
+            var seen  = new System.Collections.Generic.HashSet<string>();
+            var dedup = new System.Collections.Generic.List<PlayableCharacterData>(raw.Length);
+            foreach (var c in raw)
+            {
+                if (c == null || string.IsNullOrEmpty(c.name)) continue;
+                if (seen.Add(c.name)) dedup.Add(c);
+            }
+            _debugCharList = dedup.ToArray();
+            Plugin.Log.LogInfo($"[Debug] 캐릭터 스캔: raw={raw.Length} unique={_debugCharList.Length}");
         }
 
         private void ScanMissions()
         {
-            _debugMissionList = Resources.FindObjectsOfTypeAll<MissionAsset>()
-                                ?? System.Array.Empty<MissionAsset>();
-            Plugin.Log.LogInfo($"[Debug] 미션 스캔: {_debugMissionList.Length}개 발견");
-            foreach (var m in _debugMissionList)
-                Plugin.Log.LogInfo($"[Debug]   mission: '{m.name}' | '{m.strMissionTitle}'");
+            var raw = Resources.FindObjectsOfTypeAll<MissionAsset>()
+                      ?? System.Array.Empty<MissionAsset>();
+            // 표준 미션만 포함: 이름이 숫자로 시작(01_, 02_, 03_...)
+            // CustomSession_*, DEMO_*, Mission_DEV_* 제외
+            var filtered = new System.Collections.Generic.List<MissionAsset>(raw.Length);
+            foreach (var m in raw)
+            {
+                if (m == null || string.IsNullOrEmpty(m.name)) continue;
+                if (char.IsDigit(m.name[0])) filtered.Add(m);
+            }
+            _debugMissionList = filtered.ToArray();
+            Plugin.Log.LogInfo($"[Debug] 미션 스캔: raw={raw.Length} standard={_debugMissionList.Length}");
         }
 
         private void SelectCharacter(PlayableCharacterData cd)
@@ -754,14 +772,24 @@ namespace BloodshedModToolkit.UI
             ("Dev", new[] { ("SampleScene", "Sample") }),
             ("P",   new[] { ("Graveyard", "Graveyard"), ("Village", "Village") }),
             ("E1",  new[] { ("01_Forest", "Forest"), ("01_AltarOfSacrifice", "Altar"),
-                            ("01_Challenge_Flynn", "Flynn"), ("01_Challenge_Jared", "Jared") }),
+                            ("01_Challenge_Flynn", "Flynn"), ("01_Challenge_Jared", "Jared"),
+                            ("01_Challenge_Seraphina", "Seraphina") }),
             ("E2",  new[] { ("02_Boat", "Boat"), ("02_StiltVillage", "Stilt"),
                             ("02_CultistTemple", "Temple"), ("02_Boss", "Boss"),
                             ("02_Challenge_Maze", "Maze"), ("02_Challenge_Final", "Final") }),
+            ("E3",  new[] { ("03_SkyCathedral", "SkyCath") }),
         };
 
         private void DrawDebugTab()
         {
+            // 최초 진입 시 자동 스캔 (이후 REFRESH 버튼으로 재스캔)
+            if (!_debugScanned)
+            {
+                ScanCharacters();
+                ScanMissions();
+                _debugScanned = true;
+            }
+
             _scrollDebug = GUILayout.BeginScrollView(_scrollDebug, GUILayout.ExpandHeight(true));
 
             // ── CURRENT STATE ────────────────────────────────────────────────
@@ -810,13 +838,11 @@ namespace BloodshedModToolkit.UI
 
             // ── CHARACTER SELECT ─────────────────────────────────────────────
             SectionHeader("CHARACTER SELECT");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("SCAN", _stActionBtn!)) ScanCharacters();
-            GUILayout.Label(
-                _debugCharList.Length > 0 ? $"총 {_debugCharList.Length}개" : "(MetaGame 씬에서 SCAN)",
-                _stSliderName!);
-            GUILayout.EndHorizontal();
-            if (_debugCharList.Length > 0)
+            if (_debugCharList.Length == 0)
+            {
+                GUILayout.Label("(MetaGame 씬에서 REFRESH 필요)", _stSliderName!);
+            }
+            else
             {
                 const int kCharsPerRow = 3;
                 for (int i = 0; i < _debugCharList.Length; i += kCharsPerRow)
@@ -835,13 +861,11 @@ namespace BloodshedModToolkit.UI
 
             // ── MISSION SELECT ────────────────────────────────────────────────
             SectionHeader("MISSION SELECT");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("SCAN", _stActionBtn!)) ScanMissions();
-            GUILayout.Label(
-                _debugMissionList.Length > 0 ? $"총 {_debugMissionList.Length}개" : "(MetaGame 씬에서 SCAN)",
-                _stSliderName!);
-            GUILayout.EndHorizontal();
-            if (_debugMissionList.Length > 0)
+            if (_debugMissionList.Length == 0)
+            {
+                GUILayout.Label("(MetaGame 씬에서 REFRESH 필요)", _stSliderName!);
+            }
+            else
             {
                 const int kMissPerRow = 2;
                 for (int i = 0; i < _debugMissionList.Length; i += kMissPerRow)
