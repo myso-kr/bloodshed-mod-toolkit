@@ -85,25 +85,24 @@ namespace BloodshedModToolkit.UI
         private float _eSpeedRefreshAt = 0f;
 
         // ── 컴포넌트 캐시 ─────────────────────────────────────────────────────────
-        private PlayerStats?    _ps;
-        private PersistentData? _pd;
-        private GameSettings?   _gs;
+        private PlayerStats?                       _ps;
+        private PersistentData?                    _pd;
+        private GameSettings?                      _gs;
+        private SessionSettings?                   _ss;
+        private MetaGameCharacterSelectionManager? _csm;
 
-        private PlayerStats? PS()
+        /// <summary>isActiveAndEnabled 기반 단일 컴포넌트 캐시. 씬 전환 후 자동 재탐색.</summary>
+        private T? CachedFind<T>(ref T? cache) where T : Behaviour
         {
-            if (_ps != null && _ps.isActiveAndEnabled) return _ps;
-            return _ps = FindObjectOfType<PlayerStats>();
+            if (cache != null && cache.isActiveAndEnabled) return cache;
+            return cache = FindObjectOfType<T>();
         }
-        private PersistentData? PD()
-        {
-            if (_pd != null && _pd.isActiveAndEnabled) return _pd;
-            return _pd = FindObjectOfType<PersistentData>();
-        }
-        private GameSettings? GS()
-        {
-            if (_gs != null && _gs.isActiveAndEnabled) return _gs;
-            return _gs = FindObjectOfType<GameSettings>();
-        }
+
+        private PlayerStats?                       PS()  => CachedFind(ref _ps);
+        private PersistentData?                    PD()  => CachedFind(ref _pd);
+        private GameSettings?                      GS()  => CachedFind(ref _gs);
+        private SessionSettings?                   SS()  => CachedFind(ref _ss);
+        private MetaGameCharacterSelectionManager? CSM() => CachedFind(ref _csm);
         private LangStrings L()
             => Strings.Get(GS()?.languageText ?? LocalizationManager.Language.English);
 
@@ -698,28 +697,20 @@ namespace BloodshedModToolkit.UI
 
         private void RefreshMetaSelection()
         {
-            _debugScanned = false;  // 다음 DrawDebugTab에서 캐릭터·미션 재스캔
-            _debugSdm = UnityEngine.Object.FindObjectOfType<SaveDataManager>();
-            var ss    = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            var csm   = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
+            _debugScanned      = false;  // 다음 DrawDebugTab에서 캐릭터·미션 재스캔
+            _debugSdm          = UnityEngine.Object.FindObjectOfType<SaveDataManager>();
             _debugMetaSaveSlot = _debugSdm != null ? _debugSdm.activeSaveSlot.ToString() : "N/A";
-
-            // DEBUG 명시 선택만 표시 — game state(csm/ss) 폴백 제거 (save data 기본값 오염 방지)
-            _debugMetaChar = _debugSelectedChar?.name ?? "(none)";
-            _debugMetaMission = _debugSelectedMission != null
-                ? (!string.IsNullOrEmpty(_debugSelectedMission.strMissionTitle)
-                    ? _debugSelectedMission.strMissionTitle
-                    : _debugSelectedMission.name)
-                : "(none)";
+            _debugMetaChar     = _debugSelectedChar?.name ?? "(none)";
+            _debugMetaMission  = _debugSelectedMission != null
+                ? MissionDisplayName(_debugSelectedMission) : "(none)";
         }
 
         private void ScanCharacters()
         {
-            var raw = Resources.FindObjectsOfTypeAll<PlayableCharacterData>()
-                      ?? System.Array.Empty<PlayableCharacterData>();
+            var raw  = FindAllAssets<PlayableCharacterData>();
             // 이름 기준 중복 제거 (동일 asset이 복수 로드되는 경우 방어)
-            var seen  = new System.Collections.Generic.HashSet<string>();
-            var dedup = new System.Collections.Generic.List<PlayableCharacterData>(raw.Length);
+            var seen  = new HashSet<string>();
+            var dedup = new List<PlayableCharacterData>(raw.Length);
             foreach (var c in raw)
             {
                 if (c == null || string.IsNullOrEmpty(c.name)) continue;
@@ -731,11 +722,10 @@ namespace BloodshedModToolkit.UI
 
         private void ScanMissions()
         {
-            var raw = Resources.FindObjectsOfTypeAll<MissionAsset>()
-                      ?? System.Array.Empty<MissionAsset>();
+            var raw      = FindAllAssets<MissionAsset>();
             // 표준 미션만 포함: 이름이 숫자로 시작(01_, 02_, 03_...)
             // CustomSession_*, DEMO_*, Mission_DEV_* 제외
-            var filtered = new System.Collections.Generic.List<MissionAsset>(raw.Length);
+            var filtered = new List<MissionAsset>(raw.Length);
             foreach (var m in raw)
             {
                 if (m == null || string.IsNullOrEmpty(m.name)) continue;
@@ -749,19 +739,15 @@ namespace BloodshedModToolkit.UI
         {
             _debugSelectedChar = cd;
             _debugMetaChar     = cd.name;
-            // SessionSettings에 즉시 반영 (REFRESH 시 확인 가능)
-            var ss = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            if (ss != null) ss.selectedCharacterData = cd;
+            var ss = SS(); if (ss != null) ss.selectedCharacterData = cd;
             Plugin.Log.LogInfo($"[Debug] 캐릭터 선택: '{cd.name}'");
         }
 
         private void SelectMission(MissionAsset m)
         {
             _debugSelectedMission = m;
-            _debugMetaMission = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : m.name;
-            // SessionSettings에 즉시 반영
-            var ss = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            if (ss != null) ss.selectedMission = m;
+            _debugMetaMission     = MissionDisplayName(m);
+            var ss = SS(); if (ss != null) ss.selectedMission = m;
             Plugin.Log.LogInfo($"[Debug] 미션 선택: '{m.name}' ({_debugMetaMission})");
         }
 
@@ -771,8 +757,8 @@ namespace BloodshedModToolkit.UI
         /// </summary>
         private void ApplyDebugSelections()
         {
-            var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
-            var csm = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
+            var ss  = SS();
+            var csm = CSM();
             if (_debugSelectedChar != null)
             {
                 if (ss  != null) ss.selectedCharacterData = _debugSelectedChar;
@@ -858,49 +844,22 @@ namespace BloodshedModToolkit.UI
             // ── CHARACTER SELECT ─────────────────────────────────────────────
             SectionHeader("CHARACTER SELECT");
             if (_debugCharList.Length == 0)
-            {
                 GUILayout.Label("(MetaGame 씬에서 REFRESH 필요)", _stSliderName!);
-            }
             else
-            {
-                const int kCharsPerRow = 3;
-                for (int i = 0; i < _debugCharList.Length; i += kCharsPerRow)
-                {
-                    GUILayout.BeginHorizontal();
-                    for (int j = i; j < System.Math.Min(i + kCharsPerRow, _debugCharList.Length); j++)
-                    {
-                        var cd = _debugCharList[j];
-                        bool active = _debugSelectedChar != null && _debugSelectedChar.name == cd.name;
-                        if (GUILayout.Button(cd.name, active ? _stPresetOn! : _stPresetOff!))
-                            SelectCharacter(cd);
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            }
+                DrawButtonGrid(_debugCharList, 3,
+                    cd => cd.name,
+                    cd => _debugSelectedChar != null && _debugSelectedChar.name == cd.name,
+                    SelectCharacter);
 
             // ── MISSION SELECT ────────────────────────────────────────────────
             SectionHeader("MISSION SELECT");
             if (_debugMissionList.Length == 0)
-            {
                 GUILayout.Label("(MetaGame 씬에서 REFRESH 필요)", _stSliderName!);
-            }
             else
-            {
-                const int kMissPerRow = 2;
-                for (int i = 0; i < _debugMissionList.Length; i += kMissPerRow)
-                {
-                    GUILayout.BeginHorizontal();
-                    for (int j = i; j < System.Math.Min(i + kMissPerRow, _debugMissionList.Length); j++)
-                    {
-                        var m = _debugMissionList[j];
-                        string label = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : m.name;
-                        bool active = _debugSelectedMission != null && _debugSelectedMission.name == m.name;
-                        if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
-                            SelectMission(m);
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            }
+                DrawButtonGrid(_debugMissionList, 2,
+                    MissionDisplayName,
+                    m => _debugSelectedMission != null && _debugSelectedMission.name == m.name,
+                    SelectMission);
 
             // ── FORCE SCENE LOAD ────────────────────────────────────────────
             SectionHeader("FORCE SCENE LOAD");
@@ -1023,6 +982,36 @@ namespace BloodshedModToolkit.UI
         // ════════════════════════════════════════════════════════════════════════
         // 드로잉 헬퍼
         // ════════════════════════════════════════════════════════════════════════
+        // ── 유틸리티 ─────────────────────────────────────────────────────────────
+
+        /// <summary>MissionAsset 표시명. strMissionTitle 우선, 없으면 name.</summary>
+        private static string MissionDisplayName(MissionAsset m) =>
+            !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : m.name;
+
+        /// <summary>Resources.FindObjectsOfTypeAll null-safe 래퍼.</summary>
+        private static T[] FindAllAssets<T>() where T : Object =>
+            Resources.FindObjectsOfTypeAll<T>() ?? System.Array.Empty<T>();
+
+        /// <summary>items를 perRow 열 그리드로 렌더링. 클릭 시 onSelect 호출.</summary>
+        private void DrawButtonGrid<T>(
+            T[] items, int perRow,
+            System.Func<T, string> getLabel,
+            System.Func<T, bool>   isActive,
+            System.Action<T>       onSelect)
+        {
+            for (int i = 0; i < items.Length; i += perRow)
+            {
+                GUILayout.BeginHorizontal();
+                for (int j = i; j < System.Math.Min(i + perRow, items.Length); j++)
+                {
+                    var item = items[j];
+                    if (GUILayout.Button(getLabel(item), isActive(item) ? _stPresetOn! : _stPresetOff!))
+                        onSelect(item);
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
+
         private void SectionHeader(string title)
         {
             GUILayout.Space(5);
