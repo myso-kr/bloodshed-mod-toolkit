@@ -121,7 +121,7 @@ public sealed class SteamApiClient : IDisposable
     /// </summary>
     public async Task<byte[]> DownloadCapsuleSmallAsync(CancellationToken ct = default)
     {
-        foreach (var filename in new[] { "capsule_184x69.jpg", "header.jpg", "library_hero.jpg" })
+        foreach (var filename in new[] { "capsule_184x69.jpg", "library_hero.jpg", "header.jpg" })
         {
             var url = $"https://cdn.akamai.steamstatic.com/steam/apps/{AppId}/{filename}";
             try
