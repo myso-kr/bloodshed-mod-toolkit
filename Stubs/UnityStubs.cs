@@ -312,6 +312,11 @@ namespace UnityEngine
         public static float Range(float min, float max) => min;
     }
 
+    public static class Resources
+    {
+        public static T[] FindObjectsOfTypeAll<T>() where T : Object => System.Array.Empty<T>();
+    }
+
     // ── PrimitiveType / TextAlignment ──────────────────────────────────────────
     public enum PrimitiveType { Sphere=0, Capsule=1, Cylinder=2, Cube=3, Plane=4, Quad=5 }
     public enum TextAlignment  { Left=0, Center=1, Right=2 }

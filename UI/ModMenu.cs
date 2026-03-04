@@ -44,6 +44,12 @@ namespace BloodshedModToolkit.UI
         private string _debugMetaChar     = "?";
         private SaveDataManager? _debugSdm;
 
+        // ── Debug CHARACTER / MISSION 명시 선택 ───────────────────────────────────
+        private com8com1.SCFPS.PlayableCharacterData?  _debugSelectedChar    = null;
+        private com8com1.SCFPS.MissionAsset?           _debugSelectedMission = null;
+        private com8com1.SCFPS.PlayableCharacterData[] _debugCharList        = System.Array.Empty<com8com1.SCFPS.PlayableCharacterData>();
+        private com8com1.SCFPS.MissionAsset[]          _debugMissionList     = System.Array.Empty<com8com1.SCFPS.MissionAsset>();
+
         // ── Debug 씬 로드 검증 오류 ───────────────────────────────────────────────
         private string _debugSceneValidationError = "";
 
@@ -629,23 +635,22 @@ namespace BloodshedModToolkit.UI
                 return false;
             }
 
-            // 2. Character
+            // 2. Character — ss.selectedCharacterData는 기본값이 있을 수 있으므로 신뢰하지 않음
+            //    DEBUG 패널 명시 선택 또는 MetaGame UI 선택(csm)만 허용
             var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
             var csm = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
-            string charName = csm?.selectedCharacter?.name
-                           ?? ss?.selectedCharacterData?.name
-                           ?? "";
-            if (charName.Length == 0)
+            var charData = _debugSelectedChar ?? csm?.selectedCharacter;
+            if (charData == null)
             {
-                reason = "Character: 캐릭터가 선택되지 않았습니다";
+                reason = "Character: 캐릭터 미선택\nDEBUG 패널 CHARACTER SELECT에서 선택 필요";
                 return false;
             }
 
             // 3. Mission ↔ Scene
-            var mission = ss?.selectedMission;
+            var mission = _debugSelectedMission ?? ss?.selectedMission;
             if (mission == null)
             {
-                reason = "Mission: 미션이 선택되지 않았습니다";
+                reason = "Mission: 미션 미선택\nDEBUG 패널 MISSION SELECT에서 선택 필요";
                 return false;
             }
 
@@ -671,12 +676,77 @@ namespace BloodshedModToolkit.UI
             var ss    = UnityEngine.Object.FindObjectOfType<SessionSettings>();
             var csm   = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
             _debugMetaSaveSlot = _debugSdm != null ? _debugSdm.activeSaveSlot.ToString() : "N/A";
-            _debugMetaMission  = ss?.selectedMission?.strMissionTitle
-                                  ?? ss?.selectedMission?.name
-                                  ?? "(none)";
-            _debugMetaChar     = csm?.selectedCharacter?.name
-                                  ?? ss?.selectedCharacterData?.name
-                                  ?? "(none)";
+
+            // DEBUG 명시 선택 우선, 없으면 게임 상태 (selectedCharacterData 기본값 제외)
+            _debugMetaChar = _debugSelectedChar?.name
+                          ?? csm?.selectedCharacter?.name
+                          ?? "(none)";
+            _debugMetaMission = _debugSelectedMission != null
+                ? (!string.IsNullOrEmpty(_debugSelectedMission.strMissionTitle)
+                    ? _debugSelectedMission.strMissionTitle
+                    : _debugSelectedMission.name)
+                : (ss?.selectedMission?.strMissionTitle
+                   ?? ss?.selectedMission?.name
+                   ?? "(none)");
+        }
+
+        private void ScanCharacters()
+        {
+            _debugCharList = Resources.FindObjectsOfTypeAll<PlayableCharacterData>()
+                             ?? System.Array.Empty<PlayableCharacterData>();
+            Plugin.Log.LogInfo($"[Debug] 캐릭터 스캔: {_debugCharList.Length}개 발견");
+            foreach (var c in _debugCharList)
+                Plugin.Log.LogInfo($"[Debug]   char: '{c.name}'");
+        }
+
+        private void ScanMissions()
+        {
+            _debugMissionList = Resources.FindObjectsOfTypeAll<MissionAsset>()
+                                ?? System.Array.Empty<MissionAsset>();
+            Plugin.Log.LogInfo($"[Debug] 미션 스캔: {_debugMissionList.Length}개 발견");
+            foreach (var m in _debugMissionList)
+                Plugin.Log.LogInfo($"[Debug]   mission: '{m.name}' | '{m.strMissionTitle}'");
+        }
+
+        private void SelectCharacter(PlayableCharacterData cd)
+        {
+            _debugSelectedChar = cd;
+            _debugMetaChar     = cd.name;
+            // SessionSettings에 즉시 반영 (REFRESH 시 확인 가능)
+            var ss = UnityEngine.Object.FindObjectOfType<SessionSettings>();
+            if (ss != null) ss.selectedCharacterData = cd;
+            Plugin.Log.LogInfo($"[Debug] 캐릭터 선택: '{cd.name}'");
+        }
+
+        private void SelectMission(MissionAsset m)
+        {
+            _debugSelectedMission = m;
+            _debugMetaMission = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : m.name;
+            // SessionSettings에 즉시 반영
+            var ss = UnityEngine.Object.FindObjectOfType<SessionSettings>();
+            if (ss != null) ss.selectedMission = m;
+            Plugin.Log.LogInfo($"[Debug] 미션 선택: '{m.name}' ({_debugMetaMission})");
+        }
+
+        /// <summary>
+        /// LoadScene 직전 호출 — Debug 명시 선택값을 게임 상태에 완전히 적용.
+        /// MetaGameCharacterSelectionManager.SetSelectedCharacter도 포함.
+        /// </summary>
+        private void ApplyDebugSelections()
+        {
+            var ss  = UnityEngine.Object.FindObjectOfType<SessionSettings>();
+            var csm = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
+            if (_debugSelectedChar != null)
+            {
+                if (ss  != null) ss.selectedCharacterData = _debugSelectedChar;
+                if (csm != null) { csm.selectedCharacter = _debugSelectedChar; csm.SetSelectedCharacter(_debugSelectedChar); }
+                Plugin.Log.LogInfo($"[Debug] Apply: char='{_debugSelectedChar.name}'");
+            }
+            if (_debugSelectedMission != null && ss != null)
+            {
+                ss.selectedMission = _debugSelectedMission;
+                Plugin.Log.LogInfo($"[Debug] Apply: mission='{_debugSelectedMission.name}'");
+            }
         }
         private static readonly (string Group, (string Scene, string Label)[] Entries)[] _sceneGroups =
         {
@@ -738,6 +808,57 @@ namespace BloodshedModToolkit.UI
             }
             GUILayout.EndHorizontal();
 
+            // ── CHARACTER SELECT ─────────────────────────────────────────────
+            SectionHeader("CHARACTER SELECT");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("SCAN", _stActionBtn!)) ScanCharacters();
+            GUILayout.Label(
+                _debugCharList.Length > 0 ? $"총 {_debugCharList.Length}개" : "(MetaGame 씬에서 SCAN)",
+                _stSliderName!);
+            GUILayout.EndHorizontal();
+            if (_debugCharList.Length > 0)
+            {
+                const int kCharsPerRow = 3;
+                for (int i = 0; i < _debugCharList.Length; i += kCharsPerRow)
+                {
+                    GUILayout.BeginHorizontal();
+                    for (int j = i; j < System.Math.Min(i + kCharsPerRow, _debugCharList.Length); j++)
+                    {
+                        var cd = _debugCharList[j];
+                        bool active = _debugSelectedChar != null && _debugSelectedChar.name == cd.name;
+                        if (GUILayout.Button(cd.name, active ? _stPresetOn! : _stPresetOff!))
+                            SelectCharacter(cd);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+            }
+
+            // ── MISSION SELECT ────────────────────────────────────────────────
+            SectionHeader("MISSION SELECT");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("SCAN", _stActionBtn!)) ScanMissions();
+            GUILayout.Label(
+                _debugMissionList.Length > 0 ? $"총 {_debugMissionList.Length}개" : "(MetaGame 씬에서 SCAN)",
+                _stSliderName!);
+            GUILayout.EndHorizontal();
+            if (_debugMissionList.Length > 0)
+            {
+                const int kMissPerRow = 2;
+                for (int i = 0; i < _debugMissionList.Length; i += kMissPerRow)
+                {
+                    GUILayout.BeginHorizontal();
+                    for (int j = i; j < System.Math.Min(i + kMissPerRow, _debugMissionList.Length); j++)
+                    {
+                        var m = _debugMissionList[j];
+                        string label = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : m.name;
+                        bool active = _debugSelectedMission != null && _debugSelectedMission.name == m.name;
+                        if (GUILayout.Button(label, active ? _stPresetOn! : _stPresetOff!))
+                            SelectMission(m);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+            }
+
             // ── FORCE SCENE LOAD ────────────────────────────────────────────
             SectionHeader("FORCE SCENE LOAD");
             GUILayout.Label("씬 이름 (클립보드 붙여넣기):", _stSliderName!);
@@ -785,7 +906,8 @@ namespace BloodshedModToolkit.UI
                 else if (ValidateSceneLoad(_debugSceneInput, out string reason))
                 {
                     _debugSceneValidationError = "";
-                    _visible = false;   // IMGUI 마우스 흡수 방지 — 씬 전환 전 메뉴 닫기
+                    ApplyDebugSelections();  // char/mission을 게임 상태에 완전 적용
+                    _visible = false;        // IMGUI 마우스 흡수 방지 — 씬 전환 전 메뉴 닫기
                     Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{_debugSceneInput}'");
                     UnityEngine.SceneManagement.SceneManager.LoadScene(_debugSceneInput);
                 }
