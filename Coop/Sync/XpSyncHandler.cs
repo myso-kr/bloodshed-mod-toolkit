@@ -22,6 +22,18 @@ namespace BloodshedModToolkit.Coop.Sync
                 _                       => earned,   // Replicate
             };
 
+        // 재귀 방지 플래그 — private으로 캡슐화
+        private static bool _applyingRemoteXp = false;
+
+        public static bool IsApplyingRemoteXp => _applyingRemoteXp;
+
+        public static void WithRemoteXpGuard(System.Action action)
+        {
+            _applyingRemoteXp = true;
+            try   { action(); }
+            finally { _applyingRemoteXp = false; }
+        }
+
         /// <summary>
         /// Guest에서 LevelUp 패킷 수신 시 레벨 동기화를 적용합니다.
         /// </summary>
@@ -33,12 +45,9 @@ namespace BloodshedModToolkit.Coop.Sync
                 Plugin.Log.LogWarning("[XpSyncHandler] PlayerStats 없음 — LevelUp 스킵");
                 return;
             }
-            if (ps.level >= newLevel) return;   // 이미 해당 레벨 이상
+            if (ps.level >= newLevel) return;
 
-            // SetLevel 중 AddXp 후킹이 재귀 브로드캐스트 하지 않도록 플래그 설정
-            XpEventPatch._applyingRemoteXp = true;
-            try   { ps.SetLevel(newLevel); }
-            finally { XpEventPatch._applyingRemoteXp = false; }
+            WithRemoteXpGuard(() => ps.SetLevel(newLevel));
 
             ps.RecalculateStats();
             Plugin.Log.LogInfo($"[XpSyncHandler] 레벨 동기화: {ps.level} → {newLevel}");
