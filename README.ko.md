@@ -1,13 +1,26 @@
 # Bloodshed Mod Toolkit
 
-> **Bloodshed** (Steam, Windows)를 위한 BepInEx 6.x IL2CPP 종합 모드 —
-> 치트, 밸런스 트윅, Steam 코-업, AI 봇 동반자를 하나의 인게임 메뉴에서.
+[![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
-[![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Languages:** [English](README.md) · **한국어** · [日本語](README.ja.md) · [中文](README.zh-CN.md)
+
+---
+
+![banner](docs/images/banner_hero.png)
+
+게임을 켠다. 컷신도 없고 튜토리얼 팝업도 없다. 음악이 터진다 — 거칠고 묵직한 메탈 리프 — 그리고 바로 전투다.
+픽셀 아트 악마들이 화면을 가득 채운다. 산탄총이 반동을 일으킨다. 뭔가가 만족스러운 붉은 폭발로 터진다. 12초 만에 죽는다.
+사망 화면이 끝나기도 전에 재시작을 누른다.
+
+*그게 Bloodshed다.* DOOM의 DNA를 로그라이크 렌즈로 걸러낸 게임 — 빠르고, 시끄럽고, 철저하게 가혹하다.
+
+개발사는 정식 업데이트를 마무리했지만, 플레이어들은 떠나지 않았다.
+**Steam 긍정 평가 85%.** 미션 하나를 더 돌고, 캐릭터 하나를 더 해금하고, 브로큰 시너지를 하나 더 찾아내는 작고 끈질긴 커뮤니티.
+
+이 툴킷은 코-업이 하고 싶어서 시작됐다. 그다음엔 트윅이 필요했고, 그다음엔 스폰 수를 ×4로 올리고 무적을 켜면 어떻게 되는지 보고 싶었다. 지금은 그걸 전부 한다 — F5 하나로.
 
 ---
 
@@ -28,6 +41,8 @@
 ---
 
 ## 기능
+
+![banner](docs/images/banner_power.png)
 
 ### CHEATS 탭
 
@@ -109,6 +124,8 @@
 | 스폰 | 수량 배율 | ×0.25 – ×4.00 |
 
 ---
+
+![banner](docs/images/banner_coop.png)
 
 ### CO-OP 탭
 
@@ -248,3 +265,9 @@ dotnet build -c Release
 ## 라이선스
 
 [MIT](LICENSE)
+
+---
+
+> Bloodshed를 아직 플레이해본 적 없다면 — 먼저 그걸 하세요.
+
+[![Steam](https://img.shields.io/badge/Steam-Bloodshed-1b2838?logo=steam)](https://store.steampowered.com/app/2747550/Bloodshed/)

@@ -1,13 +1,26 @@
 # Bloodshed Mod Toolkit
 
-> 面向 **Bloodshed**（Steam，Windows）的 BepInEx 6.x IL2CPP 综合 Mod —
-> 作弊、平衡调整、Steam 合作联机与 AI 机器人伙伴，尽在一个游戏内菜单。
+[![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
-[![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Languages:** [English](README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · **中文**
+
+---
+
+![banner](docs/images/banner_hero.png)
+
+启动游戏。没有过场动画，没有教程弹窗。音乐响起 — 那段粗粝、有力的金属即兴重复段 — 然后直接开打。
+像素风恶魔涌满屏幕。霰弹枪踢出后坐力。某个东西在令人满足的红色爆炸中碎裂。十二秒后死亡。
+死亡画面还没结束，手指已经按下了重试。
+
+*这就是 Bloodshed。* DOOM 的 DNA 经过 Roguelike 镜头过滤 — 快速、嘈杂、毫不留情。
+
+开发者已停止主动开发，但玩家没有离开。
+**Steam 好评率 85%。** 一个小而倔强的社区，不断地再跑一次任务，再解锁一个角色，再找一个破坏性的协同效果。
+
+这个工具集起源于想玩联机。然后需要调整数值。然后想看看把刷怪数量拉到 ×4 同时开无敌会发生什么。现在它全都能做 — 按一下 F5 就行。
 
 ---
 
@@ -28,6 +41,8 @@
 ---
 
 ## 功能
+
+![banner](docs/images/banner_power.png)
 
 ### CHEATS 标签
 
@@ -109,6 +124,8 @@
 | 刷怪 | 数量倍率 | ×0.25 – ×4.00 |
 
 ---
+
+![banner](docs/images/banner_coop.png)
 
 ### CO-OP 标签
 
@@ -248,3 +265,9 @@ Co-op 功能仅与**通过 Steam 直接邀请的好友**连接。
 ## 许可证
 
 [MIT](LICENSE)
+
+---
+
+> 如果你还没玩过 Bloodshed — 先去玩。
+
+[![Steam](https://img.shields.io/badge/Steam-Bloodshed-1b2838?logo=steam)](https://store.steampowered.com/app/2747550/Bloodshed/)

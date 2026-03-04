@@ -1,13 +1,27 @@
 # Bloodshed Mod Toolkit
 
-> A comprehensive BepInEx 6.x IL2CPP mod for **Bloodshed** (Steam, Windows) —
-> cheats, balance tweaks, Steam co-op, and AI bot companions, all in one in-game menu.
+[![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
-[![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Languages:** [한국어](README.ko.md) · [日本語](README.ja.md) · [中文](README.zh-CN.md)
+**Languages:** **English** · [한국어](README.ko.md) · [日本語](README.ja.md) · [中文](README.zh-CN.md)
+
+---
+
+![banner](docs/images/banner_hero.png)
+
+You boot the game. No cutscene, no tutorial popup. The music hits — that crunchy, driving metal riff — and suddenly you're in it.
+Pixel art demons flood the screen. Your shotgun kicks. Something explodes in a satisfying red burst. You die in twelve seconds.
+You hit retry before the death screen finishes loading.
+
+*That's Bloodshed.* DOOM's DNA filtered through a roguelike lens — fast, loud, and completely unforgiving.
+
+The developer wrapped up active development, but the players didn't leave.
+**85% positive reviews on Steam.** A small, stubborn community that keeps running one more mission,
+unlocking one more character, finding one more broken synergy.
+
+This toolkit started because I wanted co-op. Then I wanted tweaks. Then I wanted to see what happened when you cranked enemy spawns to ×4 and turned on god mode at the same time. Now it does all of that — and it ships as a single F5 keypress.
 
 ---
 
@@ -28,6 +42,8 @@ The menu has four tabs:
 ---
 
 ## Features
+
+![banner](docs/images/banner_power.png)
 
 ### CHEATS Tab
 
@@ -109,6 +125,8 @@ Apply a difficulty **preset** with one click, or fine-tune each multiplier indiv
 | Spawn | Count Multiplier | ×0.25 – ×4.00 |
 
 ---
+
+![banner](docs/images/banner_coop.png)
 
 ### CO-OP Tab
 
@@ -248,3 +266,9 @@ The author is not responsible for any consequences arising from misuse.
 ## License
 
 [MIT](LICENSE)
+
+---
+
+> If you haven't played Bloodshed yet — do that first.
+
+[![Steam](https://img.shields.io/badge/Steam-Bloodshed-1b2838?logo=steam)](https://store.steampowered.com/app/2747550/Bloodshed/)

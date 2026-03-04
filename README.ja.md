@@ -1,13 +1,26 @@
 # Bloodshed Mod Toolkit
 
-> **Bloodshed** (Steam, Windows) 向けの BepInEx 6.x IL2CPP 総合Mod —
-> チート、バランス調整、Steam Co-op、AIボット同伴者を一つのメニューで。
+[![Bloodshed on Steam](https://cdn.akamai.steamstatic.com/steam/apps/2747550/header.jpg)](https://store.steampowered.com/app/2747550/Bloodshed/)
 
-[![Build](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml/badge.svg)](https://github.com/myso-kr/bloodshed-mod-toolkit/actions/workflows/build.yml)
 [![Latest Release](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Languages:** [English](README.md) · [한국어](README.ko.md) · **日本語** · [中文](README.zh-CN.md)
+
+---
+
+![banner](docs/images/banner_hero.png)
+
+ゲームを起動する。カットシーンもない、チュートリアルのポップアップもない。音楽が鳴り響く — あのゴリゴリしたメタルリフ — そして即、戦闘だ。
+ピクセルアートのデーモンたちが画面を埋め尽くす。ショットガンが反動を返す。何かが気持ちいい赤い爆発で吹き飛ぶ。12秒で死ぬ。
+デスシーンが終わる前にリトライを押す。
+
+*それが Bloodshed だ。* DOOMのDNAをローグライクのレンズで濾過したゲーム — 速く、うるさく、徹底的に容赦ない。
+
+開発者は開発を終了したが、プレイヤーたちは離れなかった。
+**Steamレビュー 85% 高評価。** もう一度ミッションを回し、もう一キャラを解放し、もう一つのブロークンシナジーを探す、小さくも粘り強いコミュニティ。
+
+このツールキットはco-opがやりたかったから始まった。次にトウィークが必要になった。次にスポーン数を×4にして無敵をオンにしたらどうなるか確かめたくなった。今はそれを全部やる — F5一発で。
 
 ---
 
@@ -28,6 +41,8 @@
 ---
 
 ## 機能
+
+![banner](docs/images/banner_power.png)
 
 ### CHEATS タブ
 
@@ -109,6 +124,8 @@
 | スポーン | 数量倍率 | ×0.25 – ×4.00 |
 
 ---
+
+![banner](docs/images/banner_coop.png)
 
 ### CO-OP タブ
 
@@ -248,3 +265,9 @@ Co-op機能は **Steamで直接招待した友人** とのみ接続します。
 ## ライセンス
 
 [MIT](LICENSE)
+
+---
+
+> Bloodshedをまだプレイしたことがないなら — まずそれをやろう。
+
+[![Steam](https://img.shields.io/badge/Steam-Bloodshed-1b2838?logo=steam)](https://store.steampowered.com/app/2747550/Bloodshed/)
