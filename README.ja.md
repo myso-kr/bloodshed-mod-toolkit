@@ -11,7 +11,6 @@
 ![Tweaks](https://img.shields.io/badge/Tweaks-9_Sliders-ea580c)
 ![AI Bots](https://img.shields.io/badge/AI_Bots-up_to_3-52525b)
 ![i18n](https://img.shields.io/badge/i18n-EN_KO_JA_ZH-2563eb)
-[![GitHub Stars](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=flat&logo=github&logoColor=white&label=Stars&color=f9c74f)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 [![GitHub Downloads](https://img.shields.io/github/downloads/myso-kr/bloodshed-mod-toolkit/total?style=flat&logo=github&logoColor=white&label=Downloads&color=22c55e)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases)
 
 **Languages:** [English](README.md) · [한국어](README.ko.md) · **日本語** · [中文](README.zh-CN.md)
@@ -32,7 +31,7 @@
 このツールキットはco-opがやりたかったから始まった。次にトウィークが必要になった。次にスポーン数を×4にして無敵をオンにしたらどうなるか確かめたくなった。今はそれを全部やる — F5一発で。
 
 [![最新リリースをダウンロード](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=最新版をダウンロード&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
-[![GitHubでスターを付ける](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=GitHubでスターを付ける&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![GitHubでスターを付ける](https://img.shields.io/badge/GitHubでスターを付ける-f9c74f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 
 ---
 
@@ -282,7 +281,7 @@ Co-op機能は **Steamで直接招待した友人** とのみ接続します。
 
 このModがBloodshedをより楽しくしてくれたなら — ⭐ スターを押してもらえると嬉しいです。
 
-[![GitHubでスターを付ける](https://img.shields.io/github/stars/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=GitHubでスターを付ける&color=f9c74f&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
+[![GitHubでスターを付ける](https://img.shields.io/badge/GitHubでスターを付ける-f9c74f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/stargazers)
 [![最新版をダウンロード](https://img.shields.io/github/v/release/myso-kr/bloodshed-mod-toolkit?style=for-the-badge&label=最新版をダウンロード&color=22c55e&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest)
 [![バグを報告](https://img.shields.io/badge/バグを報告-dc2626?style=for-the-badge&logo=github&logoColor=white)](https://github.com/myso-kr/bloodshed-mod-toolkit/issues/new)
 
