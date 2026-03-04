@@ -707,17 +707,13 @@ namespace BloodshedModToolkit.UI
             var csm   = UnityEngine.Object.FindObjectOfType<MetaGameCharacterSelectionManager>();
             _debugMetaSaveSlot = _debugSdm != null ? _debugSdm.activeSaveSlot.ToString() : "N/A";
 
-            // DEBUG 명시 선택 우선, 없으면 게임 상태 (selectedCharacterData 기본값 제외)
-            _debugMetaChar = _debugSelectedChar?.name
-                          ?? csm?.selectedCharacter?.name
-                          ?? "(none)";
+            // DEBUG 명시 선택만 표시 — game state(csm/ss) 폴백 제거 (save data 기본값 오염 방지)
+            _debugMetaChar = _debugSelectedChar?.name ?? "(none)";
             _debugMetaMission = _debugSelectedMission != null
                 ? (!string.IsNullOrEmpty(_debugSelectedMission.strMissionTitle)
                     ? _debugSelectedMission.strMissionTitle
                     : _debugSelectedMission.name)
-                : (ss?.selectedMission?.strMissionTitle
-                   ?? ss?.selectedMission?.name
-                   ?? "(none)");
+                : "(none)";
         }
 
         private void ScanCharacters()
