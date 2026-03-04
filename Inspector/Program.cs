@@ -258,6 +258,188 @@ SearchMembers(types, "missions/episode/playlist 멤버",
 // ════════════════════════════════════════════════════════════════════════════
 // 15. GameDataManager 타입 상세 — availableMissions 반환 타입 풀네임 확인
 // ════════════════════════════════════════════════════════════════════════════
+// W1. 무기 타이밍 심층 조사 — 발사 간격에 관여하는 float 멤버 전부
+// ════════════════════════════════════════════════════════════════════════════
+Console.WriteLine("\n\n### 무기 타이밍 심층 조사 ###");
+foreach (var name in new[] { "Weapon", "ShotAction", "ShotAction_Raycast",
+                              "WeaponData", "WeaponItem", "BurstHandler", "ShotHandler" })
+{
+    var t = types.FirstOrDefault(x => x.Name == name);
+    if (t == null) { Console.WriteLine($"\n[NOT FOUND] {name}"); continue; }
+    Console.WriteLine($"\n-- {name} : float 멤버 --");
+    var flags2 = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    foreach (var p in t.GetProperties(flags2)
+        .Where(p => p.DeclaringType?.FullName == t.FullName && p.PropertyType.Name == "Single")
+        .OrderBy(p => p.Name))
+        Console.WriteLine($"  prop  {p.Name}");
+    foreach (var f in t.GetFields(flags2)
+        .Where(f => f.DeclaringType?.FullName == t.FullName && f.FieldType.Name == "Single" && !f.Name.StartsWith("<"))
+        .OrderBy(f => f.Name))
+        Console.WriteLine($"  field {f.Name}");
+}
+
+// W2. Shot/Burst/Fire 포함 타입 목록
+Console.WriteLine("\n\n### Shot/Burst/Fire 포함 타입 목록 ###");
+foreach (var t in types.Where(x => x.Name.Contains("Shot",  StringComparison.OrdinalIgnoreCase)
+                                 || x.Name.Contains("Burst", StringComparison.OrdinalIgnoreCase)
+                                 || x.Name.Contains("Fire",  StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(x => x.Name))
+    Console.WriteLine($"  {t.FullName}");
+
+// W3. delay/timer/interval/wait 멤버 전수 검색
+Console.WriteLine("\n\n### delay/timer/interval/wait/pause 관련 멤버 ###");
+var timingRx = new Regex(@"delay|Delay|timer|Timer|interval|Interval|wait|Wait|pause|Pause", RegexOptions.IgnoreCase);
+foreach (var t in types.OrderBy(t => t.Name))
+{
+    try
+    {
+        foreach (var m in t.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+            .Where(m => timingRx.IsMatch(m.Name) && m.DeclaringType?.FullName == t.FullName))
+        {
+            try
+            {
+                string sig = m switch
+                {
+                    MethodInfo   mi => $"meth  {mi.ReturnType.Name} {mi.Name}({string.Join(", ", mi.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"))})",
+                    PropertyInfo pi => $"prop  {pi.PropertyType.Name} {pi.Name}",
+                    FieldInfo    fi => $"field {fi.FieldType.Name} {fi.Name}",
+                    _              => $"???   {m.Name}"
+                };
+                Console.WriteLine($"  [{t.Name}]  {sig}");
+            }
+            catch { }
+        }
+    }
+    catch { }
+}
+
+// W4. IEnumerator 반환 메서드 (코루틴) 전수
+Console.WriteLine("\n\n### IEnumerator 반환 메서드 (코루틴) ###");
+foreach (var t in types.OrderBy(x => x.Name))
+{
+    try
+    {
+        foreach (var m in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+            .Where(m => m.DeclaringType?.FullName == t.FullName
+                     && (m.ReturnType.Name == "IEnumerator" || m.ReturnType.Name.Contains("Coroutine"))))
+        {
+            try
+            {
+                var parms = string.Join(", ", m.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"));
+                Console.WriteLine($"  [{t.Name}]  {m.ReturnType.Name} {m.Name}({parms})");
+            }
+            catch { }
+        }
+    }
+    catch { }
+}
+
+// W4b. WeaponHandler + CoTriggerBurst 내부 클래스 전체 덤프
+Console.WriteLine("\n\n### WeaponHandler 전체 덤프 ###");
+var whType = types.FirstOrDefault(x => x.FullName == "com8com1.SCFPS.WeaponHandler");
+if (whType != null) DumpType(whType, "WeaponHandler");
+else Console.WriteLine("[NOT FOUND] WeaponHandler");
+
+Console.WriteLine("\n\n### _CoTriggerBurst_d__62 전체 덤프 ###");
+var burstCoType = types.FirstOrDefault(x => x.FullName?.Contains("_CoTriggerBurst") == true);
+if (burstCoType != null) DumpType(burstCoType, burstCoType.FullName!);
+else Console.WriteLine("[NOT FOUND] _CoTriggerBurst*");
+
+// W4c. Weapon 코루틴 관련 필드/메서드
+Console.WriteLine("\n\n### Weapon 코루틴/Shoot 관련 멤버 ###");
+var wt2 = types.FirstOrDefault(x => x.FullName == "com8com1.SCFPS.Weapon");
+if (wt2 != null)
+{
+    var flags3 = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    foreach (var m in wt2.GetMembers(flags3)
+        .Where(m => m.DeclaringType?.FullName == wt2.FullName
+                 && !m.Name.StartsWith("Native")
+                 && (m.Name.Contains("Shoot") || m.Name.Contains("shoot")
+                  || m.Name.Contains("Coroutine") || m.Name.Contains("coroutine")
+                  || m.Name.Contains("Burst") || m.Name.Contains("burst")
+                  || m.Name.Contains("handler") || m.Name.Contains("Handler"))))
+    {
+        try
+        {
+            string sig = m switch
+            {
+                MethodInfo   mi => $"meth  {mi.ReturnType.Name} {mi.Name}({string.Join(", ", mi.GetParameters().Select(p => $"{p.ParameterType.Name} {p.Name}"))})",
+                PropertyInfo pi => $"prop  {pi.PropertyType.Name} {pi.Name}",
+                FieldInfo    fi => $"field {fi.FieldType.Name} {fi.Name}",
+                _              => $"???   {m.Name}"
+            };
+            Console.WriteLine($"  {sig}");
+        }
+        catch { }
+    }
+}
+
+// W5. ShotAction / Weapon 상속 계층 + 파생 클래스
+foreach (var rootName in new[] { "ShotAction", "Weapon" })
+{
+    Console.WriteLine($"\n\n### {rootName} 상속 계층 + 파생 ###");
+    var rt = types.FirstOrDefault(x => x.Name == rootName);
+    if (rt == null) { Console.WriteLine("  [NOT FOUND]"); continue; }
+    var bt2 = rt;
+    while (bt2 != null) { Console.WriteLine($"  {bt2.FullName}"); bt2 = bt2.BaseType; }
+    Console.WriteLine("  파생 클래스:");
+    foreach (var t in types.Where(x => x.BaseType?.Name == rootName).OrderBy(x => x.Name))
+        DumpType(t, t.Name);
+}
+
+// Quick namespace check
+foreach (var tname2 in new[] { "LevelUpScreenManager", "LevelUpOption", "ItemData" })
+{
+    var t2 = types.FirstOrDefault(x => x.Name == tname2);
+    Console.WriteLine($"{tname2} → {t2?.FullName ?? "NOT FOUND"}");
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// UPGRADE UI INNER CLASS 덤프
+// ════════════════════════════════════════════════════════════════════════════
+foreach (var tname in new[] { "UpgradeUI", "LevelUpOption" })
+{
+    var t2 = types.FirstOrDefault(x => x.Name == tname);
+    if (t2 == null) { Console.WriteLine($"\n[NOT FOUND] {tname}"); continue; }
+    DumpType(t2, $"{tname} — 전체");
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ITEM / CARD SELECTION 발견 섹션
+// ════════════════════════════════════════════════════════════════════════════
+
+// 1. 타입 이름 검색 — 카드/보상/업그레이드 UI 클래스
+SearchTypes(types, "Card/Item/Reward/Upgrade 타입",
+    new Regex(@"card|reward|upgrade|pickup|item|select|choice|picker",
+              RegexOptions.IgnoreCase));
+
+// 2. 메서드/프로퍼티/필드 검색
+SearchMembers(types, "선택 관련 메서드/필드",
+    new Regex(@"SelectCard|PickItem|ChooseReward|ConfirmSelection|OnCardSelect"
+            + @"|OnItemSelect|OnUpgradeSelect|AddItem|PickUpgrade|SelectUpgrade"
+            + @"|cardIndex|itemIndex|selectedCard|selectedItem|currentCards"
+            + @"|availableCards|rewardCards|upgradeCards",
+              RegexOptions.IgnoreCase));
+
+// 3. PlayerInventory 전체 덤프
+var invType = types.FirstOrDefault(x => x.Name == "PlayerInventory");
+if (invType != null) DumpType(invType, "PlayerInventory — 전체");
+else Console.WriteLine("\n[NOT FOUND] PlayerInventory");
+
+// 4. LevelUpAway / HasLevelUpAway 관련 — 레벨업 선택 기능 확인
+SearchMembers(types, "Away/LevelUpAway 관련",
+    new Regex(@"away|Away|levelUpAway|LevelUpAway|HasAway|PickAway",
+              RegexOptions.IgnoreCase));
+
+// 5. Away/PickUp 포함 타입 전체 덤프
+foreach (var t in types.Where(x => x.Name.Contains("Away", StringComparison.OrdinalIgnoreCase)
+                                 || x.Name.Contains("PickUp", StringComparison.OrdinalIgnoreCase)
+                                 || x.Name.Contains("Reward", StringComparison.OrdinalIgnoreCase)
+                                 || x.Name.Contains("Card", StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(x => x.Name))
+    DumpType(t, t.Name);
+
+// ════════════════════════════════════════════════════════════════════════════
 Console.WriteLine("\n\n### GameDataManager 타입 상세 ###");
 var gdmType2 = types.FirstOrDefault(x => x.Name == "GameDataManager");
 if (gdmType2 != null)

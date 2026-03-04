@@ -253,6 +253,9 @@ namespace BloodshedModToolkit.Coop.Bots
             Level         = Level,
             Experience    = Experience,
             ExperienceCap = ExperienceCap,
+            RotY          = 0f,                 // 봇 회전은 BotPhysicsBody가 아바타 transform으로 직접 제어
+            WeaponClassId = (byte)WeaponClass,
+            CharacterId   = (byte)BotIndex,
         };
     }
 }

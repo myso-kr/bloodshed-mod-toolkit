@@ -2,6 +2,14 @@ using System.Collections.Generic;
 
 namespace BloodshedModToolkit.Coop.Mission
 {
+    public enum CoopSessionState
+    {
+        Disconnected,   // 로비 없음
+        InLobby,        // 로비 참가, 미션 미시작
+        Briefing,       // MissionBriefing 발송/수신 — 캐릭터 선택 진행 중
+        InMission,      // 미션 씬 진행 중
+    }
+
     public enum MissionStatus
     {
         Idle,
@@ -19,6 +27,7 @@ namespace BloodshedModToolkit.Coop.Mission
         /// <summary>캐릭터 선택·미션 준비 화면 씬 이름 — 게스트가 자유롭게 이용하는 씬.</summary>
         public const string MetaGameScene = "MetaGame";
 
+        public static CoopSessionState SessionState   { get; set; } = CoopSessionState.Disconnected;
         public static MissionStatus Status            { get; set; } = MissionStatus.Idle;
         public static string        PendingSceneName  { get; set; } = "";
         public static int           PendingBuildIndex { get; set; } = -1;
@@ -39,6 +48,7 @@ namespace BloodshedModToolkit.Coop.Mission
 
         public static void Reset()
         {
+            SessionState          = CoopSessionState.Disconnected;
             Status                = MissionStatus.Idle;
             PendingSceneName      = "";
             PendingBuildIndex     = -1;
@@ -46,6 +56,7 @@ namespace BloodshedModToolkit.Coop.Mission
             HostCurrentBuildIndex = -1;
             GuestCharacterSelected = false;
             GuestReadyMap.Clear();
+            ItemSelectState.Reset();
             SceneTracker.Reset();
         }
     }

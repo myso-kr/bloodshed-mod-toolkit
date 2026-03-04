@@ -50,11 +50,20 @@ namespace BloodshedModToolkit.Coop.Events
 
         public static void OnPlayerStateChanged(ulong steamId,
             float px, float py, float pz,
-            float hp, float maxHp, int level, float xp, float xpCap)
+            float hp, float maxHp, int level, float xp, float xpCap,
+            float rotY = 0f, byte weaponClassId = 0, byte charId = 0)
         {
             if (!CoopState.IsConnected || Net == null) return;
             Net.BroadcastUnreliable(
-                PlayerStatePacket.Encode(steamId, px, py, pz, hp, maxHp, level, xp, xpCap));
+                PlayerStatePacket.Encode(steamId, px, py, pz, hp, maxHp, level, xp, xpCap,
+                    rotY, weaponClassId, charId));
+        }
+
+        /// <summary>공격 이벤트 브로드캐스트 — 피어 아바타의 공격 애니메이션 동기화.</summary>
+        public static void OnAttack(ulong steamId)
+        {
+            if (!CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(AttackEventPacket.Encode(steamId));
         }
 
         /// <summary>
@@ -85,6 +94,13 @@ namespace BloodshedModToolkit.Coop.Events
             }
             Net.BroadcastReliable(MissionStartPacket.Encode(sceneName, buildIndex));
             Plugin.Log.LogInfo($"[EventBridge] MissionStart 브로드캐스트: '{sceneName}' (idx={buildIndex}) → {CoopState.Peers.Count}명");
+        }
+
+        public static void OnMissionBriefing(string sceneName, int buildIndex)
+        {
+            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(MissionBriefingPacket.Encode(sceneName, buildIndex));
+            Plugin.Log.LogInfo($"[EventBridge] MissionBriefing 브로드캐스트: '{sceneName}' (idx={buildIndex}) → {CoopState.Peers.Count}명");
         }
     }
 }

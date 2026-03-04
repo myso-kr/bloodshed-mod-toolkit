@@ -15,17 +15,17 @@ namespace BloodshedModToolkit.Coop.Net
         LevelUp       = 0x22,
         ItemSelected  = 0x23,
         WaveAdvance   = 0x30,
-        DamageEvent   = 0x40,
         DamageRequest = 0x41,
-        PlayerInput   = 0x50,
+        AttackEvent   = 0x42,   // 양방향: 공격 이벤트 (아바타 공격 애니메이션 동기화)
         FullSnapshot  = 0x51,
 
         // Phase 7 — 밸런스 설정 동기화
         TweakSync     = 0x60,
 
         // Phase 9 — 미션 진입 게이트
-        MissionStart  = 0x70,   // Host → Guest: 씬 이름 + 빌드 인덱스
-        PlayerReady   = 0x71,   // Guest → Host: 준비 완료
+        MissionStart     = 0x70,   // Host → Guest: 씬 이름 + 빌드 인덱스
+        PlayerReady      = 0x71,   // Guest → Host: 준비 완료
+        MissionBriefing  = 0x72,   // Host → Guest: 미션 사전 알림 + 캐릭터 선택 요청
 
         // Phase 10 — 인게임 채팅
         ChatMessage   = 0x80,   // 양방향: 채팅 메시지
@@ -211,6 +211,7 @@ namespace BloodshedModToolkit.Coop.Net
     }
 
     // PlayerState 패킷 — Phase 2 이상에서 전송 (20 Hz)
+    // v1.2.0: CharacterId(1B) 추가 → 총 46 bytes
     public struct PlayerStatePacket
     {
         public ulong SteamId;
@@ -220,9 +221,13 @@ namespace BloodshedModToolkit.Coop.Net
         public int   Level;
         public float Experience;
         public float ExperienceCap;
+        public float RotY;           // Y축 회전각 (도)
+        public byte  WeaponClassId;  // 0=Melee 1=Pistol 2=Rifle 3=Launcher
+        public byte  CharacterId;    // selectedCharacterData 이름 해시 % 16
 
         public static byte[] Encode(ulong steamId, float px, float py, float pz,
-            float hp, float maxHp, int level, float xp, float xpCap)
+            float hp, float maxHp, int level, float xp, float xpCap,
+            float rotY = 0f, byte weaponClassId = 0, byte charId = 0)
             => Packet.Encode(PacketType.PlayerState, w =>
             {
                 w.Write(steamId);
@@ -230,6 +235,9 @@ namespace BloodshedModToolkit.Coop.Net
                 w.Write(hp); w.Write(maxHp);
                 w.Write(level);
                 w.Write(xp); w.Write(xpCap);
+                w.Write(rotY);
+                w.Write(weaponClassId);
+                w.Write(charId);
             });
 
         public static PlayerStatePacket Decode(byte[] payload)
@@ -244,6 +252,9 @@ namespace BloodshedModToolkit.Coop.Net
                 Level         = br.ReadInt32(),
                 Experience    = br.ReadSingle(),
                 ExperienceCap = br.ReadSingle(),
+                RotY          = br.ReadSingle(),
+                WeaponClassId = br.ReadByte(),
+                CharacterId   = br.ReadByte(),
             };
         }
     }
@@ -312,6 +323,24 @@ namespace BloodshedModToolkit.Coop.Net
             => Packet.Encode(PacketType.PlayerReady, _ => { });
     }
 
+    // MissionBriefing — Host → Guest
+    public static class MissionBriefingPacket
+    {
+        public static byte[] Encode(string sceneName, int buildIndex)
+            => Packet.Encode(PacketType.MissionBriefing, w =>
+            {
+                w.Write(sceneName);
+                w.Write(buildIndex);
+            });
+
+        public static (string sceneName, int buildIndex) Decode(byte[] payload)
+        {
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms);
+            return (br.ReadString(), br.ReadInt32());
+        }
+    }
+
     // ChatMessage — 양방향
     public static class ChatMessagePacket
     {
@@ -327,6 +356,21 @@ namespace BloodshedModToolkit.Coop.Net
             using var ms = new System.IO.MemoryStream(payload);
             using var br = new System.IO.BinaryReader(ms, System.Text.Encoding.UTF8);
             return (br.ReadString(), br.ReadString());
+        }
+    }
+
+    // AttackEvent — 양방향: 공격 이벤트 (아바타 공격 애니메이션 동기화)
+    public struct AttackEventPacket
+    {
+        public ulong SteamId;
+
+        public static byte[] Encode(ulong steamId)
+            => Packet.Encode(PacketType.AttackEvent, w => w.Write(steamId));
+
+        public static AttackEventPacket Decode(byte[] payload)
+        {
+            using var br = new BinaryReader(new MemoryStream(payload));
+            return new AttackEventPacket { SteamId = br.ReadUInt64() };
         }
     }
 

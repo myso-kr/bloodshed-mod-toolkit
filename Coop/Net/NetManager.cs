@@ -7,6 +7,8 @@ using BloodshedModToolkit.Coop.Events;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Sync;
 using BloodshedModToolkit.Coop.Mission;
+using BloodshedModToolkit.Coop.Renderer;
+using BloodshedModToolkit.Coop.Bots;
 using BloodshedModToolkit.UI;
 
 namespace BloodshedModToolkit.Coop.Net
@@ -43,9 +45,11 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.DamageRequest, HandleDamageRequest);
             Router.Register(PacketType.TweakSync,     HandleTweakSync);
             Router.Register(PacketType.ItemSelected,  HandleItemSelected);
-            Router.Register(PacketType.MissionStart,  HandleMissionStart);
-            Router.Register(PacketType.PlayerReady,   HandlePlayerReady);
-            Router.Register(PacketType.ChatMessage,   HandleChatMessage);
+            Router.Register(PacketType.MissionStart,    HandleMissionStart);
+            Router.Register(PacketType.PlayerReady,     HandlePlayerReady);
+            Router.Register(PacketType.MissionBriefing, HandleMissionBriefing);
+            Router.Register(PacketType.ChatMessage,     HandleChatMessage);
+            Router.Register(PacketType.AttackEvent,     HandleAttackEvent);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -238,27 +242,46 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (CoopState.IsHost) return;
             var pkt = ItemSelectedPacket.Decode(payload);
-            Plugin.Log.LogInfo(
-                $"[NetManager] ItemSelected 수신: index={pkt.ItemIndex}  (자동 적용 미구현)");
+            Sync.ItemSyncHandler.ApplyItemSelection(pkt.ItemIndex);
         }
 
         private void HandleMissionStart(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
             var (sceneName, buildIndex) = MissionStartPacket.Decode(payload);
-            MissionSyncHandler.OnMissionStart(sceneName, buildIndex);
+            CoopSessionManager.NotifyMissionStart(sceneName, buildIndex);
         }
 
         private void HandlePlayerReady(CSteamID from, byte[] payload)
         {
             if (!CoopState.IsHost) return;
-            MissionSyncHandler.OnPlayerReady((ulong)from);
+            CoopSessionManager.NotifyGuestReady((ulong)from);
+        }
+
+        private void HandleMissionBriefing(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            var (scene, idx) = MissionBriefingPacket.Decode(payload);
+            CoopSessionManager.NotifyMissionBriefing(scene, idx);
         }
 
         private void HandleChatMessage(CSteamID from, byte[] payload)
         {
             var (senderName, message) = ChatMessagePacket.Decode(payload);
             UI.ChatWindow.Instance?.AddMessage(senderName, message);
+        }
+
+        private void HandleAttackEvent(CSteamID from, byte[] payload)
+        {
+            var pkt = AttackEventPacket.Decode(payload);
+
+            // 아바타 공격 애니메이션
+            if (Renderer.BotAvatarAnimator.Instances.TryGetValue(pkt.SteamId, out var anim))
+                anim.TriggerAttack();
+
+            // 무기 클래스별 공격 이펙트
+            if (Sync.PlayerSyncHandler.States.TryGetValue(pkt.SteamId, out var state))
+                Renderer.AttackEffectSpawner.Play(pkt.SteamId, (WeaponClass)(state.WeaponClassId % 4));
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)

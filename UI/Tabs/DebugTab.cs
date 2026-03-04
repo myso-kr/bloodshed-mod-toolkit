@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop;
 using BloodshedModToolkit.Coop.Mission;
+using BloodshedModToolkit.Coop.Role;
 using BloodshedModToolkit.Coop.Sync;
 
 namespace BloodshedModToolkit.UI.Tabs
@@ -135,7 +136,7 @@ namespace BloodshedModToolkit.UI.Tabs
             var cur = SceneManager.GetActiveScene();
             GUILayout.Label($"Active : {cur.name} (idx={cur.buildIndex})", ctx.StSliderName!);
             GUILayout.Label($"From   : {(SceneTracker.FromSceneName.Length > 0 ? SceneTracker.FromSceneName + $"(idx={SceneTracker.FromSceneBuildIndex})" : "(none)")}", ctx.StSliderName!);
-            GUILayout.Label($"Status : {MissionState.Status}", ctx.StSliderName!);
+            GUILayout.Label($"Status : {MissionState.Status}  Session={MissionState.SessionState}", ctx.StSliderName!);
             GUILayout.Label($"Pending: {(MissionState.PendingSceneName.Length > 0 ? MissionState.PendingSceneName : "(none)")}", ctx.StSliderName!);
             GUILayout.Label($"CharSel: {MissionState.GuestCharacterSelected}", ctx.StSliderName!);
             GUILayout.Label($"Coop   : Enabled={CoopState.IsEnabled} Host={CoopState.IsHost} Connected={CoopState.IsConnected}", ctx.StSliderName!);
@@ -272,6 +273,11 @@ namespace BloodshedModToolkit.UI.Tabs
             {
                 _debugSceneValidationError = "";
                 ApplyDebugSelections(ctx);
+
+                // Co-op Host: 미션 씬 진입 전 Guest에게 MissionBriefing 발송
+                if (CoopState.IsHost && CoopSessionManager.Role is HostRole hostRole)
+                    hostRole.BroadcastMissionBriefing(sceneName, -1);
+
                 Plugin.Log.LogInfo($"[Debug] ForceLoadScene → '{sceneName}'");
                 SceneManager.LoadScene(sceneName);
             }

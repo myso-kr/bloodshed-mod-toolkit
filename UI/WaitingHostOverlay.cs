@@ -71,6 +71,23 @@ namespace BloodshedModToolkit.UI
 
                 GUI.depth = 0;
             }
+            else if (Coop.Mission.ItemSelectState.IsWaiting)
+            {
+                // 상단 배너 — Host가 업그레이드 선택 중
+                EnsureStyles();
+                GUI.depth = 5;
+
+                float bh = 48f;
+                GUI.color = new Color(0.1f, 0.55f, 0.1f, 0.88f);
+                GUI.DrawTexture(new Rect(0, 0, Screen.width, bh), Texture2D.whiteTexture);
+                GUI.color = Color.white;
+
+                float cx = Screen.width * 0.5f;
+                GUI.Label(new Rect(cx - 260f, 12f, 520f, 28f),
+                    "Host is picking an upgrade...", _stTitle!);
+
+                GUI.depth = 0;
+            }
             else if (status == MissionStatus.NeedsCharacterSelect &&
                      sceneName == Coop.Mission.MissionState.MetaGameScene)
             {

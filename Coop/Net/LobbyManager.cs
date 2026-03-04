@@ -221,6 +221,7 @@ namespace BloodshedModToolkit.Coop.Net
             CoopState.IsHost      = true;
             CoopState.IsConnected = false;
             CoopState.LobbyId     = new CSteamID(result.m_ulSteamIDLobby);
+            CoopState.InitAsHost();
 
             var active = SceneManager.GetActiveScene();
             if (active.buildIndex > 0 && !active.name.StartsWith("00_"))
@@ -249,6 +250,7 @@ namespace BloodshedModToolkit.Coop.Net
             CoopState.IsEnabled = true;
             CoopState.IsHost    = false;
             CoopState.LobbyId   = new CSteamID(result.m_ulSteamIDLobby);
+            CoopState.InitAsGuest();
 
             var hostId = SteamMatchmaking.GetLobbyOwner(CoopState.LobbyId);
             var myId   = SteamUser.GetSteamID();

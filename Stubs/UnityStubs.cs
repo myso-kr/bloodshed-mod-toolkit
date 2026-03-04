@@ -114,6 +114,8 @@ namespace UnityEngine
         public static float   Distance(Vector3 a, Vector3 b) => (a - b).magnitude;
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
         public static Vector3 operator -(Vector3 a, Vector3 b) => new Vector3(a.x - b.x, a.y - b.y, a.z - b.z);
+        public static Vector3 operator *(Vector3 v, float s)   => new Vector3(v.x * s, v.y * s, v.z * s);
+        public static Vector3 operator *(float s, Vector3 v)   => new Vector3(v.x * s, v.y * s, v.z * s);
     }
 
     public struct RaycastHit
@@ -337,6 +339,32 @@ namespace UnityEngine
         public static Quaternion operator *(Quaternion a, Quaternion b)                 => identity;
     }
 
+    // ── AudioClip / AudioSource ────────────────────────────────────────────────
+    public class AudioClip : Object
+    {
+        public AudioClip(IntPtr ptr) : base(ptr) { }
+        public new string name => "";
+    }
+
+    public class AudioSource : Behaviour
+    {
+        public AudioSource(IntPtr ptr) : base(ptr) { }
+        public AudioClip? clip    { get; set; }
+        public float      volume  { get; set; }
+        public bool       isPlaying { get; }
+        public static void PlayClipAtPoint(AudioClip clip, Vector3 pos, float vol = 1f) { }
+    }
+
+    // ── ParticleSystem ──────────────────────────────────────────────────────────
+    public class ParticleSystem : Behaviour
+    {
+        public ParticleSystem(IntPtr ptr) : base(ptr) { }
+        public bool isPlaying { get; }
+        public void Play()  { }
+        public void Stop()  { }
+        public void Clear() { }
+    }
+
     // ── Camera ──────────────────────────────────────────────────────────────────
     public class Camera : Behaviour
     {
@@ -465,6 +493,22 @@ namespace UnityEngine
         public static GUILayoutOption Width(float width)    => new GUILayoutOption();
         public static GUILayoutOption Height(float height)  => new GUILayoutOption();
         public static GUILayoutOption ExpandHeight(bool expand) => new GUILayoutOption();
+    }
+}
+
+namespace UnityEngine.UI
+{
+    public class UnityEvent
+    {
+        public void Invoke() { }
+        public void AddListener(System.Action call) { }
+        public void RemoveListener(System.Action call) { }
+    }
+
+    public class Button : UnityEngine.Component
+    {
+        public Button(IntPtr ptr) : base(ptr) { }
+        public UnityEvent onClick { get; } = new UnityEvent();
     }
 }
 

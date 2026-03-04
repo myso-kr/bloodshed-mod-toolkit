@@ -105,9 +105,11 @@ namespace BloodshedModToolkit.UI.Tabs
                     int ready = 0;
                     foreach (var v in MissionState.GuestReadyMap.Values) if (v) ready++;
                     GUILayout.Label($"GUESTS READY: {ready} / {CoopState.Peers.Count}", ctx.StSliderName!);
+                    GUILayout.Label($"Session: {MissionState.SessionState}", ctx.StSliderName!);
                 }
                 else
                 {
+                    GUILayout.Label($"Session: {MissionState.SessionState}", ctx.StSliderName!);
                     switch (MissionState.Status)
                     {
                         case MissionStatus.Idle:

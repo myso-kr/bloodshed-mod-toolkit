@@ -73,10 +73,38 @@ namespace com8com1.SCFPS
         public Vector3 GetSpreadDirection(Vector3 direction) => direction;
     }
 
+    public class ItemData : UnityEngine.ScriptableObject
+    {
+        public ItemData(IntPtr ptr) : base(ptr) { }
+    }
+
     public class PlayerInventory : MonoBehaviour
     {
         public PlayerInventory(IntPtr ptr) : base(ptr) { }
         public bool HasLevelUpAway() => false;
+
+        public System.Collections.Generic.List<UpgradeUI>? upgradeUiOptions { get; set; }
+        public bool upgradeChosen { get; set; }
+
+        public void AddFromLevelUpMenu(ItemData data, int upgradeOptionIndex) { }
+        public void LevelUpWeaponFromLevelUpMenu(int slotIndex, int upgradeIndex, int upgradeOptionIndex) { }
+        public void LevelUpActiveItemFromLevelUpMenu(int slotIndex, int upgradeIndex, int upgradeOptionIndex) { }
+        public void LevelUpPassiveItemFromLevelUpMenu(int slotIndex, int upgradeIndex, int upgradeOptionIndex) { }
+
+        public class UpgradeUI : MonoBehaviour
+        {
+            public UpgradeUI(IntPtr ptr) : base(ptr) { }
+            public ItemData? itemData { get; set; }
+            public UnityEngine.UI.Button? upgradeButton { get; set; }
+        }
+    }
+
+    public class LevelUpScreenManager : MonoBehaviour
+    {
+        public LevelUpScreenManager(IntPtr ptr) : base(ptr) { }
+        public bool levelUpScreenActive { get; set; }
+        public void OpenLevelUpScreen() { }
+        public void CloseLevelUpScreen() { }
     }
 
     public class AimPrecisionHandler : MonoBehaviour
@@ -132,10 +160,18 @@ namespace com8com1.SCFPS
         public int  magazineSize  { get; set; }
     }
 
+    public class WeaponHandler : MonoBehaviour
+    {
+        public WeaponHandler(IntPtr ptr) : base(ptr) { }
+        public float activationCooldown { get; set; }
+        public float burstShotTimer     { get; set; }
+    }
+
     public class Weapon : MonoBehaviour
     {
         public Weapon(IntPtr ptr) : base(ptr) { }
         public WeaponData?                    weaponData         { get; set; }
+        public WeaponHandler?                 weaponHandler      { get; set; }
         public bool                           isReloading        { get; set; }
         public Coroutine?                     coroutineReloading { get; set; }
         public int                            mag                { get; set; }

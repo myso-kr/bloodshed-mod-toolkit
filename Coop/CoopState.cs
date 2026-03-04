@@ -14,7 +14,13 @@ namespace BloodshedModToolkit.Coop
         public static CSteamID      LobbyId { get; set; } = CSteamID.Nil;
         public static List<CSteamID> Peers  { get; }      = new();
 
-        public const string CoopVersion = "1.0.0";
+        public const string CoopVersion = "1.2.0";
+
+        public static void InitAsHost()
+            => CoopSessionManager.InitAsHost();
+
+        public static void InitAsGuest()
+            => CoopSessionManager.InitAsGuest();
 
         public static void Reset()
         {
@@ -25,6 +31,7 @@ namespace BloodshedModToolkit.Coop
             Peers.Clear();
             EntityRegistry.Reset();
             MissionState.Reset();
+            CoopSessionManager.Reset();
         }
     }
 }
