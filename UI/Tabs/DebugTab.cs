@@ -50,6 +50,43 @@ namespace BloodshedModToolkit.UI.Tabs
             ("E3",  new[] { ("03_SkyCathedral", "SkyCath") }),
         };
 
+        // _sceneGroups에서 빌드한 유효 씬명 집합 — SceneManager.LoadScene에 사용 가능한 이름만 포함
+        private static readonly System.Collections.Generic.HashSet<string> _knownScenes = BuildKnownScenes();
+        private static System.Collections.Generic.HashSet<string> BuildKnownScenes()
+        {
+            var set = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            foreach (var (_, entries) in _sceneGroups)
+                foreach (var (scene, _) in entries)
+                    set.Add(scene);
+            return set;
+        }
+
+        /// <summary>
+        /// MissionAsset → 실제 씬명 결정.
+        /// ① strScene이 _knownScenes에 있으면 바로 사용
+        /// ② 없으면 assetName에서 _Mission_ 제거 후 확인 (01_Mission_Forest → 01_Forest)
+        /// ③ 그래도 없으면 빈 문자열 반환 (Quick Load 비활성화)
+        /// </summary>
+        private static string ResolveSceneName(string assetName, string strScene)
+        {
+            if (!string.IsNullOrEmpty(strScene) && _knownScenes.Contains(strScene))
+                return strScene;
+
+            // 01_Mission_Forest → 01_Forest 패턴
+            if (assetName.Contains("_Mission_"))
+            {
+                string derived = assetName.Replace("_Mission_", "_");
+                if (_knownScenes.Contains(derived))
+                    return derived;
+            }
+
+            // assetName 자체가 씬명인 경우 (Graveyard 등)
+            if (_knownScenes.Contains(assetName))
+                return assetName;
+
+            return "";
+        }
+
         public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (scene.name == MissionState.MetaGameScene)
@@ -339,9 +376,11 @@ namespace BloodshedModToolkit.UI.Tabs
                 try { displayName = !string.IsNullOrEmpty(m.strMissionTitle) ? m.strMissionTitle : assetName; }
                 catch { displayName = assetName; }
 
-                string sceneName;
-                try { sceneName = !string.IsNullOrEmpty(m.strScene) ? m.strScene : ""; }
-                catch { sceneName = ""; }
+                string rawScene;
+                try { rawScene = m.strScene ?? ""; } catch { rawScene = ""; }
+
+                // _sceneGroups 기준으로 실제 씬명 결정 (ground truth 검증)
+                string sceneName = ResolveSceneName(assetName, rawScene);
 
                 temp.Add((m, assetName, displayName, sceneName));
             }
@@ -350,7 +389,7 @@ namespace BloodshedModToolkit.UI.Tabs
             if (_debugMissionList.Length > 0)
             {
                 foreach (var (_, a, d, sn) in _debugMissionList)
-                    Plugin.Log.LogDebug($"  mission: assetName='{a}' scene='{sn}' display='{d}'");
+                    Plugin.Log.LogDebug($"  mission: assetName='{a}' strScene-resolved='{sn}' display='{d}'");
             }
         }
 
