@@ -225,7 +225,7 @@ Function MainPageLeave
     ; - 5. Mod DLL -
     ${If} $DoInstallModDll == ${BST_CHECKED}
 
-        ; -- 버전 체크: 설치된 버전 vs GitHub 최신 버전 --
+        ; -- Version check: installed vs latest on GitHub --
         !insertmacro SetStatus "Checking version..."
         FileOpen $0 "$TEMP\bmti_vercheck.ps1" w
         FileWrite $0 "$$dll = '$GamePath\BepInEx\plugins\BloodshedModToolkit.dll'$\n"
@@ -245,13 +245,13 @@ Function MainPageLeave
         Pop $1  ; "installedVer|latestVer"
         Delete "$TEMP\bmti_vercheck.ps1"
 
-        ; parse pipe-delimited result
+        ; Parse pipe-delimited result
         StrCpy $InstalledVer ""
         StrCpy $LatestVer    ""
         ${StrTok} $InstalledVer "$1" "|" "0" "1"
         ${StrTok} $LatestVer    "$1" "|" "1" "1"
 
-        ; 이미 최신 버전이면 재설치 여부 확인
+        ; Already up to date: ask whether to reinstall
         ${If} $InstalledVer != ""
         ${AndIf} $LatestVer  != ""
         ${AndIf} $InstalledVer == $LatestVer
@@ -262,7 +262,7 @@ Function MainPageLeave
             Goto ModDllDone
         ${EndIf}
 
-        ; 업데이트 가능한 경우 알림 (설치 계속 진행)
+        ; Newer version available: notify then continue install
         ${If} $InstalledVer != ""
         ${AndIf} $LatestVer  != ""
         ${AndIf} $InstalledVer != $LatestVer
