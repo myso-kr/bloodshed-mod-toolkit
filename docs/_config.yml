@@ -2,8 +2,8 @@ title: Bloodshed Mod Toolkit
 description: >-
   BepInEx mod for Bloodshed (Unity IL2CPP) — God Mode, 4-player Steam P2P co-op,
   difficulty tweaks, AI bots. Windows x64. Press F5 in-game.
-url: "https://myso-kr.github.io"
-baseurl: "/bloodshed-mod-toolkit"
+url: "https://bloodshed.playpilot.io"
+baseurl: ""
 lang: en
 
 permalink: pretty
