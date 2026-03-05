@@ -7,8 +7,8 @@ import { state, MAX_HP, MAX_AMMO } from './state.js';
 import { shake } from './shake.js';
 
 /* ── Supabase credentials — replace with your project values ── */
-const SB_URL = 'https://YOUR_PROJECT.supabase.co';
-const SB_KEY = 'YOUR_ANON_KEY';
+const SB_URL = 'https://qucelkfkincvhotygsci.supabase.co';
+const SB_KEY = 'sb_publishable_1GJtKjYBYIyvHVcfPe-5jw_vgTC8dzv';
 
 /* ── HP HUD ── */
 export function updateHpHud() {
