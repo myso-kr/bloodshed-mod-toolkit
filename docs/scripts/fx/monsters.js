@@ -65,15 +65,28 @@ function hexRgba(hex, a) {
   return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
 }
 
-/* ── dynamic scaling ── */
-function maxMonsters() { return Math.min(12, Math.floor(4 + Math.log(state.kills + 1) * 1.8)); }
-function spawnInterval() { return Math.max(1000, 5000 / (1 + state.kills * 0.1)); }
+/* ── dynamic difficulty (sqrt scale: fast early ramp, gentle late plateau) ──
+ *
+ *  kills │ max  │ spawn  │ spd range       │ shot cd range
+ *  ──────┼──────┼────────┼─────────────────┼──────────────
+ *      0 │   4  │ 4.00s  │ 0.014 – 0.022   │ 5.5 – 8.5s
+ *     10 │  13  │ 2.27s  │ 0.017 – 0.025   │ 4.8 – 7.4s
+ *     30 │  20  │ 1.58s  │ 0.020 – 0.028   │ 4.4 – 6.9s
+ *    100 │  34  │ 0.95s  │ 0.024 – 0.032   │ 3.5 – 5.5s
+ *    200 │  46  │ 0.68s  │ 0.028 – 0.036   │ 2.7 – 4.3s
+ *    400 │  64  │ 0.50s  │ 0.032 – 0.040   │ 1.5 – 3.0s
+ */
+function sq() { return Math.sqrt(state.kills); }
+function maxMonsters()   { return Math.min(64, 4 + Math.floor(sq() * 3)); }
+function spawnInterval() { return Math.max(500, 4000 / (1 + sq() * 0.4)); }
+function monsterSpd()    { const b = Math.min(0.018, sq() * 0.001); return rand(0.014 + b, 0.022 + b); }
+function monsterShotCd() { const s = sq(); return rand(Math.max(1.5, 5.5 - s * 0.2), Math.max(3.0, 8.5 - s * 0.3)); }
 
 /* ── projectile toward cursor ── */
 export function fireProjectile(m) {
   const dx = state.mx - m.x, dy = state.my - m.y;
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const spd = rand(2.4, 3.4);
+  const spd = Math.min(6.0, rand(2.4 + sq() * 0.08, 3.4 + sq() * 0.08));
   state.projectiles.push({
     x: m.x, y: m.y,
     vx: (dx / dist) * spd,
@@ -95,7 +108,7 @@ export function spawnMonster() {
                               : [-EDGE,      rand(0, H)];
   state.monsters.push({
     x: sx, y: sy,
-    spd: rand(0.016, 0.026),
+    spd: monsterSpd(),
     pal,
     fA: bake(pal, 0),
     fB: bake(pal, 1),
@@ -103,7 +116,7 @@ export function spawnMonster() {
     frame: 0,
     dyingT: -1,
     alpha: 1,
-    shotCooldown: rand(3, 7),
+    shotCooldown: monsterShotCd(),
   });
 }
 
@@ -131,7 +144,7 @@ export function tickMonsters(dt) {
         if (m.shotCooldown <= 0) {
           fireProjectile(m);
           playMonsterShot();
-          m.shotCooldown = rand(3, 7);
+          m.shotCooldown = monsterShotCd();
         }
       }
     }
