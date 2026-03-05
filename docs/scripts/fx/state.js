@@ -2,7 +2,7 @@
    STATE — shared mutable game state (no DOM, no imports)
 ══════════════════════════════════════════════════════ */
 
-export const MAX_AMMO    = 8;
+export const MAX_AMMO    = 5;
 export const RELOAD_DUR  = 1.1;
 export const MAX_HP      = 5;
 export const FIRE_COOLDOWN = 0.44; /* seconds between shots */

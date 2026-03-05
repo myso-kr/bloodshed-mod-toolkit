@@ -5,7 +5,7 @@
 /* ── HUD group ── */
 #hud-group {
   position: fixed; bottom: 32px; left: 32px; z-index: 9998;
-  display: flex; align-items: stretch; gap: 8px;
+  display: flex; flex-direction: column; gap: 6px;
   pointer-events: none;
   font-family: 'JetBrains Mono', monospace;
 }
