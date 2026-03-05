@@ -61,6 +61,8 @@ export function resetGame(killValueEl) {
   document.getElementById('go-submit').disabled = false;
   document.getElementById('go-submit').textContent = 'REGISTER SCORE';
   document.getElementById('go-lb').style.display = 'none';
+  document.querySelector('.name-row').style.display = '';
+  document.querySelector('.go-hint').style.display = '';
   document.getElementById('gameover-modal').classList.remove('active');
   document.body.classList.add('game-active');
 }
@@ -230,6 +232,8 @@ export function setupGameOverUI(killValueEl) {
     }
     document.getElementById('go-lb').style.display = 'block';
     btn.style.display = 'none';
+    document.querySelector('.name-row').style.display = 'none';
+    document.querySelector('.go-hint').style.display = 'none';
   });
 
   /* ── play again ── */
