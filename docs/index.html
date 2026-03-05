@@ -1567,6 +1567,34 @@ a, button, label, input, textarea, select { cursor: none; }
     bgmRunning = false;
   }
 
+  function playReload() {
+    if (!ac) return;
+    /* two pump-action metallic clicks */
+    [0.15, 0.65].forEach((delay, i) => {
+      const t0 = ac.currentTime + delay;
+      const len = ac.sampleRate * 0.1;
+      const buf = ac.createBuffer(1, len, ac.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let j = 0; j < len; j++) d[j] = (Math.random()*2-1) * Math.exp(-j/(len*0.12));
+      const src = ac.createBufferSource(); src.buffer = buf;
+      const f = ac.createBiquadFilter(); f.type = 'highpass';
+      f.frequency.value = i === 0 ? 1400 : 900;
+      const g = ac.createGain(); g.gain.value = 0.55;
+      src.connect(f); f.connect(g); g.connect(ac.destination);
+      src.start(t0);
+    });
+  }
+
+  function playEmpty() {
+    if (!ac) return;
+    const t = ac.currentTime;
+    const osc = ac.createOscillator(); osc.type = 'square'; osc.frequency.value = 900;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(t); osc.stop(t + 0.05);
+  }
+
   /* BGM toggle button */
   const bgmBtn = document.getElementById('bgm-btn');
   let bgmOn = false;
@@ -1604,24 +1632,67 @@ a, button, label, input, textarea, select { cursor: none; }
     if (!cursorVisible) return;
     const cx = mx, cy = my;
     const R = 10, gap = 3, armLen = 6;
+    const outOfAmmo = ammo <= 0 && !reloading;
+    const col = reloading ? '#6b7280' : outOfAmmo ? '#7f1d1d' : '#dc2626';
+
     ctx.save();
-    ctx.strokeStyle = '#dc2626';
+    ctx.strokeStyle = col;
     ctx.lineWidth = 1.5;
-    ctx.shadowColor = '#dc2626';
+    ctx.shadowColor = col;
     ctx.shadowBlur  = 6;
+
     /* outer ring */
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke();
+
     /* 4 arms */
     [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy]) => {
       ctx.beginPath();
-      ctx.moveTo(cx + dx*(R+gap),       cy + dy*(R+gap));
+      ctx.moveTo(cx + dx*(R+gap),        cy + dy*(R+gap));
       ctx.lineTo(cx + dx*(R+gap+armLen), cy + dy*(R+gap+armLen));
       ctx.stroke();
     });
+
     /* center dot */
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#dc2626';
+    ctx.fillStyle = col;
     ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI*2); ctx.fill();
+
+    /* reload progress arc */
+    if (reloading) {
+      const prog = 1 - reloadT / RELOAD_DUR;
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R + 5, -Math.PI/2, -Math.PI/2 + prog * Math.PI*2);
+      ctx.stroke();
+    }
+
+    /* ammo shells — stacked vertically to the right of the crosshair */
+    const SW = 4, SH = 8, SG = 2;
+    const ox = cx + R + gap + armLen + 6;
+    const totalH = MAX_AMMO * (SH + SG) - SG;
+    const oy = cy - totalH / 2;
+
+    ctx.shadowBlur = 0;
+    for (let i = 0; i < MAX_AMMO; i++) {
+      const sy = oy + i * (SH + SG);
+      const loaded = i < ammo;
+      if (loaded) {
+        /* brass shell body */
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(ox, sy, SW, SH);
+        /* brass tip highlight */
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(ox, sy, SW, 2);
+      } else {
+        /* spent / empty slot */
+        ctx.strokeStyle = reloading ? '#4b5563' : '#374151';
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(ox + 0.5, sy + 0.5, SW - 1, SH - 1);
+      }
+    }
+
     ctx.restore();
   }
 
@@ -1740,17 +1811,36 @@ a, button, label, input, textarea, select { cursor: none; }
   setTimeout(spawnMonster, 3200);
   setInterval(() => { if (Math.random() < 0.75) spawnMonster(); }, 5000);
 
+  /* ── ammo ────────────────────────────────────────────── */
+  const MAX_AMMO   = 8;
+  const RELOAD_DUR = 1.1;
+  let ammo       = MAX_AMMO;
+  let reloading  = false;
+  let reloadT    = 0;
+
+  function reload() {
+    if (reloading || ammo >= MAX_AMMO) return;
+    ensureAudio();
+    reloading = true;
+    reloadT   = RELOAD_DUR;
+    playReload();
+  }
+
   /* ── input ───────────────────────────────────────────── */
   let mx = innerWidth / 2, my = innerHeight / 2;
   addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
   addEventListener('touchmove', e => { mx = e.touches[0].clientX; my = e.touches[0].clientY; }, { passive:true });
 
   function fire(cx, cy) {
+    if (reloading) return;
     ensureAudio();
+    if (ammo <= 0) { playEmpty(); return; }
+    ammo--;
+
     let hit = false;
     for (const m of monsters) {
       if (m.dyingT >= 0) continue;
-      const hw = 12 * PX * m.scale * 0.5;
+      const hw = 12 * PX * 0.5;
       if (Math.abs(cx - m.x) < hw && Math.abs(cy - m.y) < hw) {
         m.dyingT = 0;
         blast(m.x, m.y, true);
@@ -1764,7 +1854,8 @@ a, button, label, input, textarea, select { cursor: none; }
     if (!hit) { blast(cx, cy, false); shake(5); playShot(false); }
   }
 
-  addEventListener('mousedown',  e => fire(e.clientX, e.clientY));
+  addEventListener('mousedown',  e => { if (e.button === 0) fire(e.clientX, e.clientY); });
+  addEventListener('contextmenu', e => { e.preventDefault(); reload(); });
   addEventListener('touchstart', e => fire(e.touches[0].clientX, e.touches[0].clientY), { passive:true });
 
   /* ── main loop ───────────────────────────────────────── */
@@ -1774,15 +1865,27 @@ a, button, label, input, textarea, select { cursor: none; }
     lastT = ts;
     ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-    /* screen shake */
+    /* screen shake — content shakes, canvas/HUD counter-transformed to stay fixed */
     if (shakeTTL > 0) {
       shakeTTL -= dt;
       const t  = shakeTTL / 0.25;
-      const sx = (Math.random()*2-1) * shakePow * t;
-      const sy = (Math.random()*2-1) * shakePow * t;
-      document.body.style.transform = `translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px)`;
+      const sx = ((Math.random()*2-1) * shakePow * t).toFixed(1);
+      const sy = ((Math.random()*2-1) * shakePow * t).toFixed(1);
+      document.body.style.transform  = `translate(${sx}px,${sy}px)`;
+      cvs.style.transform     = `translate(${-sx}px,${-sy}px)`;
+      killHud.style.transform = `translate(${-sx}px,${-sy}px)`;
+      bgmBtn.style.transform  = `translate(${-sx}px,${-sy}px)`;
     } else if (document.body.style.transform) {
-      document.body.style.transform = '';
+      document.body.style.transform  = '';
+      cvs.style.transform     = '';
+      killHud.style.transform = '';
+      bgmBtn.style.transform  = '';
+    }
+
+    /* reload timer */
+    if (reloading) {
+      reloadT -= dt;
+      if (reloadT <= 0) { ammo = MAX_AMMO; reloading = false; }
     }
 
     /* particles */
@@ -1819,9 +1922,8 @@ a, button, label, input, textarea, select { cursor: none; }
 
       if (m.dyingT >= 0) {
         m.dyingT += dt;
-        m.alpha   = Math.max(0, 1 - m.dyingT / 0.4);
-        m.scale   = 1 + m.dyingT * 3;
-        if (m.dyingT > 0.55) { monsters.splice(i, 1); continue; }
+        m.alpha   = Math.max(0, 1 - m.dyingT / 0.35);
+        if (m.dyingT > 0.38) { monsters.splice(i, 1); continue; }
       } else {
         m.x += (mx - m.x) * m.spd * 60 * dt;
         m.y += (my - m.y) * m.spd * 60 * dt;
@@ -1830,12 +1932,12 @@ a, button, label, input, textarea, select { cursor: none; }
       }
 
       const sprite = m.frame === 0 ? m.fA : m.fB;
-      const sz = 12 * PX * m.scale;
+      const sz = 12 * PX; /* fixed size — no scale during death */
 
       ctx.save();
       ctx.globalAlpha = m.alpha;
 
-      /* ambient glow */
+      /* ambient glow (alive only) */
       if (m.dyingT < 0) {
         const gr = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, sz * 0.7);
         gr.addColorStop(0, hexRgba(m.pal.glow, 0.2));
@@ -1844,11 +1946,16 @@ a, button, label, input, textarea, select { cursor: none; }
         ctx.beginPath(); ctx.arc(m.x, m.y, sz*0.7, 0, Math.PI*2); ctx.fill();
       }
 
-      /* death flash */
-      if (m.dyingT >= 0 && m.dyingT < 0.07) ctx.filter = 'brightness(6) saturate(0)';
-
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(sprite, m.x - sz/2, m.y - sz/2, sz, sz);
+
+      /* death flash — white overlay (no ctx.filter to avoid bleed across draw calls) */
+      if (m.dyingT >= 0 && m.dyingT < 0.1) {
+        ctx.globalAlpha = (1 - m.dyingT / 0.1) * 0.85;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(m.x - sz/2, m.y - sz/2, sz, sz);
+      }
+
       ctx.restore();
     }
 
