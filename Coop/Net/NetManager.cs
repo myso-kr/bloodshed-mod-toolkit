@@ -175,10 +175,30 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (CoopState.IsHost) return;
             var pkt = EntityDespawnPacket.Decode(payload);
-            if (EntityRegistry.HostToLocal.TryGetLocal(pkt.HostEntityIndex, out int localId))
-                EntityRegistry.LocalHealth.Remove(localId);
+
+            bool hasLocal = EntityRegistry.HostToLocal.TryGetLocal(pkt.HostEntityIndex, out int localId);
+
+            // registry에서 먼저 제거 — 아래 Damage 호출이 GuestDamageRequestPatch를 재귀 트리거하지 않도록
             EntityRegistry.HostToLocal.Remove(pkt.HostEntityIndex);
-            Plugin.Log.LogDebug($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex}");
+
+            if (hasLocal)
+            {
+                if (EntityRegistry.LocalHealth.TryGetValue(localId, out var health)
+                    && health != null && !health.isPlayer && health.currentHealth > 0f)
+                {
+                    try
+                    {
+                        // maximumHealth + 1 데미지로 즉사 처리
+                        health.Damage(health.maximumHealth + 1f, null!, 0f, 0f, default, default, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.Log.LogDebug($"[NetManager] EntityDespawn 로컬 킬 예외: {ex.Message}");
+                    }
+                }
+                EntityRegistry.LocalHealth.Remove(localId);
+            }
+            Plugin.Log.LogDebug($"[NetManager] EntityDespawn: idx={pkt.HostEntityIndex} localId={localId}");
         }
 
         private void HandleWaveAdvance(CSteamID from, byte[] payload)
@@ -325,7 +345,7 @@ namespace BloodshedModToolkit.Coop.Net
 
             int localId = (int)pkt.HostEntityIndex;
             var health  = FindHealthById(localId);
-            if (health == null || health.isPlayer) return;
+            if (health == null || health.isPlayer || health.currentHealth <= 0f) return;
 
             health.Damage(pkt.Damage, null!, 0f, 0f, default, default, true);
             Plugin.Log.LogDebug(

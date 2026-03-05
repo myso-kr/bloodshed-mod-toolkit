@@ -161,21 +161,24 @@ namespace BloodshedModToolkit.Coop.Ecs
                 }
             }
 
-            // 방법 B: MonoBehaviour 폴백
-            var cards = UnityEngine.Object.FindObjectsOfType<EnemyIdentityCard>();
-            if (cards != null)
+            // 방법 B: Health 기반 폴백 (SpawnEventPatch와 동일한 ID 공간 — Health.GetInstanceID())
+            // LocalHealth 캐시는 SpawnEventPatch.Postfix에서 즉시 채워지므로 항상 유효.
+            foreach (var kv in EntityRegistry.LocalHealth)
             {
-                foreach (var card in cards)
+                uint id = (uint)kv.Key;
+                if (result.ContainsKey(id)) continue;
+
+                var health = kv.Value;
+                if (health == null || health.isPlayer) continue;
+
+                ushort hp = (ushort)Math.Clamp((int)health.currentHealth, 0, 65534);
+
+                result[id] = new EnemySnapshot
                 {
-                    uint id = (uint)card.GetInstanceID();
-                    if (result.ContainsKey(id)) continue;   // ECS 결과 우선
-                    result[id] = new EnemySnapshot
-                    {
-                        HostEntityIndex = id,
-                        PosX = 0f, PosY = 0f, PosZ = 0f,  // Phase 4에서 정밀화
-                        Hp   = 0,
-                    };
-                }
+                    HostEntityIndex = id,
+                    PosX = 0f, PosY = 0f, PosZ = 0f,
+                    Hp   = hp,
+                };
             }
 
             return result;

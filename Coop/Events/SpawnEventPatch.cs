@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using com8com1.SCFPS;
@@ -16,30 +17,35 @@ namespace BloodshedModToolkit.Coop.Events
         static void Prefix()
         {
             if (!CoopState.IsConnected) return;
-            var all = UnityEngine.Object.FindObjectsOfType<EnemyIdentityCard>();
-            _prevEnemyCount = all?.Length ?? 0;
+            _prevEnemyCount = CountLiveEnemies();
         }
 
         static void Postfix()
         {
             if (!CoopState.IsConnected) return;
-            var all = UnityEngine.Object.FindObjectsOfType<EnemyIdentityCard>();
+
+            var all = UnityEngine.Object.FindObjectsOfType<Health>();
             if (all == null) return;
 
-            int newCount = all.Length - _prevEnemyCount;
+            // 비-플레이어 Health 목록 추출
+            var enemies = new List<Health>(all.Length);
+            foreach (var h in all)
+                if (!h.isPlayer) enemies.Add(h);
+
+            int newCount = enemies.Count - _prevEnemyCount;
             if (newCount <= 0) return;
 
             if (CoopState.IsHost)
             {
-                // Host: 신규 스폰을 Guest에게 브로드캐스트
-                // Health 캐시는 StateApplicator / HandleDamageRequest 에서 lazy-init 처리
-                for (int i = all.Length - newCount; i < all.Length; i++)
+                // Host: 신규 적을 Guest에게 브로드캐스트, LocalHealth 캐시에 즉시 등록
+                for (int i = enemies.Count - newCount; i < enemies.Count; i++)
                 {
-                    var card    = all[i];
-                    int localId = card.GetInstanceID();
+                    var h    = enemies[i];
+                    int id   = h.GetInstanceID();
+                    EntityRegistry.LocalHealth[id] = h;
 
                     EventBridge.OnEnemySpawned(
-                        hostEntityIdx: (uint)localId,
+                        hostEntityIdx: (uint)id,
                         typeId:        0,
                         x: 0f, y: 0f, z: 0f,
                         seed: (uint)UnityEngine.Random.Range(0, int.MaxValue));
@@ -47,20 +53,30 @@ namespace BloodshedModToolkit.Coop.Events
             }
             else
             {
-                // Guest: PendingHostIds 큐에서 순서대로 매핑
-                // Health 캐시는 StateApplicator.ApplyEntry 에서 lazy-init 처리
-                for (int i = all.Length - newCount; i < all.Length; i++)
+                // Guest: PendingHostIds 큐에서 순서대로 매핑 + LocalHealth 캐시 등록
+                for (int i = enemies.Count - newCount; i < enemies.Count; i++)
                 {
-                    if (!EntityRegistry.PendingHostIds.TryDequeue(out uint hostId))
-                        break;
+                    if (!EntityRegistry.PendingHostIds.TryDequeue(out uint hostId)) break;
 
-                    int localId = all[i].GetInstanceID();
+                    var h      = enemies[i];
+                    int localId = h.GetInstanceID();
+                    EntityRegistry.LocalHealth[localId] = h;
                     EntityRegistry.HostToLocal.Register(hostId, localId);
 
                     Plugin.Log.LogDebug(
                         $"[IDMapper] Host[{hostId}] ↔ Local[{localId}]");
                 }
             }
+        }
+
+        private static int CountLiveEnemies()
+        {
+            var all = UnityEngine.Object.FindObjectsOfType<Health>();
+            if (all == null) return 0;
+            int count = 0;
+            foreach (var h in all)
+                if (!h.isPlayer) count++;
+            return count;
         }
     }
 }
