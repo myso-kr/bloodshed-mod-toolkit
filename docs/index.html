@@ -351,6 +351,52 @@ description: >-
   display: block;
 }
 
+/* ── MANIFESTO ────────────────────────────────────── */
+#manifesto {
+  padding: 5rem 1.5rem;
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+.manifesto-body {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.85;
+  color: #9ca3af;
+}
+.manifesto-body p { margin: 0 0 1.4rem; }
+.manifesto-body em {
+  font-style: normal;
+  color: #e5e7eb;
+  font-weight: 600;
+}
+.manifesto-body strong {
+  color: #dc2626;
+  font-weight: 700;
+}
+.manifesto-pull {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 4vw, 2.6rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: #fff;
+  border-left: 4px solid #dc2626;
+  padding-left: 1.25rem;
+  text-align: left;
+  margin: 3rem 0;
+  box-shadow: -4px 0 24px rgba(220,38,38,0.15);
+}
+.manifesto-divider {
+  width: 48px;
+  height: 2px;
+  background: #dc2626;
+  margin: 2.5rem auto;
+  box-shadow: 0 0 10px rgba(220,38,38,0.5);
+}
+
 /* ── FEATURE GRID ─────────────────────────────────── */
 #features {
   padding: 5rem 1.5rem;
@@ -848,6 +894,45 @@ description: >-
       <span class="stat-label">Cost — 100% Free</span>
     </div>
   </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     MANIFESTO
+══════════════════════════════════════════════════ -->
+<section id="manifesto">
+  <div class="manifesto-body reveal">
+    <p>
+      You boot the game. No cutscene, no tutorial popup. The music hits —
+      that crunchy, driving metal riff — and suddenly you're in it.<br>
+      Pixel art demons flood the screen. Your shotgun kicks. Something explodes
+      in a satisfying red burst. <em>You die in twelve seconds.</em><br>
+      You hit retry before the death screen finishes loading.
+    </p>
+  </div>
+
+  <blockquote class="manifesto-pull reveal">
+    DOOM's DNA filtered through a roguelike lens —<br>
+    fast, loud, and completely unforgiving.
+  </blockquote>
+
+  <div class="manifesto-body reveal">
+    <p>
+      The developer wrapped up active development, but the players didn't leave.
+      <strong>85% positive reviews on Steam.</strong>
+      A small, stubborn community that keeps running one more mission,
+      unlocking one more character, finding one more broken synergy.
+    </p>
+    <p>
+      This toolkit started because I wanted co-op. Then I wanted tweaks.
+      Then I wanted to see what happened when you cranked enemy spawns to ×4
+      and turned on God Mode at the same time.
+      Now it does all of that — and it ships as a single
+      <kbd style="font-family:'JetBrains Mono',monospace;font-size:0.85em;background:#1f2937;border:1px solid #374151;border-radius:2px;padding:0.1em 0.45em;color:#f87171;">F5</kbd>
+      keypress.
+    </p>
+  </div>
+
+  <div class="manifesto-divider"></div>
 </section>
 
 <!-- ══════════════════════════════════════════════════
