@@ -147,19 +147,20 @@ async function fetchLeaderboard() {
 export function setupGameOverUI(killValueEl) {
   const slots = [0, 1, 2].map(i => document.getElementById(`ns-${i}`));
 
-  /* read validated A-Z char from slot i */
+  /* A-Z then 0-9 cycle order: A…Z→0…9→A */
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+  /* read validated char from slot i */
   function charAt(i) {
-    const v = (slots[i].value || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const v = (slots[i].value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     return v ? v[0] : 'A';
   }
 
-  /* cycle slot i by dir (+1 next letter, -1 prev letter) */
+  /* cycle slot i by dir (+1 next, -1 prev) through CHARS */
   function cycleLetter(i, dir) {
-    const code = charAt(i).charCodeAt(0);
-    slots[i].value = String.fromCharCode(
-      dir > 0 ? (code >= 90 ? 65 : code + 1)
-              : (code <= 65 ? 90 : code - 1)
-    );
+    const idx = CHARS.indexOf(charAt(i));
+    const next = (idx + dir + CHARS.length) % CHARS.length;
+    slots[i].value = CHARS[next];
   }
 
   /* focus + select-all on slot i (clamps to 0–2) */
@@ -191,11 +192,14 @@ export function setupGameOverUI(killValueEl) {
     inp.addEventListener('keydown', e => {
       if (!state.gameOver) return;
 
-      /* A–Z: physical keyCode 65–90, independent of IME / language state */
+      /* A–Z (65–90) and 0–9 (48–57, 96–105 numpad), IME-agnostic */
       const kc = e.keyCode;
-      if (kc >= 65 && kc <= 90) {
+      const isLetter = kc >= 65 && kc <= 90;
+      const isDigit  = (kc >= 48 && kc <= 57) || (kc >= 96 && kc <= 105);
+      if (isLetter || isDigit) {
         e.preventDefault();
-        inp.value = String.fromCharCode(kc); /* always uppercase */
+        const ch = isLetter ? String.fromCharCode(kc) : String.fromCharCode(kc >= 96 ? kc - 48 : kc);
+        inp.value = ch;
         if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
         else        inp.select();
         return;
