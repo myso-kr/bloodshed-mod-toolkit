@@ -1809,10 +1809,18 @@ a, button, label, input, textarea, select { cursor: none; }
 
   /* ── monster pool ────────────────────────────────────── */
   const monsters = [];
-  const MAX_M = 4;
+  /* 킬수에 따라 로그 스케일로 증가: 4 → 12 */
+  function maxMonsters() {
+    return Math.min(12, Math.floor(4 + Math.log(kills + 1) * 1.8));
+  }
+
+  /* 킬수에 따라 스폰 간격 감소: 5000ms → 최소 1000ms */
+  function spawnInterval() {
+    return Math.max(1000, 5000 / (1 + kills * 0.1));
+  }
 
   function spawnMonster() {
-    if (monsters.length >= MAX_M) return;
+    if (monsters.length >= maxMonsters()) return;
     const pal  = PALETTES[Math.random() * PALETTES.length | 0];
     const side = Math.random() * 4 | 0;
     const W = innerWidth, H = innerHeight;
@@ -1835,9 +1843,13 @@ a, button, label, input, textarea, select { cursor: none; }
     });
   }
 
+  function scheduleSpawn() {
+    setTimeout(() => { spawnMonster(); scheduleSpawn(); }, spawnInterval());
+  }
+
   setTimeout(spawnMonster, 900);
   setTimeout(spawnMonster, 3200);
-  setInterval(() => { if (Math.random() < 0.75) spawnMonster(); }, 5000);
+  scheduleSpawn();
 
   /* ── ammo ────────────────────────────────────────────── */
   const MAX_AMMO   = 8;
