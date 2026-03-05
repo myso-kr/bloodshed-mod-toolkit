@@ -14,6 +14,18 @@ const SB_URL    = 'https://qucelkfkincvhotygsci.supabase.co';
 const SB_KEY    = 'sb_publishable_1GJtKjYBYIyvHVcfPe-5jw_vgTC8dzv';
 const SB_DOMAIN = 'bloodshed';
 
+/* ── Ammo HUD ── */
+export function updateAmmoHud() {
+  const pips = document.getElementById('ammo-pips');
+  pips.innerHTML = '';
+  for (let i = 0; i < MAX_AMMO; i++) {
+    const pip = document.createElement('div');
+    const cls = state.reloading ? 'reloading' : i < state.ammo ? 'loaded' : 'empty';
+    pip.className = `ammo-pip ${cls}`;
+    pips.appendChild(pip);
+  }
+}
+
 /* ── HP HUD ── */
 export function updateHpHud() {
   const pips = document.getElementById('hp-pips');
@@ -60,6 +72,7 @@ export function resetGame(killValueEl) {
   state.touchFlashes.length = 0;
   initPlayer();
   updateHpHud();
+  updateAmmoHud();
   if (killValueEl) killValueEl.textContent = '0';
   [0, 1, 2].forEach(i => { document.getElementById(`ns-${i}`).textContent = 'A'; });
   document.getElementById('go-submit').style.display = '';

@@ -68,27 +68,5 @@ export function drawCursor() {
     ctx.stroke();
   }
 
-  /* ammo shells — stacked vertically right of crosshair, top depletes first */
-  const SW = 4, SH = 4, SG = 2;
-  const ox = cx + R + gap + armLen + 6;
-  const totalH = MAX_AMMO * (SH + SG) - SG;
-  const oy = cy - totalH / 2;
-
-  ctx.shadowBlur = 0;
-  for (let i = 0; i < MAX_AMMO; i++) {
-    const sy     = oy + i * (SH + SG);
-    const loaded = i >= (MAX_AMMO - state.ammo); /* top shells deplete first */
-    if (loaded) {
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(ox, sy, SW, SH);
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(ox, sy, SW, 2);
-    } else {
-      ctx.strokeStyle = state.reloading ? '#4b5563' : '#374151';
-      ctx.lineWidth   = 0.8;
-      ctx.strokeRect(ox + 0.5, sy + 0.5, SW - 1, SH - 1);
-    }
-  }
-
   ctx.restore();
 }

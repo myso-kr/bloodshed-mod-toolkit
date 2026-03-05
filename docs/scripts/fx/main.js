@@ -9,7 +9,7 @@ import { blast, tickParticles }                                from './particles
 import { shake, collectShakeEls }                              from './shake.js';
 import { spawnMonster, scheduleSpawn, tickMonsters }           from './monsters.js';
 import { drawCursor }                                          from './cursor.js';
-import { updateHpHud, tickProjectiles, tickDamageVignette, setupGameOverUI } from './game.js';
+import { updateHpHud, updateAmmoHud, tickProjectiles, tickDamageVignette, setupGameOverUI } from './game.js';
 import { SceneManager }                                        from './scene.js';
 import { IS_MOBILE }                                           from './platform.js';
 import { initPlayer, tickPlayer, drawPlayer }                  from './player.js';
@@ -43,6 +43,7 @@ function doReload() {
   state.reloading = true;
   state.reloadT   = RELOAD_DUR;
   playReload();
+  updateAmmoHud();
 }
 
 function fire(cx, cy) {
@@ -51,6 +52,7 @@ function fire(cx, cy) {
   if (state.ammo <= 0) { doReload(); return; }
   state.ammo--;
   state.fireCooldown = FIRE_COOLDOWN;
+  updateAmmoHud();
   if (state.ammo === 0) doReload();   /* 마지막 탄 소진 즉시 자동 재장전 */
 
   let hit = false;
@@ -104,6 +106,7 @@ scheduleSpawn();
 /* ── init ── */
 SceneManager.init('game', { fire, doReload });
 updateHpHud();
+updateAmmoHud();
 setupGameOverUI(killValue);
 collectShakeEls();
 if (IS_MOBILE) initPlayer();
@@ -118,7 +121,7 @@ function loop(ts) {
   /* timers */
   if (state.reloading) {
     state.reloadT -= dt;
-    if (state.reloadT <= 0) { state.ammo = MAX_AMMO; state.reloading = false; }
+    if (state.reloadT <= 0) { state.ammo = MAX_AMMO; state.reloading = false; updateAmmoHud(); }
   }
   if (state.fireCooldown > 0) state.fireCooldown = Math.max(0, state.fireCooldown - dt);
 

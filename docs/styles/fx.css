@@ -53,6 +53,16 @@
 .hp-pip.alive { background: #22c55e; box-shadow: 0 0 5px rgba(34, 197, 94, 0.6); }
 .hp-pip.dead  { background: #1a1f2e; border: 1px solid #1f2937; }
 
+/* ammo pips */
+#ammo-pips { display: flex; gap: 3px; align-items: flex-end; }
+.ammo-pip {
+  width: 5px; height: 10px; border-radius: 1px 1px 0 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.ammo-pip.loaded  { background: #fbbf24; box-shadow: 0 0 4px rgba(251,191,36,0.5); }
+.ammo-pip.reloading { background: #4b5563; }
+.ammo-pip.empty   { background: #1a1f2e; border: 1px solid #1f2937; }
+
 /* ── damage vignette ── */
 #dmg-vignette {
   position: fixed; inset: 0; pointer-events: none; z-index: 9998;
