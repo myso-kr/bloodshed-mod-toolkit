@@ -38,11 +38,12 @@ function onSharedMousedown(e) {
    game 씬 전용 핸들러
    ══════════════════════════════════════════════════════ */
 
+/* capture 단계에서 가로채므로 몬스터 명중 시
+ * 링크/버튼에 도달하기 전에 이벤트를 차단할 수 있다 */
 function onGameClick(e) {
-  /* 모바일: tap crosshair flash */
   if (IS_MOBILE) state.touchFlashes.push({ x: e.clientX, y: e.clientY, life: 1 });
   const hit = _ctx.fire?.(e.clientX, e.clientY);
-  if (hit) e.stopPropagation();
+  if (hit) { e.stopPropagation(); e.preventDefault(); }
 }
 
 /* ══════════════════════════════════════════════════════
@@ -56,8 +57,8 @@ const SCENES = {
   /* ── 게임 진행 중 ─────────────────────────────────── */
   game: {
     listeners: [
-      [window,   'click',       onGameClick  ],
-      [window,   'contextmenu', onContextmenu],
+      [document, 'click',       onGameClick,  { capture: true }],
+      [window,   'contextmenu', onContextmenu                  ],
     ],
     onEnter() {
       document.body.classList.add('game-active');
