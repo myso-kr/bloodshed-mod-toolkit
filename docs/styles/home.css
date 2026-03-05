@@ -531,5 +531,11 @@
 }
 
 /* ── Global interaction guards ── */
-body { cursor: none; -webkit-user-select: none; user-select: none; }
-a, button, label, input, textarea, select { cursor: none; }
+body { -webkit-user-select: none; user-select: none; }
+body.game-active { cursor: none; }
+body.game-active a,
+body.game-active button,
+body.game-active label,
+body.game-active input,
+body.game-active textarea,
+body.game-active select { cursor: none; }

@@ -37,7 +37,7 @@ export function triggerGameOver() {
   state.gameOver = true;
   document.getElementById('go-score-val').textContent = state.kills;
   document.getElementById('gameover-modal').classList.add('active');
-  document.body.style.cursor = 'auto';
+  document.body.classList.remove('game-active');
   /* auto-focus first slot for keyboard users; delay for modal animation */
   setTimeout(() => document.getElementById('ns-0')?.focus(), 200);
 }
@@ -62,7 +62,7 @@ export function resetGame(killValueEl) {
   document.getElementById('go-submit').textContent = 'REGISTER SCORE';
   document.getElementById('go-lb').style.display = 'none';
   document.getElementById('gameover-modal').classList.remove('active');
-  document.body.style.cursor = '';
+  document.body.classList.add('game-active');
 }
 
 /* ── projectiles update + draw ── */

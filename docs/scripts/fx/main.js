@@ -115,6 +115,7 @@ setTimeout(spawnMonster, 3200);
 scheduleSpawn();
 
 /* ── init ── */
+document.body.classList.add('game-active');
 updateHpHud();
 setupGameOverUI(killValue);
 collectShakeEls();

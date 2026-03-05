@@ -143,13 +143,6 @@
 #lb-table tr.me td { color: #fbbf24; font-weight: 700; }
 #lb-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
 
-/* ── game-over modal: restore cursor (overrides body { cursor: none }) ── */
-#gameover-modal.active,
-#gameover-modal.active * { cursor: auto !important; }
-#gameover-modal.active button,
-#gameover-modal.active .ns-arrow { cursor: pointer !important; }
-#gameover-modal.active .name-slot { cursor: default !important; }
-
 /* ── BGM toggle button ── */
 #bgm-btn {
   position: fixed; bottom: 24px; right: 24px; z-index: 9998;
