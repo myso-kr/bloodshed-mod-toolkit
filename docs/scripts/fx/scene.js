@@ -18,6 +18,7 @@ let _ctx = {};   /* { fire, doReload } */
    ══════════════════════════════════════════════════════ */
 
 function onDragstart(e) { e.preventDefault(); }
+function onContextmenu(e) { e.preventDefault(); }
 
 /* 마우스다운 텍스트-선택 / 포커스 제어
  *  · form 요소 · contenteditable : 기본 동작 허용 (타이핑 가능)
@@ -55,9 +56,10 @@ const SCENES = {
   /* ── 게임 진행 중 ─────────────────────────────────── */
   game: {
     listeners: [
-      [window,   'mousedown', onGameMousedown  ],
-      [document, 'mousedown', onSharedMousedown],
-      [document, 'dragstart', onDragstart      ],
+      [window,   'mousedown',   onGameMousedown  ],
+      [window,   'contextmenu', onContextmenu    ],
+      [document, 'mousedown',   onSharedMousedown],
+      [document, 'dragstart',   onDragstart      ],
     ],
     onEnter() {
       document.body.classList.add('game-active');
@@ -71,8 +73,9 @@ const SCENES = {
   /* ── 게임오버 / 리더보드 ─────────────────────────── */
   gameover: {
     listeners: [
-      [document, 'mousedown', onSharedMousedown],
-      [document, 'dragstart', onDragstart      ],
+      [window,   'contextmenu', onContextmenu    ],
+      [document, 'mousedown',   onSharedMousedown],
+      [document, 'dragstart',   onDragstart      ],
     ],
     onEnter() {
       document.body.classList.remove('game-active');

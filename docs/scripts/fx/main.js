@@ -101,7 +101,7 @@ setTimeout(spawnMonster, 3200);
 scheduleSpawn();
 
 /* ── init ── */
-SceneManager.init('game', { doReload });
+SceneManager.init('game', { fire, doReload });
 updateHpHud();
 setupGameOverUI(killValue);
 collectShakeEls();
