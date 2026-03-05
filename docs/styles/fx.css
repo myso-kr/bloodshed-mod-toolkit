@@ -2,6 +2,11 @@
    FX — HUD overlays: kill counter, HP, vignette, game-over, BGM
 ══════════════════════════════════════════════════════ */
 
+/* ── FX canvas pointer-events
+ *  기본: none (클릭 통과) — 게임 진행 중에만 all로 전환해 링크/버튼 보호 */
+#fx-cvs { pointer-events: none; }
+body.game-active #fx-cvs { pointer-events: all; }
+
 /* ── HUD group ── */
 #hud-group {
   position: fixed; bottom: 32px; left: 32px; z-index: 9998;
