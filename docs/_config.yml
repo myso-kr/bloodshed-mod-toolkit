@@ -14,6 +14,7 @@ permalink: pretty
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
+  - jekyll-redirect-from
 
 # OG image defaults by domain — 1200x630 JPEG optimised for social sharing
 defaults:
@@ -49,3 +50,4 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - "*.gemspec"
+  - vendor
