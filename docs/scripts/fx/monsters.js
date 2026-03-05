@@ -149,19 +149,32 @@ export function tickMonsters(dt) {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sprite, m.x - sz / 2, m.y - sz / 2, sz, sz);
 
-    /* pre-attack warning ring — drawn ON TOP of sprite */
+    /* pre-attack warning — drawn ON TOP of sprite, no shadowBlur (unreliable cross-browser) */
     if (m.dyingT < 0 && !state.gameOver && m.shotCooldown < 2) {
-      const progress = 1 - m.shotCooldown / 2;           /* 0→1 as shot nears */
-      const freq     = 3 + progress * 12;                 /* blink Hz: 3→15    */
-      const pulse    = 0.35 + 0.65 * Math.abs(Math.sin(performance.now() * 0.001 * Math.PI * freq));
-      const ringR    = sz * 0.68 + progress * sz * 0.18;
+      const progress = 1 - m.shotCooldown / 2;                        /* 0→1 as shot nears */
+      const hz       = 3 + progress * 12;                              /* blink Hz: 3→15    */
+      const pulse    = 0.3 + 0.7 * Math.abs(Math.sin(performance.now() * 0.001 * Math.PI * hz));
+      const ringR    = sz * 0.7 + progress * sz * 0.15;
+
       ctx.save();
-      ctx.globalAlpha = pulse;
+
+      /* 1. sprite color flash overlay — always visible regardless of GPU */
+      ctx.globalAlpha = pulse * (0.15 + progress * 0.3);
+      ctx.fillStyle   = m.pal.glow;
+      ctx.fillRect(m.x - sz * 0.5, m.y - sz * 0.5, sz, sz);
+
+      /* 2. outer glow ring */
+      ctx.globalAlpha = pulse * (0.6 + progress * 0.35);
       ctx.strokeStyle = m.pal.glow;
-      ctx.lineWidth   = 2 + progress * 3;
-      ctx.shadowColor = m.pal.glow;
-      ctx.shadowBlur  = 12 + progress * 20;
+      ctx.lineWidth   = 2.5 + progress * 2.5;
       ctx.beginPath(); ctx.arc(m.x, m.y, ringR, 0, Math.PI * 2); ctx.stroke();
+
+      /* 3. thin white highlight ring inside glow ring */
+      ctx.globalAlpha = pulse * progress * 0.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.arc(m.x, m.y, ringR - 3, 0, Math.PI * 2); ctx.stroke();
+
       ctx.restore();
     }
     if (m.dyingT >= 0 && m.dyingT < 0.1) {

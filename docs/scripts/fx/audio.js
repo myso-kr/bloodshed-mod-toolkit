@@ -1,17 +1,33 @@
 /* ══════════════════════════════════════════════════════
    AUDIO — Web Audio engine (SFX + 8-bit BGM)
+
+   Signal routing:
+     SFX → sfxBus (gain 1.0) → ac.destination
+     BGM → bgmMaster (gain 0.07) → ac.destination
+
+   Individual SFX gains are tuned so SFX are always
+   clearly audible above the BGM.
 ══════════════════════════════════════════════════════ */
 
 export let ac         = null;
 export let bgmRunning = false;
 export let bgmMaster  = null;
+let sfxBus = null;
+
+/* helper — SFX output node (created alongside AudioContext) */
+function sfx() { return sfxBus ?? ac.destination; }
 
 export function ensureAudio() {
   if (ac) { if (ac.state === 'suspended') ac.resume(); return; }
   ac = new (window.AudioContext || window.webkitAudioContext)();
+  sfxBus = ac.createGain();
+  sfxBus.gain.value = 1.0;
+  sfxBus.connect(ac.destination);
 }
 
 /* ── SFX ── */
+
+/* player fires — bloody=true: hit monster, false: miss */
 export function playShot(bloody) {
   if (!ac) return;
   const t = ac.currentTime;
@@ -23,17 +39,17 @@ export function playShot(bloody) {
   const flt = ac.createBiquadFilter();
   flt.type = 'bandpass'; flt.frequency.value = bloody ? 280 : 1200; flt.Q.value = 0.8;
   const gain = ac.createGain();
-  gain.gain.setValueAtTime(bloody ? 0.55 : 0.4, t);
+  gain.gain.setValueAtTime(bloody ? 0.75 : 0.55, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-  src.connect(flt); flt.connect(gain); gain.connect(ac.destination);
+  src.connect(flt); flt.connect(gain); gain.connect(sfx());
   src.start(t);
   if (bloody) {
     const osc = ac.createOscillator(); osc.type = 'sine';
     osc.frequency.setValueAtTime(110, t);
     osc.frequency.exponentialRampToValueAtTime(35, t + 0.3);
     const og = ac.createGain();
-    og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-    osc.connect(og); og.connect(ac.destination);
+    og.gain.setValueAtTime(0.7, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(og); og.connect(sfx());
     osc.start(t); osc.stop(t + 0.4);
   }
 }
@@ -49,10 +65,20 @@ export function playReload() {
     const src = ac.createBufferSource(); src.buffer = buf;
     const f = ac.createBiquadFilter(); f.type = 'highpass';
     f.frequency.value = i === 0 ? 1400 : 900;
-    const g = ac.createGain(); g.gain.value = 0.55;
-    src.connect(f); f.connect(g); g.connect(ac.destination);
+    const g = ac.createGain(); g.gain.value = 0.6;
+    src.connect(f); f.connect(g); g.connect(sfx());
     src.start(t0);
   });
+}
+
+export function playEmpty() {
+  if (!ac) return;
+  const t = ac.currentTime;
+  const osc = ac.createOscillator(); osc.type = 'square'; osc.frequency.value = 900;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+  osc.connect(g); g.connect(sfx());
+  osc.start(t); osc.stop(t + 0.05);
 }
 
 /* monster fires a projectile — alien zap descending pitch */
@@ -62,11 +88,12 @@ export function playMonsterShot() {
   const osc = ac.createOscillator(); osc.type = 'sawtooth';
   osc.frequency.setValueAtTime(520, t);
   osc.frequency.exponentialRampToValueAtTime(80, t + 0.18);
-  const flt = ac.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 900; flt.Q.value = 2;
+  /* wider filter cutoff so less attenuation */
+  const flt = ac.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 1800; flt.Q.value = 1;
   const g = ac.createGain();
-  g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.connect(flt); flt.connect(g); g.connect(ac.destination);
-  osc.start(t); osc.stop(t + 0.22);
+  g.gain.setValueAtTime(0.55, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+  osc.connect(flt); flt.connect(g); g.connect(sfx());
+  osc.start(t); osc.stop(t + 0.25);
 }
 
 /* monster killed — low thump + noise splat */
@@ -77,29 +104,19 @@ export function playMonsterDeath() {
   const o = ac.createOscillator(); o.type = 'sine';
   o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.18);
   const og = ac.createGain();
-  og.gain.setValueAtTime(0.5, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-  o.connect(og); og.connect(ac.destination);
-  o.start(t); o.stop(t + 0.25);
+  og.gain.setValueAtTime(0.7, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  o.connect(og); og.connect(sfx());
+  o.start(t); o.stop(t + 0.28);
   /* noise splat */
-  const len = ac.sampleRate * 0.14;
+  const len = ac.sampleRate * 0.15;
   const buf = ac.createBuffer(1, len, ac.sampleRate);
   const d = buf.getChannelData(0);
   for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.18));
   const src = ac.createBufferSource(); src.buffer = buf;
-  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 320; bp.Q.value = 1;
-  const sg = ac.createGain(); sg.gain.value = 0.38;
-  src.connect(bp); bp.connect(sg); sg.connect(ac.destination);
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 400; bp.Q.value = 0.8;
+  const sg = ac.createGain(); sg.gain.value = 0.55;
+  src.connect(bp); bp.connect(sg); sg.connect(sfx());
   src.start(t);
-}
-
-export function playEmpty() {
-  if (!ac) return;
-  const t = ac.currentTime;
-  const osc = ac.createOscillator(); osc.type = 'square'; osc.frequency.value = 900;
-  const g = ac.createGain();
-  g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
-  osc.connect(g); g.connect(ac.destination);
-  osc.start(t); osc.stop(t + 0.05);
 }
 
 /* ── 8-bit BGM sequencer (E Phrygian, BPM 168) ── */
@@ -109,7 +126,7 @@ export function startBGM() {
 
   const master = ac.createGain();
   master.gain.value = 0;
-  master.gain.linearRampToValueAtTime(0.12, ac.currentTime + 1.8);
+  master.gain.linearRampToValueAtTime(0.07, ac.currentTime + 1.8); /* BGM kept quiet so SFX cut through */
   master.connect(ac.destination);
   bgmMaster = master;
 
