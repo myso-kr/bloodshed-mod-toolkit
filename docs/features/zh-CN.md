@@ -9,7 +9,7 @@ image: /images/og_banner_power.jpg
 
 # 功能
 
-![banner](../images/banner_power.png)
+<picture><source srcset="../images/banner_power.webp" type="image/webp"><img src="../images/banner_power.png" alt="banner" style="width:100%"></picture>
 
 ## CHEATS 标签
 

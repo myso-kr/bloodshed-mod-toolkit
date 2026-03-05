@@ -43,7 +43,8 @@
 .hero-bg-img {
   position: absolute;
   inset: 0;
-  background: url('../images/banner_hero.png') center/cover no-repeat;
+  background: url('../images/banner_hero.webp') center/cover no-repeat;
+  background-image: image-set(url('../images/banner_hero.webp') type('image/webp'), url('../images/banner_hero.png') type('image/png'));
   filter: brightness(0.18) saturate(0.6);
   transform: scale(1.06);
   will-change: transform;
@@ -394,7 +395,8 @@
 #coop { position: relative; overflow: hidden; padding: 7rem 1.5rem; text-align: center; }
 .coop-bg {
   position: absolute; inset: 0;
-  background: url('../images/banner_coop.png') center/cover no-repeat;
+  background: url('../images/banner_coop.webp') center/cover no-repeat;
+  background-image: image-set(url('../images/banner_coop.webp') type('image/webp'), url('../images/banner_coop.png') type('image/png'));
   filter: brightness(0.12) saturate(0.5); transform: scale(1.04);
 }
 .coop-overlay {
