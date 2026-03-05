@@ -97,22 +97,22 @@
 .ns-arrow:hover  { color: #dc2626; }
 .ns-arrow:active { color: #fbbf24; }
 
-/* name input slot — readonly, keyCode-driven, no IME, no selection */
-input.name-slot {
+/* name slot — contenteditable div, keyCode-driven, no IME, no caret */
+.name-slot {
   width: 50px; height: 56px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
   border: 2px solid #374151; border-radius: 4px;
   background: #111827;
   font-family: 'JetBrains Mono', monospace;
   font-size: 2.2rem; font-weight: 700; line-height: 1;
   color: #e5e7eb;
-  text-align: center;
   caret-color: transparent;
-  outline: none; padding: 0;
+  outline: none;
   user-select: none; -webkit-user-select: none;
-  pointer-events: auto;
+  pointer-events: auto; cursor: default;
   transition: border-color 0.18s, box-shadow 0.18s;
 }
-input.name-slot:focus {
+.name-slot:focus {
   border-color: #dc2626;
   box-shadow:
     0 0 0 1px #dc2626,

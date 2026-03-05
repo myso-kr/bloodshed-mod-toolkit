@@ -56,7 +56,7 @@ export function resetGame(killValueEl) {
   state.parts.length       = 0;
   updateHpHud();
   if (killValueEl) killValueEl.textContent = '0';
-  [0, 1, 2].forEach(i => { document.getElementById(`ns-${i}`).value = 'A'; });
+  [0, 1, 2].forEach(i => { document.getElementById(`ns-${i}`).textContent = 'A'; });
   document.getElementById('go-submit').style.display = '';
   document.getElementById('go-submit').disabled = false;
   document.getElementById('go-submit').textContent = 'REGISTER SCORE';
@@ -150,30 +150,31 @@ export function setupGameOverUI(killValueEl) {
   /* A-Z then 0-9 cycle order: A…Z→0…9→A */
   const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-  /* read validated char from slot i */
+  /* read validated char from slot i (textContent, not value) */
   function charAt(i) {
-    const v = (slots[i].value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const v = (slots[i].textContent || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     return v ? v[0] : 'A';
   }
+
+  /* set slot i textContent */
+  function setChar(i, ch) { slots[i].textContent = ch; }
 
   /* cycle slot i by dir (+1 next, -1 prev) through CHARS */
   function cycleLetter(i, dir) {
     const idx = CHARS.indexOf(charAt(i));
     const next = (idx + dir + CHARS.length) % CHARS.length;
-    slots[i].value = CHARS[next];
+    setChar(i, CHARS[next]);
   }
 
-  /* focus + select-all on slot i (clamps to 0–2) */
+  /* focus slot i (clamps to 0–2) — no .select() on div */
   function focusSlot(i) {
-    const el = slots[Math.max(0, Math.min(2, i))];
-    el.focus();
-    el.select();
+    slots[Math.max(0, Math.min(2, i))].focus();
   }
 
   /* ── ▲ / ▼ arrow buttons ── */
   document.querySelectorAll('.ns-arrow').forEach(btn => {
     btn.addEventListener('pointerdown', e => {
-      e.preventDefault(); /* keep focus on input */
+      e.preventDefault(); /* keep focus on slot */
       const i   = parseInt(btn.dataset.slot, 10);
       const dir = parseInt(btn.dataset.dir,  10);
       cycleLetter(i, dir);
@@ -181,46 +182,36 @@ export function setupGameOverUI(killValueEl) {
     });
   });
 
-  /* ── keyCode-based input per slot (IME-agnostic, English only) ── */
-  slots.forEach((inp, i) => {
-    /* select all on focus for visual consistency */
-    inp.addEventListener('focus', () => inp.select());
-
-    /* block text selection (pointer drag, etc.) */
-    inp.addEventListener('selectstart', e => e.preventDefault());
-
-    inp.addEventListener('keydown', e => {
+  /* ── keyCode-based input per slot (IME-agnostic) ── */
+  slots.forEach((slot, i) => {
+    /* block all default contenteditable behavior — we control everything */
+    slot.addEventListener('keydown', e => {
+      e.preventDefault(); /* prevent any native edit */
       if (!state.gameOver) return;
 
-      /* A–Z (65–90) and 0–9 (48–57, 96–105 numpad), IME-agnostic */
+      /* A–Z (65–90) and 0–9 (48–57 top row, 96–105 numpad) */
       const kc = e.keyCode;
       const isLetter = kc >= 65 && kc <= 90;
       const isDigit  = (kc >= 48 && kc <= 57) || (kc >= 96 && kc <= 105);
       if (isLetter || isDigit) {
-        e.preventDefault();
-        const ch = isLetter ? String.fromCharCode(kc) : String.fromCharCode(kc >= 96 ? kc - 48 : kc);
-        inp.value = ch;
+        setChar(i, isLetter ? String.fromCharCode(kc) : String.fromCharCode(kc >= 96 ? kc - 48 : kc));
         if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
-        else        inp.select();
         return;
       }
 
       switch (e.key) {
-        case 'ArrowUp':    cycleLetter(i,  1); e.preventDefault(); break;
-        case 'ArrowDown':  cycleLetter(i, -1); e.preventDefault(); break;
-        case 'ArrowLeft':  focusSlot(i - 1);   e.preventDefault(); break;
-        case 'ArrowRight': focusSlot(i + 1);   e.preventDefault(); break;
-        case 'Backspace':
-          inp.value = 'A';
-          if (i > 0) focusSlot(i - 1);
-          e.preventDefault();
-          break;
-        case 'Enter':
-          document.getElementById('go-submit').click();
-          e.preventDefault();
-          break;
+        case 'ArrowUp':    cycleLetter(i,  1); break;
+        case 'ArrowDown':  cycleLetter(i, -1); break;
+        case 'ArrowLeft':  focusSlot(i - 1);   break;
+        case 'ArrowRight': focusSlot(i + 1);   break;
+        case 'Backspace':  setChar(i, 'A'); if (i > 0) focusSlot(i - 1); break;
+        case 'Enter':      document.getElementById('go-submit').click(); break;
       }
     });
+
+    /* block paste and drag-drop */
+    slot.addEventListener('paste', e => e.preventDefault());
+    slot.addEventListener('drop',  e => e.preventDefault());
   });
 
   /* ── submit score ── */
