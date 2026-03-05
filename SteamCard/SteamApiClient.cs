@@ -51,7 +51,7 @@ public sealed class SteamApiClient : IDisposable
     private async Task<(string name, string shortDesc, string price, string originalPrice, int discount)>
         FetchAppDetailsAsync(CancellationToken ct)
     {
-        var url = $"https://store.steampowered.com/api/appdetails?appids={AppId}";
+        var url = $"https://store.steampowered.com/api/appdetails?appids={AppId}&cc=us&l=en";
         var json = await GetJsonAsync(url, ct);
 
         if (json is null) return ("Bloodshed", "", "N/A", "N/A", 0);
