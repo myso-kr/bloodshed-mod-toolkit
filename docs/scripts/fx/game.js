@@ -180,29 +180,27 @@ export function setupGameOverUI(killValueEl) {
     });
   });
 
-  /* ── OTP input handling (per slot) ── */
+  /* ── keyCode-based input per slot (IME-agnostic, English only) ── */
   slots.forEach((inp, i) => {
-    /* select all on focus so next keystroke replaces */
+    /* select all on focus for visual consistency */
     inp.addEventListener('focus', () => inp.select());
 
-    /* input event: fired by both physical keyboard and virtual keyboard */
-    inp.addEventListener('input', () => {
-      const raw     = (inp.value || '').toUpperCase();
-      const letters = raw.replace(/[^A-Z]/g, '');
-      if (letters) {
-        /* take last letter typed (handles composition / paste) */
-        inp.value = letters[letters.length - 1];
-        /* auto-advance to next slot */
-        if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
-        else        inp.select(); /* last slot — stay and select */
-      } else {
-        inp.value = charAt(i); /* revert if nothing valid typed */
-      }
-    });
+    /* block text selection (pointer drag, etc.) */
+    inp.addEventListener('selectstart', e => e.preventDefault());
 
-    /* keyboard shortcuts: arrow keys + Backspace + Enter */
     inp.addEventListener('keydown', e => {
       if (!state.gameOver) return;
+
+      /* A–Z: physical keyCode 65–90, independent of IME / language state */
+      const kc = e.keyCode;
+      if (kc >= 65 && kc <= 90) {
+        e.preventDefault();
+        inp.value = String.fromCharCode(kc); /* always uppercase */
+        if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
+        else        inp.select();
+        return;
+      }
+
       switch (e.key) {
         case 'ArrowUp':    cycleLetter(i,  1); e.preventDefault(); break;
         case 'ArrowDown':  cycleLetter(i, -1); e.preventDefault(); break;

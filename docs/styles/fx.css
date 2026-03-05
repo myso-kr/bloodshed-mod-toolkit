@@ -79,43 +79,53 @@
 .go-score span { color: #fbbf24; font-size: 2.4rem; font-weight: 700; }
 .name-row { display: flex; gap: 12px; margin-bottom: 8px; }
 
-/* per-slot column: ▲ / input / ▼ */
-.name-slot-group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+/* per-slot column: ▲ / input / ▼  — all children share exact 50px width */
+.name-slot-group {
+  display: flex; flex-direction: column; align-items: stretch; gap: 0;
+  width: 50px;
+}
 
-/* ▲ ▼ cycle buttons */
+/* ▲ ▼ cycle buttons — same width as input, centered glyph */
 .ns-arrow {
-  background: none; border: none; outline: none;
-  color: #4b5563; font-size: 13px; line-height: 1;
-  padding: 4px 16px; min-height: 36px; min-width: 50px;
-  cursor: pointer;
-  transition: color 0.12s;
-  font-family: inherit;
+  width: 50px; height: 32px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; outline: none; padding: 0;
+  color: #4b5563; font-size: 11px; line-height: 1;
+  cursor: pointer; transition: color 0.12s;
+  font-family: inherit; flex-shrink: 0;
 }
 .ns-arrow:hover  { color: #dc2626; }
 .ns-arrow:active { color: #fbbf24; }
 
-/* name input slot */
+/* name input slot — readonly, keyCode-driven, no IME, no selection */
 input.name-slot {
-  width: 50px; height: 58px;
+  width: 50px; height: 56px; box-sizing: border-box;
   border: 2px solid #374151; border-radius: 4px;
   background: #111827;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 2.2rem; font-weight: 700;
+  font-size: 2.2rem; font-weight: 700; line-height: 1;
   color: #e5e7eb;
   text-align: center;
-  caret-color: transparent; /* hide blinking text cursor */
-  outline: none;
-  padding: 0;
-  user-select: none;
-  -webkit-user-select: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  caret-color: transparent;
+  outline: none; padding: 0;
+  user-select: none; -webkit-user-select: none;
+  pointer-events: auto;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 input.name-slot:focus {
   border-color: #dc2626;
-  box-shadow: 0 0 12px rgba(220,38,38,0.5);
-  animation: ns-blink 0.65s step-end infinite;
+  box-shadow:
+    0 0 0 1px #dc2626,
+    0 0 12px rgba(220,38,38,0.55),
+    0 0 28px rgba(220,38,38,0.25);
+  animation: ns-blink 0.7s step-end infinite;
 }
-@keyframes ns-blink { 50% { border-color: #7f1d1d; } }
+@keyframes ns-blink {
+  50% {
+    border-color: #7f1d1d;
+    box-shadow: 0 0 0 1px #7f1d1d, 0 0 6px rgba(220,38,38,0.2);
+  }
+}
 .go-hint { font-size: 0.7rem; color: #4b5563; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.08em; }
 .go-btn {
   padding: 9px 26px; background: #dc2626; color: #fff;
