@@ -5,6 +5,14 @@
 import { ctx } from './canvas.js';
 import { state, PX } from './state.js';
 import { playMonsterShot } from './audio.js';
+import { IS_MOBILE } from './platform.js';
+import { player } from './player.js';
+
+const MOBILE_MIN_DIST = 80;  /* minimum px gap between monster and player on mobile */
+
+function getTarget() {
+  return IS_MOBILE ? { x: player.x, y: player.y } : { x: state.mx, y: state.my };
+}
 
 /* ── sprite data ── */
 /* prettier-ignore */
@@ -82,9 +90,10 @@ function spawnInterval() { return Math.max(500, 4000 / (1 + sq() * 0.4)); }
 function monsterSpd()    { const b = Math.min(0.018, sq() * 0.001); return rand(0.014 + b, 0.022 + b); }
 function monsterShotCd() { const s = sq(); return rand(Math.max(1.5, 5.5 - s * 0.2), Math.max(3.0, 8.5 - s * 0.3)); }
 
-/* ── projectile toward cursor ── */
+/* ── projectile toward target ── */
 export function fireProjectile(m) {
-  const dx = state.mx - m.x, dy = state.my - m.y;
+  const t = getTarget();
+  const dx = t.x - m.x, dy = t.y - m.y;
   const dist = Math.sqrt(dx * dx + dy * dy) || 1;
   const spd = Math.min(6.0, rand(2.4 + sq() * 0.08, 3.4 + sq() * 0.08));
   state.projectiles.push({
@@ -135,8 +144,18 @@ export function tickMonsters(dt) {
       m.alpha   = Math.max(0, 1 - m.dyingT / 0.35);
       if (m.dyingT > 0.38) { state.monsters.splice(i, 1); continue; }
     } else {
-      m.x += (state.mx - m.x) * m.spd * 60 * dt;
-      m.y += (state.my - m.y) * m.spd * 60 * dt;
+      const tgt = getTarget();
+      m.x += (tgt.x - m.x) * m.spd * 60 * dt;
+      m.y += (tgt.y - m.y) * m.spd * 60 * dt;
+      /* mobile: keep minimum distance from player */
+      if (IS_MOBILE) {
+        const edx = m.x - tgt.x, edy = m.y - tgt.y;
+        const ed  = Math.sqrt(edx * edx + edy * edy) || 1;
+        if (ed < MOBILE_MIN_DIST) {
+          m.x = tgt.x + (edx / ed) * MOBILE_MIN_DIST;
+          m.y = tgt.y + (edy / ed) * MOBILE_MIN_DIST;
+        }
+      }
       m.timer += dt;
       if (m.timer > 0.28) { m.timer = 0; m.frame ^= 1; }
       if (!state.gameOver) {

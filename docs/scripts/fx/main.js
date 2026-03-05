@@ -11,6 +11,8 @@ import { spawnMonster, scheduleSpawn, tickMonsters }           from './monsters.
 import { drawCursor }                                          from './cursor.js';
 import { updateHpHud, tickProjectiles, tickDamageVignette, setupGameOverUI } from './game.js';
 import { SceneManager }                                        from './scene.js';
+import { IS_MOBILE }                                           from './platform.js';
+import { initPlayer, tickPlayer, drawPlayer }                  from './player.js';
 
 /* ── cursor tracking ── */
 window.addEventListener('mousemove', e => { state.mx = e.clientX; state.my = e.clientY; });
@@ -49,6 +51,7 @@ function fire(cx, cy) {
   if (state.ammo <= 0) { doReload(); return; }
   state.ammo--;
   state.fireCooldown = FIRE_COOLDOWN;
+  if (state.ammo === 0) doReload();   /* 마지막 탄 소진 즉시 자동 재장전 */
 
   let hit = false;
   const hw = 12 * PX * 0.5;
@@ -102,6 +105,7 @@ SceneManager.init('game', { doReload });
 updateHpHud();
 setupGameOverUI(killValue);
 collectShakeEls();
+if (IS_MOBILE) initPlayer();
 
 /* ── main loop ── */
 let lastT = 0;
@@ -121,7 +125,36 @@ function loop(ts) {
   tickParticles();
   tickMonsters(dt);
   tickProjectiles();
-  drawCursor();
+
+  if (IS_MOBILE) {
+    /* tick + draw mobile player */
+    tickPlayer(dt);
+    drawPlayer();
+
+    /* tap crosshair flashes */
+    for (let i = state.touchFlashes.length - 1; i >= 0; i--) {
+      const f = state.touchFlashes[i];
+      f.life -= dt * 2.8;
+      if (f.life <= 0) { state.touchFlashes.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha  = f.life * f.life;   /* ease-out fade */
+      ctx.strokeStyle  = '#dc2626';
+      ctx.lineWidth    = 2;
+      ctx.shadowColor  = '#dc2626';
+      ctx.shadowBlur   = 10;
+      const R = 12, gap = 4, arm = 7;
+      ctx.beginPath(); ctx.arc(f.x, f.y, R, 0, Math.PI * 2); ctx.stroke();
+      [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx, dy]) => {
+        ctx.beginPath();
+        ctx.moveTo(f.x + dx * (R + gap),       f.y + dy * (R + gap));
+        ctx.lineTo(f.x + dx * (R + gap + arm), f.y + dy * (R + gap + arm));
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+  } else {
+    drawCursor();
+  }
 
   requestAnimationFrame(loop);
 }

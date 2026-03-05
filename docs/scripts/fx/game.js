@@ -6,6 +6,8 @@ import { ctx } from './canvas.js';
 import { state, MAX_HP, MAX_AMMO } from './state.js';
 import { shake } from './shake.js';
 import { SceneManager } from './scene.js';
+import { IS_MOBILE } from './platform.js';
+import { player, initPlayer } from './player.js';
 
 /* ── Supabase credentials ── */
 const SB_URL    = 'https://qucelkfkincvhotygsci.supabase.co';
@@ -55,6 +57,8 @@ export function resetGame(killValueEl) {
   state.monsters.length    = 0;
   state.projectiles.length = 0;
   state.parts.length       = 0;
+  state.touchFlashes.length = 0;
+  initPlayer();
   updateHpHud();
   if (killValueEl) killValueEl.textContent = '0';
   [0, 1, 2].forEach(i => { document.getElementById(`ns-${i}`).textContent = 'A'; });
@@ -75,10 +79,13 @@ export function tickProjectiles() {
     p.x += p.vx; p.y += p.vy;
     p.life -= 0.004;
 
-    /* cursor hit detection */
+    /* cursor / player hit detection */
     if (!state.gameOver) {
-      const dx = p.x - state.mx, dy = p.y - state.my;
-      if (dx * dx + dy * dy < 18 * 18) {
+      const tx = IS_MOBILE ? player.x : state.mx;
+      const ty = IS_MOBILE ? player.y : state.my;
+      const dx = p.x - tx, dy = p.y - ty;
+      const hitR = IS_MOBILE ? 16 * 16 : 18 * 18;
+      if (dx * dx + dy * dy < hitR) {
         state.projectiles.splice(i, 1);
         takeDamage();
         continue;

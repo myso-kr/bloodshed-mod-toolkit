@@ -30,4 +30,5 @@ export const state = {
   parts:       [],
   monsters:    [],
   projectiles: [],
+  touchFlashes: [],   /* mobile tap crosshair flashes { x, y, life } */
 };
