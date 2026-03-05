@@ -69,6 +69,7 @@ function fire(cx, cy) {
     }
   }
   if (!hit) { blast(cx, cy, false); shake(5); playShot(false); }
+  return hit;
 }
 
 /* ── BGM toggle ── */

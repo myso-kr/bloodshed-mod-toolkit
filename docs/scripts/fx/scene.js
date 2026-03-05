@@ -41,7 +41,8 @@ function onSharedMousedown(e) {
 function onGameClick(e) {
   /* 모바일: tap crosshair flash */
   if (IS_MOBILE) state.touchFlashes.push({ x: e.clientX, y: e.clientY, life: 1 });
-  _ctx.fire?.(e.clientX, e.clientY);
+  const hit = _ctx.fire?.(e.clientX, e.clientY);
+  if (hit) e.stopPropagation();
 }
 
 /* ══════════════════════════════════════════════════════
