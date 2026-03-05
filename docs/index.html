@@ -815,6 +815,53 @@ description: >-
   .orbit-ring-1 { width: 120px; height: 120px; }
   .orbit-ring-2 { width: 190px; height: 190px; }
 }
+
+/* ── Global interaction guards ── */
+body { cursor: none; -webkit-user-select: none; user-select: none; }
+a, button, label, input, textarea, select { cursor: none; }
+
+/* ── Kill counter HUD ── */
+#kill-hud {
+  position: fixed; bottom: 24px; left: 24px; z-index: 9998;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  background: rgba(10,10,10,0.88);
+  border: 1px solid #dc2626;
+  border-left: 4px solid #dc2626;
+  box-shadow: 0 0 16px rgba(220,38,38,0.3), inset 0 0 24px rgba(220,38,38,0.04);
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+  transition: box-shadow 0.15s;
+}
+#kill-hud.flash {
+  box-shadow: 0 0 32px rgba(220,38,38,0.9), inset 0 0 24px rgba(220,38,38,0.15);
+}
+#kill-hud .hud-icon { font-size: 18px; line-height: 1; }
+#kill-hud .hud-label {
+  font-size: 11px; letter-spacing: 0.15em;
+  color: #6b7280; text-transform: uppercase;
+}
+#kill-hud .hud-value {
+  font-size: 26px; font-weight: 700; line-height: 1;
+  color: #dc2626;
+  text-shadow: 0 0 12px rgba(220,38,38,0.8);
+  min-width: 2.2ch; text-align: right;
+  transition: transform 0.1s;
+}
+#kill-hud .hud-value.bump { transform: scale(1.35); }
+
+/* ── BGM toggle button ── */
+#bgm-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9998;
+  width: 36px; height: 36px;
+  background: rgba(10,10,10,0.88);
+  border: 1px solid #374151;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+#bgm-btn:hover { border-color: #dc2626; box-shadow: 0 0 10px rgba(220,38,38,0.4); }
 </style>
 
 <!-- ══════════════════════════════════════════════════
@@ -1396,6 +1443,17 @@ description: >-
 <!-- ══════════════════════════════════════════════════
      CLICK FX  +  DOOM MONSTERS
 ══════════════════════════════════════════════════ -->
+<!-- Kill counter HUD -->
+<div id="kill-hud" aria-live="polite" aria-atomic="true">
+  <span class="hud-icon">☠</span>
+  <div>
+    <div class="hud-label">KILLS</div>
+    <div class="hud-value" id="kill-value">0</div>
+  </div>
+</div>
+<!-- BGM toggle -->
+<button id="bgm-btn" aria-label="Toggle background music" title="BGM">♪</button>
+<!-- FX canvas -->
 <canvas id="fx-cvs" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9997;image-rendering:pixelated;"></canvas>
 <script>
 (function () {
@@ -1408,11 +1466,163 @@ description: >-
   resize();
   addEventListener('resize', resize, { passive: true });
 
+  /* ── drag / text-select guard ────────────────────────── */
+  document.addEventListener('dragstart', e => e.preventDefault());
+  document.addEventListener('mousedown', e => {
+    if (!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) e.preventDefault();
+  });
+
   /* ── helpers ─────────────────────────────────────────── */
   function rand(a, b) { return a + Math.random() * (b - a); }
   function hexRgba(hex, a) {
     const n = parseInt(hex.replace('#',''), 16);
     return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+  }
+
+  /* ── audio ───────────────────────────────────────────── */
+  let ac = null;
+  let bgmRunning = false;
+  let bgmDroneGain = null;
+
+  function ensureAudio() {
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playShot(bloody) {
+    if (!ac) return;
+    const t = ac.currentTime;
+    /* noise burst */
+    const len = ac.sampleRate * 0.18;
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.exp(-i/(len*0.12));
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const flt = ac.createBiquadFilter();
+    flt.type = 'bandpass';
+    flt.frequency.value = bloody ? 280 : 1200;
+    flt.Q.value = 0.8;
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(bloody ? 0.55 : 0.4, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    src.connect(flt); flt.connect(gain); gain.connect(ac.destination);
+    src.start(t);
+
+    if (bloody) {
+      /* bass thud on kill */
+      const osc = ac.createOscillator(); osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(35, t + 0.3);
+      const og = ac.createGain();
+      og.gain.setValueAtTime(0.6, t);
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(og); og.connect(ac.destination);
+      osc.start(t); osc.stop(t + 0.4);
+    }
+  }
+
+  function startBGM() {
+    if (!ac || bgmRunning) return;
+    bgmRunning = true;
+    /* low detuned drone */
+    const masterGain = ac.createGain(); masterGain.gain.value = 0.07;
+    masterGain.connect(ac.destination);
+    bgmDroneGain = masterGain;
+
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 320;
+    lp.connect(masterGain);
+
+    [[55, 0], [55.6, 0.08], [82.4, -0.05]].forEach(([hz, det]) => {
+      const o = ac.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = hz + det;
+      const g = ac.createGain(); g.gain.value = 0.35;
+      o.connect(g); g.connect(lp); o.start();
+    });
+
+    /* slow LFO on cutoff */
+    const lfo = ac.createOscillator(); lfo.frequency.value = 0.07;
+    const lg  = ac.createGain(); lg.gain.value = 90;
+    lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+
+    /* occasional hit accent */
+    function accent() {
+      if (!bgmRunning || !ac) return;
+      const t = ac.currentTime;
+      const osc = ac.createOscillator(); osc.type = 'square';
+      osc.frequency.value = [110, 147, 165, 220][Math.random()*4|0];
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.connect(g); g.connect(ac.destination);
+      osc.start(t); osc.stop(t + 0.7);
+      setTimeout(accent, rand(3000, 7000));
+    }
+    setTimeout(accent, 2000);
+  }
+
+  function stopBGM() {
+    if (bgmDroneGain) {
+      bgmDroneGain.gain.linearRampToValueAtTime(0, ac.currentTime + 1);
+    }
+    bgmRunning = false;
+  }
+
+  /* BGM toggle button */
+  const bgmBtn = document.getElementById('bgm-btn');
+  let bgmOn = false;
+  bgmBtn.addEventListener('click', () => {
+    ensureAudio();
+    bgmOn = !bgmOn;
+    bgmBtn.textContent = bgmOn ? '♫' : '♪';
+    bgmBtn.style.borderColor = bgmOn ? '#dc2626' : '';
+    bgmBtn.style.boxShadow   = bgmOn ? '0 0 10px rgba(220,38,38,0.5)' : '';
+    if (bgmOn) startBGM(); else stopBGM();
+  });
+
+  /* ── kill counter ─────────────────────────────────────── */
+  let kills = 0;
+  const killValue = document.getElementById('kill-value');
+  const killHud   = document.getElementById('kill-hud');
+
+  function addKill() {
+    kills++;
+    killValue.textContent = kills;
+    killValue.classList.remove('bump');
+    void killValue.offsetWidth; /* reflow to restart */
+    killValue.classList.add('bump');
+    setTimeout(() => killValue.classList.remove('bump'), 120);
+    killHud.classList.add('flash');
+    setTimeout(() => killHud.classList.remove('flash'), 180);
+  }
+
+  /* ── custom cursor (drawn on canvas) ─────────────────── */
+  let cursorVisible = false;
+  document.addEventListener('mousemove', () => { cursorVisible = true; });
+  document.addEventListener('mouseleave', () => { cursorVisible = false; });
+
+  function drawCursor() {
+    if (!cursorVisible) return;
+    const cx = mx, cy = my;
+    const R = 10, gap = 3, armLen = 6;
+    ctx.save();
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#dc2626';
+    ctx.shadowBlur  = 6;
+    /* outer ring */
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke();
+    /* 4 arms */
+    [[0,-1],[0,1],[-1,0],[1,0]].forEach(([dx,dy]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx + dx*(R+gap),       cy + dy*(R+gap));
+      ctx.lineTo(cx + dx*(R+gap+armLen), cy + dy*(R+gap+armLen));
+      ctx.stroke();
+    });
+    /* center dot */
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath(); ctx.arc(cx, cy, 1.5, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
   }
 
   /* ── screen shake ────────────────────────────────────── */
@@ -1536,6 +1746,7 @@ description: >-
   addEventListener('touchmove', e => { mx = e.touches[0].clientX; my = e.touches[0].clientY; }, { passive:true });
 
   function fire(cx, cy) {
+    ensureAudio();
     let hit = false;
     for (const m of monsters) {
       if (m.dyingT >= 0) continue;
@@ -1544,11 +1755,13 @@ description: >-
         m.dyingT = 0;
         blast(m.x, m.y, true);
         shake(9);
+        playShot(true);
+        addKill();
         hit = true;
         break;
       }
     }
-    if (!hit) { blast(cx, cy, false); shake(5); }
+    if (!hit) { blast(cx, cy, false); shake(5); playShot(false); }
   }
 
   addEventListener('mousedown',  e => fire(e.clientX, e.clientY));
@@ -1638,6 +1851,9 @@ description: >-
       ctx.drawImage(sprite, m.x - sz/2, m.y - sz/2, sz, sz);
       ctx.restore();
     }
+
+    /* custom cursor — drawn last (top of everything) */
+    drawCursor();
 
     requestAnimationFrame(loop);
   }
