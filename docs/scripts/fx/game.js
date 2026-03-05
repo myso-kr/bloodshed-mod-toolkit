@@ -182,19 +182,17 @@ export function setupGameOverUI(killValueEl) {
     });
   });
 
-  /* ── keyCode-based input per slot (IME-agnostic) ── */
+  /* ── key input per slot
+   *  Non-contenteditable div → IME 미활성 → e.key가 정상 단일 문자로 옴 ── */
   slots.forEach((slot, i) => {
-    /* block all default contenteditable behavior — we control everything */
     slot.addEventListener('keydown', e => {
-      e.preventDefault(); /* prevent any native edit */
       if (!state.gameOver) return;
+      e.preventDefault();
 
-      /* A–Z (65–90) and 0–9 (48–57 top row, 96–105 numpad) */
-      const kc = e.keyCode;
-      const isLetter = kc >= 65 && kc <= 90;
-      const isDigit  = (kc >= 48 && kc <= 57) || (kc >= 96 && kc <= 105);
-      if (isLetter || isDigit) {
-        setChar(i, isLetter ? String.fromCharCode(kc) : String.fromCharCode(kc >= 96 ? kc - 48 : kc));
+      /* single A-Z / 0-9 character */
+      const ch = e.key.toUpperCase();
+      if (ch.length === 1 && /^[A-Z0-9]$/.test(ch)) {
+        setChar(i, ch);
         if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
         return;
       }
@@ -208,10 +206,6 @@ export function setupGameOverUI(killValueEl) {
         case 'Enter':      document.getElementById('go-submit').click(); break;
       }
     });
-
-    /* block paste and drag-drop */
-    slot.addEventListener('paste', e => e.preventDefault());
-    slot.addEventListener('drop',  e => e.preventDefault());
   });
 
   /* ── submit score ── */
