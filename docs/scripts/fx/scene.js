@@ -55,10 +55,8 @@ const SCENES = {
   /* ── 게임 진행 중 ─────────────────────────────────── */
   game: {
     listeners: [
-      [window,   'click',       onGameClick      ],
-      [window,   'contextmenu', onContextmenu    ],
-      [document, 'mousedown',   onSharedMousedown],
-      [document, 'dragstart',   onDragstart      ],
+      [window,   'click',       onGameClick  ],
+      [window,   'contextmenu', onContextmenu],
     ],
     onEnter() {
       document.body.classList.add('game-active');
