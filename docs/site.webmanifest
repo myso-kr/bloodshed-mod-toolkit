@@ -1,0 +1,25 @@
+---
+layout: null
+---
+{
+  "name": "Bloodshed Mod Toolkit",
+  "short_name": "BMT",
+  "description": "BepInEx mod for Bloodshed — God Mode, 4-player co-op, difficulty tweaks, AI bots.",
+  "start_url": "{{ site.baseurl }}/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "{{ site.baseurl }}/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "{{ site.baseurl }}/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
