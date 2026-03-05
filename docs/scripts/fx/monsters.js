@@ -4,6 +4,7 @@
 
 import { ctx } from './canvas.js';
 import { state, PX } from './state.js';
+import { playMonsterShot } from './audio.js';
 
 /* ── sprite data ── */
 /* prettier-ignore */
@@ -129,6 +130,7 @@ export function tickMonsters(dt) {
         m.shotCooldown -= dt;
         if (m.shotCooldown <= 0) {
           fireProjectile(m);
+          playMonsterShot();
           m.shotCooldown = rand(3, 7);
         }
       }
@@ -143,6 +145,23 @@ export function tickMonsters(dt) {
       gr.addColorStop(1, hexRgba(m.pal.glow, 0));
       ctx.fillStyle = gr;
       ctx.beginPath(); ctx.arc(m.x, m.y, sz * 0.7, 0, Math.PI * 2); ctx.fill();
+
+      /* pre-attack warning flash: blinks faster as shotCooldown approaches 0 */
+      if (!state.gameOver && m.shotCooldown < 2) {
+        const progress = 1 - m.shotCooldown / 2; /* 0→1 as shot nears */
+        const freq = 3 + progress * 12;           /* blink Hz: 3→15 */
+        const pulse = Math.abs(Math.sin(performance.now() * 0.001 * Math.PI * freq));
+        const ringAlpha = (0.3 + progress * 0.7) * pulse;
+        const ringR = sz * 0.65 + progress * sz * 0.2;
+        ctx.save();
+        ctx.globalAlpha = m.alpha * ringAlpha;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth   = 1.5 + progress * 2;
+        ctx.shadowColor = m.pal.glow;
+        ctx.shadowBlur  = 8 + progress * 16;
+        ctx.beginPath(); ctx.arc(m.x, m.y, ringR, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
     }
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sprite, m.x - sz / 2, m.y - sz / 2, sz, sz);

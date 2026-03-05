@@ -55,6 +55,43 @@ export function playReload() {
   });
 }
 
+/* monster fires a projectile — alien zap descending pitch */
+export function playMonsterShot() {
+  if (!ac) return;
+  const t = ac.currentTime;
+  const osc = ac.createOscillator(); osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(520, t);
+  osc.frequency.exponentialRampToValueAtTime(80, t + 0.18);
+  const flt = ac.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 900; flt.Q.value = 2;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.connect(flt); flt.connect(g); g.connect(ac.destination);
+  osc.start(t); osc.stop(t + 0.22);
+}
+
+/* monster killed — low thump + noise splat */
+export function playMonsterDeath() {
+  if (!ac) return;
+  const t = ac.currentTime;
+  /* thump */
+  const o = ac.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.18);
+  const og = ac.createGain();
+  og.gain.setValueAtTime(0.5, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+  o.connect(og); og.connect(ac.destination);
+  o.start(t); o.stop(t + 0.25);
+  /* noise splat */
+  const len = ac.sampleRate * 0.14;
+  const buf = ac.createBuffer(1, len, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * 0.18));
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 320; bp.Q.value = 1;
+  const sg = ac.createGain(); sg.gain.value = 0.38;
+  src.connect(bp); bp.connect(sg); sg.connect(ac.destination);
+  src.start(t);
+}
+
 export function playEmpty() {
   if (!ac) return;
   const t = ac.currentTime;
@@ -72,7 +109,7 @@ export function startBGM() {
 
   const master = ac.createGain();
   master.gain.value = 0;
-  master.gain.linearRampToValueAtTime(0.22, ac.currentTime + 1.8);
+  master.gain.linearRampToValueAtTime(0.12, ac.currentTime + 1.8);
   master.connect(ac.destination);
   bgmMaster = master;
 

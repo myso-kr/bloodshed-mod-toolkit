@@ -5,7 +5,7 @@
 export const MAX_AMMO    = 8;
 export const RELOAD_DUR  = 1.1;
 export const MAX_HP      = 5;
-export const FIRE_COOLDOWN = 0.22; /* seconds between shots */
+export const FIRE_COOLDOWN = 0.44; /* seconds between shots */
 export const PX          = 3;     /* monster sprite pixel size */
 
 export const state = {

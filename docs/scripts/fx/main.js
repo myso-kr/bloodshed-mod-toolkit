@@ -4,7 +4,7 @@
 
 import { cvs, ctx }                                            from './canvas.js';
 import { state, MAX_AMMO, RELOAD_DUR, FIRE_COOLDOWN, PX }     from './state.js';
-import { ensureAudio, startBGM, stopBGM, playShot, playReload } from './audio.js';
+import { ensureAudio, startBGM, stopBGM, playShot, playReload, playMonsterDeath } from './audio.js';
 import { blast, tickParticles }                                from './particles.js';
 import { shake, collectShakeEls }                              from './shake.js';
 import { spawnMonster, scheduleSpawn, tickMonsters }           from './monsters.js';
@@ -64,6 +64,7 @@ function fire(cx, cy) {
       blast(m.x, m.y, true);
       shake(9);
       playShot(true);
+      playMonsterDeath();
       addKill();
       hit = true;
       break;
