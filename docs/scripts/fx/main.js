@@ -68,17 +68,6 @@ function fire(cx, cy) {
   if (!hit) { blast(cx, cy, false); shake(5); playShot(false); }
 }
 
-/* mouse: left=fire, right=reload */
-window.addEventListener('mousedown', e => { if (e.button === 0) fire(e.clientX, e.clientY); });
-
-/* touch: touchstart fires + syncs cursor position so crosshair follows tap */
-window.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  state.mx = t.clientX;
-  state.my = t.clientY;
-  fire(t.clientX, t.clientY);
-}, { passive: true });
-
 /* ── BGM toggle ── */
 const bgmBtn = document.getElementById('bgm-btn');
 let bgmOn = false;
