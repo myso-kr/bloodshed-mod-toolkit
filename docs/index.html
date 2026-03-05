@@ -177,10 +177,13 @@ description: >-
 
   <div class="steam-card-wrap reveal">
     <p class="steam-card-label">Haven't played yet? — Start here.</p>
-    <iframe src="https://store.steampowered.com/widget/2747550/"
-            frameborder="0" width="646" height="190"
-            title="Bloodshed on Steam"
-            style="max-width:100%;border-radius:4px;"></iframe>
+    <div style="position:relative;display:inline-block;max-width:100%;width:646px;">
+      <iframe src="https://store.steampowered.com/widget/2747550/"
+              frameborder="0" width="646" height="190"
+              title="Bloodshed on Steam"
+              style="max-width:100%;border-radius:4px;display:block;"></iframe>
+      <div class="iframe-guard"></div>
+    </div>
   </div>
 </section>
 

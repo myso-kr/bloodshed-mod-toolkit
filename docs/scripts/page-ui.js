@@ -123,3 +123,23 @@ window.addEventListener('scroll', () => {
     coopBg.style.transform = `scale(1.04) translateY(${rect.top * 0.08}px)`;
   }
 }, { passive: true });
+
+/* ── iframe 우클릭 차단 ──────────────────────────────────
+ *  cross-origin iframe 내부 이벤트는 부모에서 직접 접근 불가.
+ *  투명 오버레이(iframe-guard)가 마우스 이벤트를 중간에서 가로챔.
+ *
+ *  · 우클릭(button≠0) → preventDefault (컨텍스트 메뉴 차단)
+ *  · 좌클릭(button=0) → 오버레이를 pointer-events:none으로 전환 →
+ *    클릭이 아래 iframe으로 통과 → mouseup 이후 복원
+ * ─────────────────────────────────────────────────────── */
+document.querySelectorAll('.iframe-guard').forEach(guard => {
+  guard.addEventListener('contextmenu', e => e.preventDefault());
+
+  guard.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;              /* 좌클릭만 통과 처리 */
+    guard.style.pointerEvents = 'none';      /* iframe에 클릭 전달 */
+    window.addEventListener('mouseup', () => {
+      guard.style.pointerEvents = '';        /* 복원 */
+    }, { once: true });
+  });
+});
