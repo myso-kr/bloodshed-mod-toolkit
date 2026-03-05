@@ -10,7 +10,7 @@ document.addEventListener('mousemove',  () => { cursorVisible = true;  });
 document.addEventListener('mouseleave', () => { cursorVisible = false; });
 
 export function drawCursor() {
-  if (!cursorVisible) return;
+  if (!cursorVisible || state.gameOver) return;
   const cx = state.mx, cy = state.my;
   const R = 10, gap = 3, armLen = 6;
   const outOfAmmo = state.ammo <= 0 && !state.reloading;

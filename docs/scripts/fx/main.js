@@ -14,7 +14,7 @@ import { updateHpHud, tickProjectiles, tickDamageVignette, setupGameOverUI } fro
 /* ── drag / text-select guard ── */
 document.addEventListener('dragstart', e => e.preventDefault());
 document.addEventListener('mousedown', e => {
-  if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) e.preventDefault();
+  if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) && !e.target.isContentEditable) e.preventDefault();
 });
 
 /* ── cursor tracking ── */

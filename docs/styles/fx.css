@@ -85,14 +85,14 @@
   width: 50px;
 }
 
-/* ▲ ▼ cycle buttons — same width as input, centered glyph */
+/* ▲ ▼ cycle buttons — same width as slot, centered glyph */
 .ns-arrow {
   width: 50px; height: 32px; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
-  background: none; border: none; outline: none; padding: 0;
-  color: #4b5563; font-size: 11px; line-height: 1;
+  background: none; border: none; outline: none; padding: 0; margin: 0;
+  color: #4b5563; font-size: 11px; line-height: 1; text-align: center;
   cursor: pointer; transition: color 0.12s;
-  font-family: inherit; flex-shrink: 0;
+  font-family: 'Saira Condensed', sans-serif; flex-shrink: 0;
 }
 .ns-arrow:hover  { color: #dc2626; }
 .ns-arrow:active { color: #fbbf24; }
@@ -142,6 +142,13 @@
 #lb-table td { padding: 5px 8px; color: #d1d5db; }
 #lb-table tr.me td { color: #fbbf24; font-weight: 700; }
 #lb-table tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+
+/* ── game-over modal: restore cursor (overrides body { cursor: none }) ── */
+#gameover-modal.active,
+#gameover-modal.active * { cursor: auto !important; }
+#gameover-modal.active button,
+#gameover-modal.active .ns-arrow { cursor: pointer !important; }
+#gameover-modal.active .name-slot { cursor: default !important; }
 
 /* ── BGM toggle button ── */
 #bgm-btn {
