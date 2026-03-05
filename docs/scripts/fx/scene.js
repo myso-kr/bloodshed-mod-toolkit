@@ -38,8 +38,7 @@ function onSharedMousedown(e) {
    game 씬 전용 핸들러
    ══════════════════════════════════════════════════════ */
 
-function onGameMousedown(e) {
-  if (e.button !== 0) return;
+function onGameClick(e) {
   /* 모바일: tap crosshair flash */
   if (IS_MOBILE) state.touchFlashes.push({ x: e.clientX, y: e.clientY, life: 1 });
   _ctx.fire?.(e.clientX, e.clientY);
@@ -56,7 +55,7 @@ const SCENES = {
   /* ── 게임 진행 중 ─────────────────────────────────── */
   game: {
     listeners: [
-      [window,   'mousedown',   onGameMousedown  ],
+      [window,   'click',       onGameClick      ],
       [window,   'contextmenu', onContextmenu    ],
       [document, 'mousedown',   onSharedMousedown],
       [document, 'dragstart',   onDragstart      ],
