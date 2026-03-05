@@ -1696,9 +1696,37 @@ a, button, label, input, textarea, select { cursor: none; }
     ctx.restore();
   }
 
-  /* ── screen shake ────────────────────────────────────── */
-  let shakeTTL = 0, shakePow = 0;
-  function shake(pow) { shakePow = pow; shakeTTL = 0.25; }
+  /* ── element shake (콘텐츠 요소를 무작위 각도로 틸트) ── */
+  let shakeEls = [];
+
+  function collectShakeEls() {
+    shakeEls = Array.from(document.querySelectorAll(
+      'h1,h2,h3,h4,h5,p,img,iframe,' +
+      '.feature-card,.diff-card,.install-step,' +
+      '.stat-num,.stat-label,.ticker-item,.steam-card-wrap,' +
+      '.manifesto-line,.coop-stat,.preset-card'
+    )).filter(el => !el.closest('#kill-hud') && el.id !== 'bgm-btn');
+  }
+
+  function shake(pow) {
+    if (!shakeEls.length) return;
+    const sample = shakeEls.filter(() => Math.random() < 0.55);
+    sample.forEach(el => {
+      const angle = (Math.random()*2-1) * pow * 1.1;
+      const tx    = (Math.random()*2-1) * pow * 0.7;
+      const ty    = (Math.random()*2-1) * pow * 0.4;
+      el.style.transition = 'none';
+      el.style.transform  = `translate(${tx.toFixed(1)}px,${ty.toFixed(1)}px) rotate(${angle.toFixed(2)}deg)`;
+    });
+    setTimeout(() => {
+      sample.forEach(el => {
+        el.style.transition = 'transform 0.28s ease-out';
+        el.style.transform  = '';
+      });
+    }, 75 + (Math.random() * 35 | 0));
+    /* 강한 충격엔 2차 여진 */
+    if (pow >= 8) setTimeout(() => shake(pow * 0.42), 70);
+  }
 
   /* ── particles ───────────────────────────────────────── */
   const parts = [];
@@ -1834,7 +1862,7 @@ a, button, label, input, textarea, select { cursor: none; }
   function fire(cx, cy) {
     if (reloading) return;
     ensureAudio();
-    if (ammo <= 0) { playEmpty(); return; }
+    if (ammo <= 0) { reload(); return; }
     ammo--;
 
     let hit = false;
@@ -1864,23 +1892,6 @@ a, button, label, input, textarea, select { cursor: none; }
     const dt = Math.min((ts - lastT) * 0.001, 0.05);
     lastT = ts;
     ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-    /* screen shake — content shakes, canvas/HUD counter-transformed to stay fixed */
-    if (shakeTTL > 0) {
-      shakeTTL -= dt;
-      const t  = shakeTTL / 0.25;
-      const sx = ((Math.random()*2-1) * shakePow * t).toFixed(1);
-      const sy = ((Math.random()*2-1) * shakePow * t).toFixed(1);
-      document.body.style.transform  = `translate(${sx}px,${sy}px)`;
-      cvs.style.transform     = `translate(${-sx}px,${-sy}px)`;
-      killHud.style.transform = `translate(${-sx}px,${-sy}px)`;
-      bgmBtn.style.transform  = `translate(${-sx}px,${-sy}px)`;
-    } else if (document.body.style.transform) {
-      document.body.style.transform  = '';
-      cvs.style.transform     = '';
-      killHud.style.transform = '';
-      bgmBtn.style.transform  = '';
-    }
 
     /* reload timer */
     if (reloading) {
@@ -1965,6 +1976,7 @@ a, button, label, input, textarea, select { cursor: none; }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+  collectShakeEls();
 
 })();
 </script>
