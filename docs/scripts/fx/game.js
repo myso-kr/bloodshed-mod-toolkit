@@ -39,7 +39,7 @@ export function triggerGameOver() {
   document.getElementById('gameover-modal').classList.add('active');
   document.body.classList.remove('game-active');
   /* auto-focus first slot for keyboard users; delay for modal animation */
-  setTimeout(() => document.getElementById('ns-0')?.focus(), 200);
+  setTimeout(() => document.getElementById('ns-0')?.focus({ preventScroll: true }), 200);
 }
 
 /* ── reset ── */
@@ -175,13 +175,15 @@ export function setupGameOverUI(killValueEl) {
 
   /* ── ▲ / ▼ arrow buttons ── */
   document.querySelectorAll('.ns-arrow').forEach(btn => {
-    btn.addEventListener('pointerdown', e => {
-      e.preventDefault(); /* keep focus on slot */
+    /* pointerup: reliable user-activation on both iOS and Android */
+    btn.addEventListener('pointerup', e => {
       const i   = parseInt(btn.dataset.slot, 10);
       const dir = parseInt(btn.dataset.dir,  10);
       cycleLetter(i, dir);
       focusSlot(i);
     });
+    /* prevent synthetic click from firing after pointerup */
+    btn.addEventListener('click', e => e.preventDefault());
   });
 
   /* ── key input per slot
@@ -195,7 +197,7 @@ export function setupGameOverUI(killValueEl) {
       const ch = e.key.toUpperCase();
       if (ch.length === 1 && /^[A-Z0-9]$/.test(ch)) {
         setChar(i, ch);
-        if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
+        if (i < 2) focusSlot(i + 1);
         return;
       }
 

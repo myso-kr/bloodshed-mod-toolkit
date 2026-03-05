@@ -15,11 +15,13 @@ import { updateHpHud, tickProjectiles, tickDamageVignette, setupGameOverUI } fro
 document.addEventListener('dragstart', e => e.preventDefault());
 document.addEventListener('mousedown', e => {
   const tag = e.target.tagName;
-  if (
-    !['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) &&
-    !e.target.isContentEditable &&
-    !(e.target.hasAttribute('tabindex') && e.target.tabIndex >= 0)
-  ) e.preventDefault();
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+  if (e.target.isContentEditable) return;
+  e.preventDefault();
+  /* tabindex 요소는 preventDefault 후 수동 focus — preventScroll로 모바일 스크롤 방지 */
+  if (e.target.hasAttribute('tabindex') && e.target.tabIndex >= 0) {
+    e.target.focus({ preventScroll: true });
+  }
 });
 
 /* ── cursor tracking ── */
