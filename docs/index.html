@@ -444,17 +444,17 @@ description: >-
 <!-- ══════════════════════════════════════════════════
      CLICK FX  +  DOOM MONSTERS
 ══════════════════════════════════════════════════ -->
-<!-- HUD group (kill + hp) -->
+<!-- HUD bar (compact single row) -->
 <div id="hud-group">
-  <div id="kill-hud" aria-live="polite" aria-atomic="true">
-    <div class="hud-label">KILLS</div>
-    <div class="hud-value" id="kill-value">0</div>
-  </div>
-  <div id="hp-hud" aria-label="Health and Ammo">
-    <div class="hud-label">HP</div>
-    <div id="hp-pips"></div>
-    <div class="hud-label" style="margin-top:5px">AMMO</div>
-    <div id="ammo-pips"></div>
+  <div id="hud-bar" aria-live="polite" aria-atomic="true">
+    <span class="hud-label">KILLS</span>
+    <span class="hud-value" id="kill-value">0</span>
+    <span class="hud-sep"></span>
+    <span class="hud-label">HP</span>
+    <span id="hp-pips"></span>
+    <span class="hud-sep"></span>
+    <span class="hud-label">AMMO</span>
+    <span id="ammo-pips"></span>
   </div>
 </div>
 <!-- Damage vignette -->

@@ -6,9 +6,11 @@ import { ctx } from './canvas.js';
 import { state, PX } from './state.js';
 import { playMonsterShot } from './audio.js';
 import { IS_MOBILE } from './platform.js';
-import { player } from './player.js';
+import { player, PLAYER_RADIUS } from './player.js';
 
 const MOBILE_MIN_DIST = 80;  /* minimum px gap between monster and player on mobile */
+const MONSTER_RADIUS = 18;          /* ~12*PX/2 — collision circle for separation */
+const SEPARATION_STRENGTH = 0.5;
 
 function getTarget() {
   return IS_MOBILE ? { x: player.x, y: player.y } : { x: state.mx, y: state.my };
@@ -133,6 +135,47 @@ export function scheduleSpawn() {
   setTimeout(() => { spawnMonster(); scheduleSpawn(); }, spawnInterval());
 }
 
+/* ── separation physics ── */
+function separateMonsters(dt) {
+  const ms = state.monsters;
+  const len = ms.length;
+  const minDistMM = MONSTER_RADIUS * 2;
+  const minDistMP = MONSTER_RADIUS + PLAYER_RADIUS;
+
+  for (let i = 0; i < len; i++) {
+    const a = ms[i];
+    if (a.dyingT >= 0) continue;
+
+    /* monster–monster */
+    for (let j = i + 1; j < len; j++) {
+      const b = ms[j];
+      if (b.dyingT >= 0) continue;
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq > minDistMM * minDistMM || distSq < 0.01) continue;
+      const dist = Math.sqrt(distSq);
+      const overlap = minDistMM - dist;
+      const nx = dx / dist, ny = dy / dist;
+      const push = overlap * SEPARATION_STRENGTH * 0.5;
+      a.x += nx * push; a.y += ny * push;
+      b.x -= nx * push; b.y -= ny * push;
+    }
+
+    /* monster–player (mobile only) */
+    if (IS_MOBILE) {
+      const dx = a.x - player.x, dy = a.y - player.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < minDistMP * minDistMP && distSq > 0.01) {
+        const dist = Math.sqrt(distSq);
+        const overlap = minDistMP - dist;
+        const nx = dx / dist, ny = dy / dist;
+        a.x += nx * overlap * SEPARATION_STRENGTH;
+        a.y += ny * overlap * SEPARATION_STRENGTH;
+      }
+    }
+  }
+}
+
 /* ── update + draw ── */
 export function tickMonsters(dt) {
   const sz = 12 * PX;
@@ -216,4 +259,6 @@ export function tickMonsters(dt) {
     }
     ctx.restore();
   }
+
+  separateMonsters(dt);
 }

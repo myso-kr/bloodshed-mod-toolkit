@@ -23,7 +23,7 @@ window.addEventListener('touchmove', e => {
 
 /* ── kill counter HUD ── */
 const killValue = document.getElementById('kill-value');
-const killHud   = document.getElementById('kill-hud');
+const killHud   = document.getElementById('hud-bar');
 
 function addKill() {
   state.kills++;
