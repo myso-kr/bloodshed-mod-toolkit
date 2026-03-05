@@ -6,9 +6,10 @@ import { ctx } from './canvas.js';
 import { state, MAX_HP, MAX_AMMO } from './state.js';
 import { shake } from './shake.js';
 
-/* ── Supabase credentials — replace with your project values ── */
-const SB_URL = 'https://qucelkfkincvhotygsci.supabase.co';
-const SB_KEY = 'sb_publishable_1GJtKjYBYIyvHVcfPe-5jw_vgTC8dzv';
+/* ── Supabase credentials ── */
+const SB_URL    = 'https://qucelkfkincvhotygsci.supabase.co';
+const SB_KEY    = 'sb_publishable_1GJtKjYBYIyvHVcfPe-5jw_vgTC8dzv';
+const SB_DOMAIN = 'bloodshed';
 
 /* ── HP HUD ── */
 export function updateHpHud() {
@@ -132,7 +133,7 @@ async function insertScore(name, score) {
         'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`,
         'Content-Type': 'application/json', 'Prefer': 'return=minimal',
       },
-      body: JSON.stringify({ name, score }),
+      body: JSON.stringify({ domain: SB_DOMAIN, name, score }),
     });
   } catch (e) { console.warn('[BMT] leaderboard insert failed:', e); }
 }
@@ -140,7 +141,7 @@ async function insertScore(name, score) {
 async function fetchLeaderboard() {
   try {
     const r = await fetch(
-      `${SB_URL}/rest/v1/leaderboard?select=name,score&order=score.desc&limit=10`,
+      `${SB_URL}/rest/v1/leaderboard?select=name,score&domain=eq.${SB_DOMAIN}&order=score.desc&limit=10`,
       { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }
     );
     return await r.json();
