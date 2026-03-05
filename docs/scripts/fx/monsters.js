@@ -109,12 +109,12 @@ export function fireProjectile(m) {
 export function spawnMonster() {
   if (state.monsters.length >= maxMonsters()) return;
   const pal  = PALETTES[Math.random() * PALETTES.length | 0];
-  const side = Math.random() * 4 | 0;
   const W = innerWidth, H = innerHeight, EDGE = 70;
-  const [sx, sy] = side === 0 ? [rand(0, W), -EDGE]
-                 : side === 1 ? [W + EDGE,   rand(0, H)]
-                 : side === 2 ? [rand(0, W), H + EDGE]
-                              : [-EDGE,      rand(0, H)];
+  /* 위쪽 70%, 좌우 각 15%, 아래쪽 없음 */
+  const r = Math.random();
+  const [sx, sy] = r < 0.70 ? [rand(0, W), -EDGE]
+                 : r < 0.85  ? [-EDGE,      rand(0, H * 0.6)]
+                              : [W + EDGE,  rand(0, H * 0.6)];
   state.monsters.push({
     x: sx, y: sy,
     spd: monsterSpd(),
