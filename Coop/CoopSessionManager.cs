@@ -39,6 +39,9 @@ namespace BloodshedModToolkit.Coop
         public static void NotifyMissionStart(string scene, int idx)
             => Role?.OnMissionStartReceived(scene, idx);
 
+        public static void NotifyMissionEnd(bool success)
+            => Role?.OnMissionEndReceived(success);
+
         public static void NotifyPeerConnected(CSteamID peer)
             => Role?.OnPeerConnected(peer);
 

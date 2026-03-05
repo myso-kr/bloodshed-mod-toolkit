@@ -14,6 +14,7 @@ namespace BloodshedModToolkit.Coop.Net
         XpGained      = 0x21,
         LevelUp       = 0x22,
         ItemSelected  = 0x23,
+        MoneyUpdate   = 0x24,   // Host → Guest: 젬(money) 델타 동기화
         WaveAdvance   = 0x30,
         DamageRequest = 0x41,
         AttackEvent   = 0x42,   // 양방향: 공격 이벤트 (아바타 공격 애니메이션 동기화)
@@ -22,10 +23,14 @@ namespace BloodshedModToolkit.Coop.Net
         // Phase 7 — 밸런스 설정 동기화
         TweakSync     = 0x60,
 
+        // Co-op 디버그 정보 (3초 주기, 양방향)
+        PeerInfo      = 0x61,
+
         // Phase 9 — 미션 진입 게이트
         MissionStart     = 0x70,   // Host → Guest: 씬 이름 + 빌드 인덱스
         PlayerReady      = 0x71,   // Guest → Host: 준비 완료
         MissionBriefing  = 0x72,   // Host → Guest: 미션 사전 알림 + 캐릭터 선택 요청
+        MissionEnd       = 0x73,   // Host → Guest: 미션 종료 (성공/실패, MetaGame 복귀 신호)
 
         // Phase 10 — 인게임 채팅
         ChatMessage   = 0x80,   // 양방향: 채팅 메시지
@@ -141,6 +146,19 @@ namespace BloodshedModToolkit.Coop.Net
         {
             using var br = new BinaryReader(new MemoryStream(payload));
             return new ItemSelectedPacket { ItemIndex = br.ReadInt32() };
+        }
+    }
+
+    // MoneyUpdate — Host → Guest: 젬(money) 델타 동기화
+    public static class MoneyUpdatePacket
+    {
+        public static byte[] Encode(float delta)
+            => Packet.Encode(PacketType.MoneyUpdate, w => w.Write(delta));
+
+        public static float Decode(byte[] payload)
+        {
+            using var br = new System.IO.BinaryReader(new System.IO.MemoryStream(payload));
+            return br.ReadSingle();
         }
     }
 
@@ -341,6 +359,19 @@ namespace BloodshedModToolkit.Coop.Net
         }
     }
 
+    // MissionEnd — Host → Guest: 미션 종료 알림 (MetaGame 복귀 신호)
+    public static class MissionEndPacket
+    {
+        public static byte[] Encode(bool success)
+            => Packet.Encode(PacketType.MissionEnd, w => w.Write(success));
+
+        public static bool Decode(byte[] payload)
+        {
+            using var br = new System.IO.BinaryReader(new System.IO.MemoryStream(payload));
+            return br.ReadBoolean();
+        }
+    }
+
     // ChatMessage — 양방향
     public static class ChatMessagePacket
     {
@@ -356,6 +387,25 @@ namespace BloodshedModToolkit.Coop.Net
             using var ms = new System.IO.MemoryStream(payload);
             using var br = new System.IO.BinaryReader(ms, System.Text.Encoding.UTF8);
             return (br.ReadString(), br.ReadString());
+        }
+    }
+
+    // PeerInfo — 양방향: 씬/캐릭터/미션 디버그 정보 (3초 주기)
+    public static class PeerInfoPacket
+    {
+        public static byte[] Encode(string scene, string charName, string mission)
+            => Packet.Encode(PacketType.PeerInfo, w =>
+            {
+                w.Write(scene);
+                w.Write(charName);
+                w.Write(mission);
+            });
+
+        public static (string scene, string charName, string mission) Decode(byte[] payload)
+        {
+            using var ms = new System.IO.MemoryStream(payload);
+            using var br = new System.IO.BinaryReader(ms);
+            return (br.ReadString(), br.ReadString(), br.ReadString());
         }
     }
 

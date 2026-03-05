@@ -73,7 +73,7 @@ namespace BloodshedModToolkit.Coop.Net
             Plugin.Log.LogInfo($"[LobbyManager] 로비 생성 (최대 {maxPlayers}인)...");
             Action<LobbyCreated_t, bool> onCreated = OnLobbyCreated;
             _crLobbyCreated = CallResult<LobbyCreated_t>.Create(onCreated);
-            var handle = SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypePublic, maxPlayers);
+            var handle = SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, maxPlayers);
             _crLobbyCreated.Set(handle);
         }
 
@@ -352,6 +352,22 @@ namespace BloodshedModToolkit.Coop.Net
             {
                 CoopState.IsConnected = false;
                 Plugin.Log.LogInfo("[LobbyManager] 모든 Peer 연결 끊김");
+
+                // Guest가 미션 씬에서 Host와 연결이 끊긴 경우 MetaGame으로 복귀
+                if (!CoopState.IsHost)
+                {
+                    var scene    = SceneManager.GetActiveScene();
+                    bool inMission = scene.buildIndex > 0
+                                  && !scene.name.StartsWith("00_")
+                                  && scene.name != Mission.MissionState.MetaGameScene;
+                    if (inMission)
+                    {
+                        Plugin.Log.LogInfo("[LobbyManager] Host 연결 끊김 (미션 중) — MetaGame으로 복귀");
+                        Mission.MissionState.Status       = Mission.MissionStatus.Idle;
+                        Mission.MissionState.SessionState = Mission.CoopSessionState.InLobby;
+                        SceneManager.LoadScene(Mission.MissionState.MetaGameScene);
+                    }
+                }
             }
         }
 

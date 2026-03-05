@@ -71,6 +71,10 @@ namespace BloodshedModToolkit.Coop.Role
                 if (MissionState.Status == MissionStatus.WaitingForHost)
                     MissionState.Status = MissionStatus.Idle;
 
+                // 미션 중 사망 등으로 MetaGame에 복귀한 경우 세션 상태 정리
+                if (MissionState.SessionState == CoopSessionState.InMission)
+                    MissionState.SessionState = CoopSessionState.InLobby;
+
                 Plugin.Log.LogInfo(
                     $"[GuestRole] MetaGame 도착" +
                     $" | Status={MissionState.Status}" +
@@ -127,6 +131,31 @@ namespace BloodshedModToolkit.Coop.Role
         }
 
         public void OnGuestReadyReceived(ulong id) { }  // Guest는 수신하지 않음
+
+        // Host → Guest: 미션 종료 (성공/실패) — MetaGame으로 복귀
+        public void OnMissionEndReceived(bool success)
+        {
+            Plugin.Log.LogInfo(
+                $"[GuestRole] MissionEnd 수신: success={success}" +
+                $" — 현재 씬: '{SceneManager.GetActiveScene().name}'");
+
+            MissionState.Status                = MissionStatus.Idle;
+            MissionState.SessionState          = CoopSessionState.InLobby;
+            MissionState.HostCurrentScene      = "";
+            MissionState.HostCurrentBuildIndex = -1;
+            MissionState.GuestCharacterSelected = false;
+
+            var current = SceneManager.GetActiveScene();
+            if (current.name != MissionState.MetaGameScene)
+            {
+                Plugin.Log.LogInfo($"[GuestRole] MissionEnd → MetaGame 로드");
+                SceneManager.LoadScene(MissionState.MetaGameScene);
+            }
+            else
+            {
+                Plugin.Log.LogInfo($"[GuestRole] MissionEnd → 이미 MetaGame");
+            }
+        }
 
         // ── 내부 헬퍼 ─────────────────────────────────────────────────────────
 

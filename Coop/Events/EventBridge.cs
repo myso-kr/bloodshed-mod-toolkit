@@ -102,5 +102,24 @@ namespace BloodshedModToolkit.Coop.Events
             Net.BroadcastReliable(MissionBriefingPacket.Encode(sceneName, buildIndex));
             Plugin.Log.LogInfo($"[EventBridge] MissionBriefing 브로드캐스트: '{sceneName}' (idx={buildIndex}) → {CoopState.Peers.Count}명");
         }
+
+        /// <summary>
+        /// Host → Guest: 미션 종료 (성공/실패). Guest는 MetaGame으로 복귀.
+        /// </summary>
+        public static void OnMissionEnd(bool success)
+        {
+            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(MissionEndPacket.Encode(success));
+            Plugin.Log.LogInfo($"[EventBridge] MissionEnd 브로드캐스트: success={success} → {CoopState.Peers.Count}명");
+        }
+
+        /// <summary>
+        /// Host → Guest: 젬(money) 델타 동기화.
+        /// </summary>
+        public static void OnMoneyChanged(float delta)
+        {
+            if (!CoopState.IsHost || !CoopState.IsConnected || Net == null) return;
+            Net.BroadcastReliable(MoneyUpdatePacket.Encode(delta));
+        }
     }
 }

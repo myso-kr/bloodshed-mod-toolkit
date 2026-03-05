@@ -18,5 +18,6 @@ namespace BloodshedModToolkit.Coop.Role
         void OnMissionBriefingReceived(string sceneName, int buildIndex); // Guest
         void OnGuestReadyReceived(ulong guestSteamId);                    // Host
         void OnMissionStartReceived(string sceneName, int buildIndex);    // Guest
+        void OnMissionEndReceived(bool success);                          // Guest
     }
 }

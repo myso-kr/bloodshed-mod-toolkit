@@ -290,6 +290,9 @@ namespace UnityEngine
         public static void DragWindow(Rect position) { }
         public static void Label(Rect position, string text) { }
         public static void Label(Rect position, string text, GUIStyle style) { }
+        public static bool Button(Rect position, string text) => false;
+        public static bool Button(Rect position, string text, GUIStyle style) => false;
+        public static bool Button(Rect position, GUIContent content) => false;
         public static bool Button(Rect position, GUIContent content, GUIStyle style) => false;
         public static void DrawTexture(Rect position, Texture2D image) { }
         public static string TextField(Rect position, string text) => text;

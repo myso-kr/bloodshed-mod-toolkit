@@ -86,6 +86,13 @@ namespace BloodshedModToolkit.UI.Tabs
 
                 DrawFriendsSection(ctx, l);
 
+                // ── CO-OP DEBUG PANEL ─────────────────────────────────────────
+                GUILayout.Space(4);
+                bool panelOn = UI.CoopDebugPanel.Instance?.Visible == true;
+                if (GUILayout.Button("CO-OP DEBUG PANEL", panelOn ? ctx.StPresetOn! : ctx.StPresetOff!))
+                    if (UI.CoopDebugPanel.Instance != null)
+                        UI.CoopDebugPanel.Instance.Visible = !UI.CoopDebugPanel.Instance.Visible;
+
                 // ── XP SYNC ──────────────────────────────────────────────────
                 GUILayout.Space(4);
                 ctx.SectionHeader("XP SYNC");

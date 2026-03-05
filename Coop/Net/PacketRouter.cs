@@ -16,6 +16,7 @@ namespace BloodshedModToolkit.Coop.Net
             try
             {
                 var (type, payload) = Packet.Decode(raw);
+                BloodshedModToolkit.Coop.Debug.PeerInfoStore.OnPacketReceived((ulong)from, (byte)type);
                 if (_handlers.TryGetValue(type, out var handler))
                     handler(from, payload);
                 else

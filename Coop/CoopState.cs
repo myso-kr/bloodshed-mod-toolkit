@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Steamworks;
+using BloodshedModToolkit.Coop.Debug;
 using BloodshedModToolkit.Coop.Ecs;
 using BloodshedModToolkit.Coop.Mission;
 
@@ -14,7 +15,7 @@ namespace BloodshedModToolkit.Coop
         public static CSteamID      LobbyId { get; set; } = CSteamID.Nil;
         public static List<CSteamID> Peers  { get; }      = new();
 
-        public const string CoopVersion = "1.2.0";
+        public const string CoopVersion = "1.3.0";
 
         public static void InitAsHost()
             => CoopSessionManager.InitAsHost();
@@ -32,6 +33,7 @@ namespace BloodshedModToolkit.Coop
             EntityRegistry.Reset();
             MissionState.Reset();
             CoopSessionManager.Reset();
+            PeerInfoStore.Reset();
         }
     }
 }

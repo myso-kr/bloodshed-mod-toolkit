@@ -34,6 +34,7 @@ namespace BloodshedModToolkit.UI
             OverlayManager.Register(new StatusPanel());
             OverlayManager.Register(new DpsPanel());
             OverlayManager.Register(new UpdateNoticePanel());
+            OverlayManager.Register(new CoopStatusPanel());
             _onSceneLoaded = OnSceneLoaded;
             SceneManager.sceneLoaded += _onSceneLoaded;
         }
@@ -107,6 +108,9 @@ namespace BloodshedModToolkit.UI
             if (Input.GetKeyDown(KeyCode.F5)) _visible = !_visible;
             if (Input.GetKeyDown(KeyCode.F6)) GameActions.HealFull(_ctx);
             if (Input.GetKeyDown(KeyCode.F7)) GameActions.ForceLevelUp(_ctx);
+            if (Input.GetKeyDown(KeyCode.F8))
+                if (CoopDebugPanel.Instance != null)
+                    CoopDebugPanel.Instance.Visible = !CoopDebugPanel.Instance.Visible;
         }
     }
 }

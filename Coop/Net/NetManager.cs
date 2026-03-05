@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Steamworks;
 using com8com1.SCFPS;
 using BloodshedModToolkit.Coop.Events;
@@ -9,6 +10,7 @@ using BloodshedModToolkit.Coop.Sync;
 using BloodshedModToolkit.Coop.Mission;
 using BloodshedModToolkit.Coop.Renderer;
 using BloodshedModToolkit.Coop.Bots;
+using BloodshedModToolkit.Coop.Debug;
 using BloodshedModToolkit.UI;
 
 namespace BloodshedModToolkit.Coop.Net
@@ -48,8 +50,11 @@ namespace BloodshedModToolkit.Coop.Net
             Router.Register(PacketType.MissionStart,    HandleMissionStart);
             Router.Register(PacketType.PlayerReady,     HandlePlayerReady);
             Router.Register(PacketType.MissionBriefing, HandleMissionBriefing);
+            Router.Register(PacketType.MissionEnd,      HandleMissionEnd);
             Router.Register(PacketType.ChatMessage,     HandleChatMessage);
             Router.Register(PacketType.AttackEvent,     HandleAttackEvent);
+            Router.Register(PacketType.PeerInfo,        HandlePeerInfo);
+            Router.Register(PacketType.MoneyUpdate,     HandleMoneyUpdate);
 
             Plugin.Log.LogInfo("[NetManager] 초기화 완료");
         }
@@ -193,6 +198,8 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandleXpGained(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
+            // 미션 씬 밖(MetaGame 대기, 사망 후)에서는 XP 적용 금지 — 레벨업 UI 오작동 방지
+            if (!IsInMissionScene()) return;
             var pkt = XpGainedPacket.Decode(payload);
             var ps  = UnityEngine.Object.FindObjectOfType<PlayerStats>();
             if (ps == null) return;
@@ -203,6 +210,7 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandleLevelUp(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
+            if (!IsInMissionScene()) return;
             var pkt = LevelUpPacket.Decode(payload);
             XpSyncHandler.ApplyLevelUp(pkt.NewLevel);
         }
@@ -241,6 +249,7 @@ namespace BloodshedModToolkit.Coop.Net
         private void HandleItemSelected(CSteamID from, byte[] payload)
         {
             if (CoopState.IsHost) return;
+            if (!IsInMissionScene()) return;
             var pkt = ItemSelectedPacket.Decode(payload);
             Sync.ItemSyncHandler.ApplyItemSelection(pkt.ItemIndex);
         }
@@ -256,6 +265,9 @@ namespace BloodshedModToolkit.Coop.Net
         {
             if (!CoopState.IsHost) return;
             CoopSessionManager.NotifyGuestReady((ulong)from);
+
+            // 미션 진입 직전에 현재 엔터티 스냅샷 전송 — 늦게 합류한 게스트가 기존 적 데이터를 받기 위해
+            SendFullSnapshotTo(from);
         }
 
         private void HandleMissionBriefing(CSteamID from, byte[] payload)
@@ -263,6 +275,22 @@ namespace BloodshedModToolkit.Coop.Net
             if (CoopState.IsHost) return;
             var (scene, idx) = MissionBriefingPacket.Decode(payload);
             CoopSessionManager.NotifyMissionBriefing(scene, idx);
+        }
+
+        private void HandleMissionEnd(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            bool success = MissionEndPacket.Decode(payload);
+            CoopSessionManager.NotifyMissionEnd(success);
+        }
+
+        private void HandleMoneyUpdate(CSteamID from, byte[] payload)
+        {
+            if (CoopState.IsHost) return;
+            float delta = MoneyUpdatePacket.Decode(payload);
+            var ps = UnityEngine.Object.FindObjectOfType<com8com1.SCFPS.PlayerStats>();
+            if (ps != null)
+                Sync.MoneySyncHandler.ApplyDelta(ps, delta);
         }
 
         private void HandleChatMessage(CSteamID from, byte[] payload)
@@ -282,6 +310,12 @@ namespace BloodshedModToolkit.Coop.Net
             // 무기 클래스별 공격 이펙트
             if (Sync.PlayerSyncHandler.States.TryGetValue(pkt.SteamId, out var state))
                 Renderer.AttackEffectSpawner.Play(pkt.SteamId, (WeaponClass)(state.WeaponClassId % 4));
+        }
+
+        private void HandlePeerInfo(CSteamID from, byte[] payload)
+        {
+            var (scene, charName, mission) = PeerInfoPacket.Decode(payload);
+            PeerInfoStore.OnPeerInfo((ulong)from, scene, charName, mission);
         }
 
         private void HandleDamageRequest(CSteamID from, byte[] payload)
@@ -315,6 +349,18 @@ namespace BloodshedModToolkit.Coop.Net
                 EntityRegistry.PendingHostIds.Enqueue(hostIdx);
             }
             Plugin.Log.LogInfo($"[NetManager] FullSnapshot 수신: {count} 에너미 큐잉");
+        }
+
+        /// <summary>
+        /// 현재 씬이 실제 미션 씬인지 확인.
+        /// Guest가 MetaGame(사망 후 대기)에 있을 때 XP/LevelUp/ItemSelected 패킷을 무시하기 위해 사용.
+        /// </summary>
+        private static bool IsInMissionScene()
+        {
+            var scene = SceneManager.GetActiveScene();
+            return scene.buildIndex > 0
+                && !scene.name.StartsWith("00_")
+                && scene.name != MissionState.MetaGameScene;
         }
 
         private static Health? FindHealthById(int localId)

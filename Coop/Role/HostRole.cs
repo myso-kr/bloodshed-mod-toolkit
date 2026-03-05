@@ -17,22 +17,36 @@ namespace BloodshedModToolkit.Coop.Role
 
         public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (!IsMissionScene(scene)) return;
+            if (IsMissionScene(scene))
+            {
+                MissionState.GuestReadyMap.Clear();
+                MissionState.HostCurrentScene      = scene.name;
+                MissionState.HostCurrentBuildIndex = scene.buildIndex;
+                MissionState.SessionState          = CoopSessionState.InMission;
 
-            MissionState.GuestReadyMap.Clear();
-            MissionState.HostCurrentScene      = scene.name;
-            MissionState.HostCurrentBuildIndex = scene.buildIndex;
-            MissionState.SessionState          = CoopSessionState.InMission;
-
-            Plugin.Log.LogInfo(
-                $"[HostRole] 미션 진입: '{scene.name}'" +
-                $" — 게스트 {CoopState.Peers.Count}명에게 MissionStart 알림");
-            EventBridge.OnMissionStart(scene.name, scene.buildIndex);
+                Plugin.Log.LogInfo(
+                    $"[HostRole] 미션 진입: '{scene.name}'" +
+                    $" — 게스트 {CoopState.Peers.Count}명에게 MissionStart 알림");
+                EventBridge.OnMissionStart(scene.name, scene.buildIndex);
+            }
+            else if (scene.name == MissionState.MetaGameScene &&
+                     !string.IsNullOrEmpty(MissionState.HostCurrentScene))
+            {
+                // 미션 종료 감지: 미션 씬에 있다가 MetaGame으로 복귀
+                Plugin.Log.LogInfo(
+                    $"[HostRole] 미션 종료 감지: '{MissionState.HostCurrentScene}' → MetaGame" +
+                    $" — 게스트 {CoopState.Peers.Count}명에게 MissionEnd 알림");
+                EventBridge.OnMissionEnd(success: true);
+                MissionState.HostCurrentScene      = "";
+                MissionState.HostCurrentBuildIndex = -1;
+                MissionState.SessionState          = CoopSessionState.InLobby;
+            }
         }
 
         // Host에서는 no-op
         public void OnMissionBriefingReceived(string s, int i) { }
         public void OnMissionStartReceived(string s, int i)    { }
+        public void OnMissionEndReceived(bool success)         { }
 
         public void OnGuestReadyReceived(ulong guestSteamId)
         {
