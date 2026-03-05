@@ -1,0 +1,1247 @@
+---
+layout: home
+title: "Bloodshed Mod Toolkit — God Mode · 4-Player Co-op · Cheats"
+description: >-
+  Free BepInEx mod for Bloodshed (Unity IL2CPP). God Mode, 4-player Steam P2P co-op,
+  difficulty tweaks, AI bots. Windows x64. Press F5 in-game.
+---
+
+<style>
+/* ══════════════════════════════════════════════════════
+   HOME PAGE — CUSTOM STYLES
+══════════════════════════════════════════════════════ */
+
+/* Navbar transparent → opaque on scroll */
+#home-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+}
+#home-nav.scrolled {
+  background: rgba(10,10,10,0.96);
+  border-bottom-color: #1f2937;
+  box-shadow: 0 2px 24px rgba(220,38,38,0.14);
+  backdrop-filter: blur(10px);
+}
+
+/* ── HERO ─────────────────────────────────────────── */
+#hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  padding: 80px 1.5rem 4rem;
+}
+
+#hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+
+.hero-bg-img {
+  position: absolute;
+  inset: 0;
+  background: url('images/banner_hero.png') center/cover no-repeat;
+  filter: brightness(0.18) saturate(0.6);
+  transform: scale(1.06);
+  will-change: transform;
+}
+
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(220,38,38,0.08) 0%, transparent 70%),
+    linear-gradient(to bottom, transparent 40%, #0a0a0a 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 900px;
+}
+
+/* glitch title */
+.glitch-wrap {
+  position: relative;
+  display: inline-block;
+}
+.glitch-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.8rem, 8vw, 7rem);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 0.95;
+  color: #fff;
+  position: relative;
+}
+.glitch-title::before,
+.glitch-title::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-transform: inherit;
+}
+.glitch-title::before {
+  color: #dc2626;
+  animation: glitch-a 3.5s infinite steps(1);
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+}
+.glitch-title::after {
+  color: #3b82f6;
+  animation: glitch-b 3.5s infinite steps(1);
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+}
+@keyframes glitch-a {
+  0%,72%,74%,80%,100% { transform: translate(0); opacity: 0; }
+  73%                  { transform: translate(-4px, 2px); opacity: 1; }
+  75%,79%              { transform: translate(3px, -1px); opacity: 1; }
+}
+@keyframes glitch-b {
+  0%,72%,74%,80%,100% { transform: translate(0); opacity: 0; }
+  73%                  { transform: translate(4px, -2px); opacity: 1; }
+  75%,79%              { transform: translate(-2px, 1px); opacity: 1; }
+}
+
+.blood-underline {
+  display: block;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #dc2626, #ea580c);
+  margin: 0.5rem auto 0;
+  border-radius: 2px;
+  animation: underline-grow 1.2s 0.6s cubic-bezier(0.22,1,0.36,1) forwards;
+  box-shadow: 0 0 12px rgba(220,38,38,0.7);
+}
+@keyframes underline-grow {
+  to { width: 80%; }
+}
+
+.hero-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 500;
+  color: #9ca3af;
+  margin-top: 1.5rem;
+  letter-spacing: 0.04em;
+}
+.hero-sub .highlight {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* typewriter */
+.typewriter {
+  display: inline-block;
+  color: #e5e7eb;
+  font-weight: 700;
+  min-width: 220px;
+  text-align: left;
+  border-right: 2px solid #dc2626;
+  padding-right: 3px;
+  animation: blink-cursor 0.75s step-end infinite;
+}
+@keyframes blink-cursor {
+  50% { border-color: transparent; }
+}
+
+/* CTA buttons */
+.hero-ctas {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2.5rem;
+}
+.btn-primary {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 2.2rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 0 0 rgba(220,38,38,0);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+.btn-primary:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(220,38,38,0.45);
+}
+.btn-primary:hover::before { transform: translateX(100%); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 2.2rem;
+  background: transparent;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s;
+}
+.btn-secondary:hover {
+  border-color: #dc2626;
+  color: #fff;
+  background: rgba(220,38,38,0.08);
+  transform: translateY(-2px);
+}
+
+/* Scroll cue */
+.scroll-cue {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  color: #374151;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  animation: fade-in-up 1s 1.5s both;
+}
+.scroll-arrow {
+  width: 20px; height: 20px;
+  border-right: 2px solid #dc2626;
+  border-bottom: 2px solid #dc2626;
+  transform: rotate(45deg);
+  animation: scroll-bounce 1.6s infinite;
+}
+@keyframes scroll-bounce {
+  0%,100% { transform: rotate(45deg) translateY(0); opacity: 1; }
+  50%      { transform: rotate(45deg) translateY(6px); opacity: 0.5; }
+}
+
+/* ── STATS TICKER ─────────────────────────────────── */
+.ticker-wrap {
+  overflow: hidden;
+  background: #0f0f0f;
+  border-top: 1px solid #1f2937;
+  border-bottom: 1px solid rgba(220,38,38,0.3);
+  padding: 0.7rem 0;
+  position: relative;
+}
+.ticker-wrap::before,
+.ticker-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+.ticker-wrap::before { left: 0; background: linear-gradient(to right, #0f0f0f, transparent); }
+.ticker-wrap::after  { right: 0; background: linear-gradient(to left, #0f0f0f, transparent); }
+
+.ticker-track {
+  display: flex;
+  gap: 0;
+  width: max-content;
+  animation: ticker-scroll 28s linear infinite;
+}
+.ticker-track:hover { animation-play-state: paused; }
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 2.5rem;
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b7280;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.ticker-item i { color: #dc2626; font-size: 0.8rem; }
+.ticker-sep { color: #1f2937; }
+
+/* ── STATS COUNTERS ───────────────────────────────── */
+#stats {
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.stat-card {
+  padding: 2rem 1rem;
+  border: 1px solid #1f2937;
+  border-top: 2px solid #dc2626;
+  background: #0d0d0d;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0, rgba(220,38,38,0.06), transparent 65%);
+}
+.stat-card:hover {
+  border-color: #dc2626;
+  box-shadow: 0 4px 24px rgba(220,38,38,0.18);
+  transform: translateY(-3px);
+}
+.stat-num {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 2.8rem;
+  line-height: 1;
+  color: #dc2626;
+  display: block;
+}
+.stat-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-top: 0.4rem;
+  display: block;
+}
+
+/* ── FEATURE GRID ─────────────────────────────────── */
+#features {
+  padding: 5rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.section-label {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #dc2626;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.section-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: #fff;
+  margin-bottom: 3rem;
+}
+.section-title span { color: #dc2626; }
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+.feat-card {
+  position: relative;
+  padding: 1.75rem;
+  background: #0d0d0d;
+  border: 1px solid #1f2937;
+  border-radius: 3px;
+  cursor: default;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.feat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx,50%) var(--my,50%),
+    rgba(220,38,38,0.08) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.feat-card:hover { border-color: rgba(220,38,38,0.5); box-shadow: 0 8px 32px rgba(220,38,38,0.12); }
+.feat-card:hover::after { opacity: 1; }
+
+.feat-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(220,38,38,0.4));
+}
+.feat-name {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+.feat-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #6b7280;
+  line-height: 1.6;
+}
+.feat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 1rem;
+}
+.feat-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(220,38,38,0.1);
+  border: 1px solid rgba(220,38,38,0.2);
+  border-radius: 2px;
+  color: #f87171;
+  letter-spacing: 0.05em;
+}
+/* reveal animation */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.6s cubic-bezier(0.22,1,0.36,1), transform 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── COOP SECTION ─────────────────────────────────── */
+#coop {
+  position: relative;
+  overflow: hidden;
+  padding: 7rem 1.5rem;
+  text-align: center;
+}
+.coop-bg {
+  position: absolute;
+  inset: 0;
+  background: url('images/banner_coop.png') center/cover no-repeat;
+  filter: brightness(0.12) saturate(0.5);
+  transform: scale(1.04);
+}
+.coop-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, #0a0a0a 0%, transparent 20%, transparent 80%, #0a0a0a 100%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(220,38,38,0.07), transparent);
+}
+.coop-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.coop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(220,38,38,0.15);
+  border: 1px solid rgba(220,38,38,0.35);
+  border-radius: 99px;
+  padding: 0.3rem 1rem;
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  color: #f87171;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%,100% { box-shadow: 0 0 0 rgba(220,38,38,0.2); }
+  50%      { box-shadow: 0 0 16px rgba(220,38,38,0.35); }
+}
+
+/* player orbit animation */
+.player-orbit {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 3rem auto;
+}
+.orbit-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 64px; height: 64px;
+  background: radial-gradient(circle, rgba(220,38,38,0.3), rgba(220,38,38,0.05));
+  border: 2px solid rgba(220,38,38,0.5);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 0 24px rgba(220,38,38,0.3);
+  animation: orbit-pulse 2s ease-in-out infinite;
+}
+@keyframes orbit-pulse {
+  0%,100% { box-shadow: 0 0 24px rgba(220,38,38,0.3); }
+  50%      { box-shadow: 0 0 40px rgba(220,38,38,0.55); }
+}
+.orbit-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  border: 1px solid rgba(220,38,38,0.15);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+}
+.orbit-ring-1 { width: 150px; height: 150px; animation: spin 12s linear infinite; }
+.orbit-ring-2 { width: 240px; height: 240px; animation: spin 20s linear infinite reverse; }
+@keyframes spin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+.orbit-player {
+  position: absolute;
+  width: 36px; height: 36px;
+  background: #111827;
+  border: 2px solid #dc2626;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 0 10px rgba(220,38,38,0.4);
+  transition: box-shadow 0.3s;
+}
+.orbit-player:nth-child(1) { top:  -4px; left: 50%; transform: translateX(-50%); }
+.orbit-player:nth-child(2) { top: 50%; right: -4px; transform: translateY(-50%); }
+.orbit-player:nth-child(3) { bottom: -4px; left: 50%; transform: translateX(-50%); }
+.orbit-player:nth-child(4) { top: 50%; left: -4px; transform: translateY(-50%); }
+
+/* Connection lines between players */
+.coop-connections {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  max-width: 480px;
+  margin: 2rem auto 0;
+}
+.conn-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #374151;
+}
+.conn-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 8px rgba(220,38,38,0.6);
+  animation: conn-blink 2s ease-in-out infinite;
+}
+.conn-node:nth-child(2) .conn-dot { animation-delay: 0.5s; }
+.conn-node:nth-child(3) .conn-dot { animation-delay: 1s; }
+.conn-node:nth-child(4) .conn-dot { animation-delay: 1.5s; }
+@keyframes conn-blink {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ── DIFFICULTY SECTION ───────────────────────────── */
+#difficulty {
+  padding: 5rem 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.difficulty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+.diff-card {
+  padding: 1.5rem 1.25rem;
+  border: 1px solid #1f2937;
+  border-radius: 3px;
+  background: #0d0d0d;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.diff-card:hover { transform: translateY(-4px); }
+.diff-card .diff-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+.diff-card.visible .diff-bar { transform: scaleX(1); }
+.diff-name {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.diff-desc {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-family: 'Rajdhani', sans-serif;
+  line-height: 1.5;
+}
+.diff-skulls { font-size: 1.1rem; margin-bottom: 0.6rem; }
+
+/* ── INSTALL SECTION ──────────────────────────────── */
+#install {
+  padding: 5rem 1.5rem 7rem;
+  text-align: center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0, rgba(220,38,38,0.04), transparent);
+}
+.install-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
+  max-width: 900px;
+  margin: 3rem auto;
+  text-align: left;
+}
+.step {
+  position: relative;
+  padding: 1.75rem;
+  background: #0d0d0d;
+  border: 1px solid #1f2937;
+  border-radius: 3px;
+}
+.step-num {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: rgba(220,38,38,0.15);
+  position: absolute;
+  top: 1rem; right: 1.25rem;
+  pointer-events: none;
+  user-select: none;
+}
+.step-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #dc2626;
+}
+.step-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 0.4rem;
+}
+.step-body {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+.step-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  background: #1f2937;
+  color: #f87171;
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+.install-cta {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── UTILITY ──────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.fade-in-up { animation: fade-in-up 0.8s cubic-bezier(0.22,1,0.36,1) both; }
+.delay-1 { animation-delay: 0.15s; }
+.delay-2 { animation-delay: 0.3s; }
+.delay-3 { animation-delay: 0.45s; }
+.delay-4 { animation-delay: 0.6s; }
+
+@media (max-width: 640px) {
+  .feature-grid { grid-template-columns: 1fr; }
+  .player-orbit { width: 200px; height: 200px; }
+  .orbit-ring-1 { width: 120px; height: 120px; }
+  .orbit-ring-2 { width: 190px; height: 190px; }
+}
+</style>
+
+<!-- ══════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-bg-img" id="hero-bg-img" aria-hidden="true"></div>
+  <div class="hero-gradient" aria-hidden="true"></div>
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+
+  <div class="hero-content">
+    <p class="section-label fade-in-up" style="margin-bottom:1rem;">
+      Free BepInEx Mod &nbsp;·&nbsp; Windows x64 &nbsp;·&nbsp; v<span id="ver-badge">1.0.163</span>
+    </p>
+
+    <div class="glitch-wrap fade-in-up delay-1">
+      <h1 class="glitch-title" data-text="BLOODSHED MOD TOOLKIT">BLOODSHED MOD TOOLKIT</h1>
+      <span class="blood-underline"></span>
+    </div>
+
+    <p class="hero-sub fade-in-up delay-2" style="margin-top:1.8rem;">
+      Activate&nbsp;<span class="highlight">God Mode</span>,&nbsp;
+      launch&nbsp;<span class="highlight">4-player co-op</span>,&nbsp;or&nbsp;enable&nbsp;
+      <span class="typewriter" id="typewriter">No Cooldown</span>
+    </p>
+
+    <div class="hero-ctas fade-in-up delay-3">
+      <a href="https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest"
+         class="btn-primary" target="_blank" rel="noopener">
+        <i class="fa-solid fa-download mr-2"></i>Download Free
+      </a>
+      <a href="/features/en/" class="btn-secondary">
+        <i class="fa-solid fa-list mr-2"></i>View All Features
+      </a>
+    </div>
+
+    <p class="fade-in-up delay-4" style="margin-top:1.25rem;font-size:0.75rem;color:#374151;letter-spacing:0.08em;font-family:'JetBrains Mono',monospace;">
+      Press <kbd style="background:#1f2937;border:1px solid #374151;border-radius:2px;padding:0.1em 0.4em;color:#9ca3af;">F5</kbd> in-game to open the menu
+    </p>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true">
+    <span>scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     TICKER
+══════════════════════════════════════════════════ -->
+<div class="ticker-wrap" aria-hidden="true">
+  <div class="ticker-track" id="ticker-track">
+    <span class="ticker-item"><i class="fa-solid fa-skull-crossbones"></i> God Mode</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-gem"></i> Infinite Gems</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-users"></i> 4-Player Co-op</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-bolt"></i> No Cooldown</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-gauge-high"></i> Speed Hack</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-crosshairs"></i> Perfect Aim</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-infinity"></i> Infinite Revive</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-robot"></i> AI Bots</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-sliders"></i> 5 Difficulty Presets</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-fire"></i> One-Shot Kill</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-heart-pulse"></i> Max Stats</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-shield-halved"></i> No Reload</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item"><i class="fa-solid fa-skull-crossbones"></i> God Mode</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-gem"></i> Infinite Gems</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-users"></i> 4-Player Co-op</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-bolt"></i> No Cooldown</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-gauge-high"></i> Speed Hack</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-crosshairs"></i> Perfect Aim</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-infinity"></i> Infinite Revive</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-robot"></i> AI Bots</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-sliders"></i> 5 Difficulty Presets</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-fire"></i> One-Shot Kill</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-heart-pulse"></i> Max Stats</span>
+    <span class="ticker-item ticker-sep">◆</span>
+    <span class="ticker-item"><i class="fa-solid fa-shield-halved"></i> No Reload</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     STATS
+══════════════════════════════════════════════════ -->
+<section id="stats">
+  <div class="stats-grid">
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="13">0</span>
+      <span class="stat-label">+ Cheat Toggles</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="4">0</span>
+      <span class="stat-label">Player Co-op</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="5">0</span>
+      <span class="stat-label">Difficulty Presets</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="4">0</span>
+      <span class="stat-label">Languages</span>
+    </div>
+    <div class="stat-card reveal">
+      <span class="stat-num" data-target="0" data-prefix="$">0</span>
+      <span class="stat-label">Cost — 100% Free</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     FEATURE GRID
+══════════════════════════════════════════════════ -->
+<section id="features">
+  <span class="section-label">What's Inside</span>
+  <h2 class="section-title">Everything You Need to <span>Break</span> the Game</h2>
+
+  <div class="feature-grid">
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">💀</span>
+      <div class="feat-name">God Mode</div>
+      <p class="feat-desc">Take zero damage. Walk through hordes. Become untouchable.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">TakeDamage → skip</span>
+        <span class="feat-tag">Harmony Prefix</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">💎</span>
+      <div class="feat-name">Economy Hacks</div>
+      <p class="feat-desc">Gems and Skull Coins locked at 999,999 — buy everything, regret nothing.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Infinite Gems</span>
+        <span class="feat-tag">Skull Coins</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">⚡</span>
+      <div class="feat-name">Combat Dominance</div>
+      <p class="feat-desc">One-shot enemies, perfect aim, no reload, no recoil, no cooldown — ever.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">One-Shot Kill</span>
+        <span class="feat-tag">No Cooldown</span>
+        <span class="feat-tag">Perfect Aim</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">🚀</span>
+      <div class="feat-name">Speed Hack</div>
+      <p class="feat-desc">Slide through levels at ×1.0 to ×20.0 movement speed with a live slider.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">×1.0 – ×20.0</span>
+        <span class="feat-tag">Real-time</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">👥</span>
+      <div class="feat-name">4-Player Co-op</div>
+      <p class="feat-desc">Steam P2P co-op built on BepInEx. Play missions together — fully synchronized.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Steam Lobby</span>
+        <span class="feat-tag">P2P Network</span>
+        <span class="feat-tag">In-game Chat</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">⚖️</span>
+      <div class="feat-name">Difficulty Tweaks</div>
+      <p class="feat-desc">5 presets from Mortal to Apocalypse. Fine-tune enemy HP, speed, spawn count.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Mortal</span>
+        <span class="feat-tag">Hunter</span>
+        <span class="feat-tag">Demon</span>
+        <span class="feat-tag">Apocalypse</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">🤖</span>
+      <div class="feat-name">AI Bots</div>
+      <p class="feat-desc">Spawn bots that simulate co-op partners — visible avatars, HP bars, synced attacks.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Avatar Render</span>
+        <span class="feat-tag">HP Bar</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">📊</span>
+      <div class="feat-name">Live DPS Meter</div>
+      <p class="feat-desc">Real-time damage-per-second overlay showing current, peak, and cumulative damage.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">Real-time</span>
+        <span class="feat-tag">Peak DPS</span>
+      </div>
+    </div>
+
+    <div class="feat-card reveal">
+      <span class="feat-icon">🔓</span>
+      <div class="feat-name">Open Source</div>
+      <p class="feat-desc">MIT licensed. Fork it, extend it, improve it. Full source on GitHub.</p>
+      <div class="feat-tags">
+        <span class="feat-tag">MIT License</span>
+        <span class="feat-tag">BepInEx 6</span>
+        <span class="feat-tag">IL2CPP</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     CO-OP SPOTLIGHT
+══════════════════════════════════════════════════ -->
+<section id="coop">
+  <div class="coop-bg" aria-hidden="true"></div>
+  <div class="coop-overlay" aria-hidden="true"></div>
+
+  <div class="coop-content reveal">
+    <div class="coop-badge">
+      <i class="fa-solid fa-tower-broadcast"></i>
+      Steam P2P &nbsp;·&nbsp; Up to 4 Players &nbsp;·&nbsp; No Server Required
+    </div>
+
+    <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:900;font-size:clamp(2rem,5vw,4rem);letter-spacing:0.04em;text-transform:uppercase;color:#fff;line-height:1.05;">
+      Play Together.<br><span style="color:#dc2626;">Break It Together.</span>
+    </h2>
+    <p style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;color:#6b7280;margin-top:1rem;max-width:560px;margin-inline:auto;line-height:1.7;">
+      Full Steam lobby integration — create or join a session, pick your mission together,
+      and enjoy synchronized level-ups, in-game chat, and real player avatars with HP bars.
+    </p>
+
+    <div class="player-orbit" aria-hidden="true">
+      <div class="orbit-ring orbit-ring-1">
+        <div class="orbit-player">P1</div>
+        <div class="orbit-player">P2</div>
+        <div class="orbit-player">P3</div>
+        <div class="orbit-player">P4</div>
+      </div>
+      <div class="orbit-ring orbit-ring-2"></div>
+      <div class="orbit-center">☠</div>
+    </div>
+
+    <div class="coop-connections" aria-hidden="true">
+      <div class="conn-node"><div class="conn-dot"></div><span>P1</span></div>
+      <div class="conn-node"><div class="conn-dot"></div><span>P2</span></div>
+      <div class="conn-node"><div class="conn-dot"></div><span>P3</span></div>
+      <div class="conn-node"><div class="conn-dot"></div><span>P4</span></div>
+    </div>
+
+    <div style="margin-top:2.5rem;">
+      <a href="/installation/en/" class="btn-primary">
+        <i class="fa-solid fa-plug mr-2"></i>Set Up Co-op
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     DIFFICULTY PRESETS
+══════════════════════════════════════════════════ -->
+<section id="difficulty">
+  <span class="section-label">Balance System</span>
+  <h2 class="section-title">Choose Your <span>Punishment</span></h2>
+
+  <div class="difficulty-grid">
+    <div class="diff-card reveal">
+      <div class="diff-bar" style="background:linear-gradient(90deg,#6b7280,#9ca3af);"></div>
+      <div class="diff-skulls">💀</div>
+      <div class="diff-name" style="color:#9ca3af;">Mortal</div>
+      <div class="diff-desc">Enemies deal more damage. You feel every hit.</div>
+    </div>
+    <div class="diff-card reveal">
+      <div class="diff-bar" style="background:linear-gradient(90deg,#22c55e,#4ade80);"></div>
+      <div class="diff-skulls">💀💀</div>
+      <div class="diff-name" style="color:#22c55e;">Hunter</div>
+      <div class="diff-desc">Balanced default. Fair and unforgiving.</div>
+    </div>
+    <div class="diff-card reveal">
+      <div class="diff-bar" style="background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+      <div class="diff-skulls">💀💀💀</div>
+      <div class="diff-name" style="color:#f59e0b;">Slayer</div>
+      <div class="diff-desc">High enemy HP and count. Crowd control required.</div>
+    </div>
+    <div class="diff-card reveal">
+      <div class="diff-bar" style="background:linear-gradient(90deg,#ea580c,#f97316);"></div>
+      <div class="diff-skulls">💀💀💀💀</div>
+      <div class="diff-name" style="color:#ea580c;">Demon</div>
+      <div class="diff-desc">Fast, numerous, and relentless. Good luck.</div>
+    </div>
+    <div class="diff-card reveal">
+      <div class="diff-bar" style="background:linear-gradient(90deg,#dc2626,#ef4444);"></div>
+      <div class="diff-skulls">☠☠☠☠☠</div>
+      <div class="diff-name" style="color:#dc2626;">Apocalypse</div>
+      <div class="diff-desc">Maximum chaos. Enable God Mode first.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     INSTALL
+══════════════════════════════════════════════════ -->
+<section id="install">
+  <span class="section-label">Quick Start</span>
+  <h2 class="section-title">Up and Running in <span>3 Steps</span></h2>
+
+  <div class="install-steps">
+    <div class="step reveal">
+      <div class="step-num">01</div>
+      <div class="step-icon"><i class="fa-brands fa-steam"></i></div>
+      <div class="step-title">Own Bloodshed on Steam</div>
+      <p class="step-body">
+        The mod requires the base game. Find it on Steam — search
+        <code>Bloodshed</code> by com8com1.
+      </p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">02</div>
+      <div class="step-icon"><i class="fa-solid fa-download"></i></div>
+      <div class="step-title">Run the Installer</div>
+      <p class="step-body">
+        Download <code>BloodshedModToolkitInstaller.exe</code> from the latest
+        GitHub release. It auto-detects your game path and installs BepInEx + the mod.
+      </p>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">03</div>
+      <div class="step-icon"><i class="fa-solid fa-gamepad"></i></div>
+      <div class="step-title">Launch &amp; Press F5</div>
+      <p class="step-body">
+        Start Bloodshed. Press <code>F5</code> in-game to open the mod menu.
+        On first launch, BepInEx will generate interop assemblies — wait 30 s.
+      </p>
+    </div>
+  </div>
+
+  <div class="install-cta">
+    <a href="https://github.com/myso-kr/bloodshed-mod-toolkit/releases/latest"
+       class="btn-primary" target="_blank" rel="noopener">
+      <i class="fa-solid fa-download mr-2"></i>Download Installer
+    </a>
+    <a href="/installation/en/" class="btn-secondary">
+      <i class="fa-solid fa-book mr-2"></i>Full Guide
+    </a>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Navbar scroll opacity ── */
+  const nav = document.getElementById('home-nav');
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 60);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ── Hero canvas particle system ── */
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function randomParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.8 + 0.3,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: Math.random() * 0.5 + 0.1,
+      alpha: Math.random() * 0.5 + 0.1,
+      hue: Math.random() > 0.8 ? 20 : 0, // mostly red, some orange
+    };
+  }
+
+  for (let i = 0; i < 120; i++) particles.push(randomParticle());
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 90%, 55%, ${p.alpha})`;
+      ctx.fill();
+
+      p.x += p.vx; p.y += p.vy;
+      p.alpha -= 0.0008;
+
+      if (p.y > H + 4 || p.alpha <= 0) {
+        Object.assign(p, randomParticle(), { y: -4 });
+      }
+    });
+
+    // Subtle grid lines
+    ctx.strokeStyle = 'rgba(220,38,38,0.025)';
+    ctx.lineWidth = 1;
+    const gs = 60;
+    for (let x = 0; x < W; x += gs) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += gs) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+
+  /* ── Parallax hero bg on mouse move ── */
+  const heroBg = document.getElementById('hero-bg-img');
+  document.getElementById('hero').addEventListener('mousemove', e => {
+    const rx = (e.clientX / window.innerWidth  - 0.5) * 10;
+    const ry = (e.clientY / window.innerHeight - 0.5) * 10;
+    heroBg.style.transform = `scale(1.08) translate(${rx}px, ${ry}px)`;
+  });
+
+  /* ── Typewriter ── */
+  const words = ['No Cooldown', 'God Mode', 'Speed Hack ×10', 'Perfect Aim', 'Infinite Revive', '4-Player Co-op', 'One-Shot Kill'];
+  const tw = document.getElementById('typewriter');
+  let wi = 0, ci = 0, deleting = false;
+  function typeStep() {
+    const word = words[wi];
+    if (!deleting) {
+      tw.textContent = word.slice(0, ++ci);
+      if (ci === word.length) { deleting = true; setTimeout(typeStep, 1800); return; }
+    } else {
+      tw.textContent = word.slice(0, --ci);
+      if (ci === 0) { deleting = false; wi = (wi + 1) % words.length; }
+    }
+    setTimeout(typeStep, deleting ? 55 : 90);
+  }
+  setTimeout(typeStep, 1200);
+
+  /* ── Intersection Observer: reveal + counters ── */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      el.classList.add('visible');
+
+      // counter animation
+      const numEl = el.querySelector('[data-target]');
+      if (numEl) {
+        const target = +numEl.dataset.target;
+        const prefix = numEl.dataset.prefix || '';
+        const suffix = numEl.dataset.suffix || '';
+        const dur = 1200;
+        const start = performance.now();
+        function tick(now) {
+          const t = Math.min((now - start) / dur, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          numEl.textContent = prefix + Math.round(target * ease) + suffix;
+          if (t < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+      io.unobserve(el);
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  /* ── 3D tilt on feature cards ── */
+  document.querySelectorAll('.feat-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width  - 0.5;
+      const y = (e.clientY - r.top)  / r.height - 0.5;
+      card.style.transform = `perspective(600px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-4px)`;
+      card.style.setProperty('--mx', `${(x + 0.5) * 100}%`);
+      card.style.setProperty('--my', `${(y + 0.5) * 100}%`);
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  });
+
+  /* ── Parallax sections on scroll ── */
+  const coopBg = document.querySelector('.coop-bg');
+  window.addEventListener('scroll', () => {
+    const sy = window.scrollY;
+    if (heroBg) heroBg.style.transform = `scale(1.06) translateY(${sy * 0.18}px)`;
+    if (coopBg) {
+      const rect = coopBg.parentElement.getBoundingClientRect();
+      coopBg.style.transform = `scale(1.04) translateY(${rect.top * 0.08}px)`;
+    }
+  }, { passive: true });
+
+})();
+</script>
