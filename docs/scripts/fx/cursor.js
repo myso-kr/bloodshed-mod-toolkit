@@ -4,13 +4,14 @@
 
 import { ctx } from './canvas.js';
 import { state, MAX_AMMO, RELOAD_DUR, FIRE_COOLDOWN } from './state.js';
+import { SceneManager } from './scene.js';
 
 let cursorVisible = false;
 document.addEventListener('mousemove',  () => { cursorVisible = true;  });
 document.addEventListener('mouseleave', () => { cursorVisible = false; });
 
 export function drawCursor() {
-  if (!cursorVisible || state.gameOver) return;
+  if (!cursorVisible || SceneManager.is('gameover')) return;
   const cx = state.mx, cy = state.my;
   const R = 10, gap = 3, armLen = 6;
   const outOfAmmo = state.ammo <= 0 && !state.reloading;

@@ -5,6 +5,7 @@
 import { ctx } from './canvas.js';
 import { state, MAX_HP, MAX_AMMO } from './state.js';
 import { shake } from './shake.js';
+import { SceneManager } from './scene.js';
 
 /* ── Supabase credentials ── */
 const SB_URL    = 'https://qucelkfkincvhotygsci.supabase.co';
@@ -37,7 +38,7 @@ export function triggerGameOver() {
   state.gameOver = true;
   document.getElementById('go-score-val').textContent = state.kills;
   document.getElementById('gameover-modal').classList.add('active');
-  document.body.classList.remove('game-active');
+  SceneManager.transition('gameover');
   /* auto-focus first slot for keyboard users; delay for modal animation */
   setTimeout(() => document.getElementById('ns-0')?.focus({ preventScroll: true }), 200);
 }
@@ -64,7 +65,7 @@ export function resetGame(killValueEl) {
   document.querySelector('.name-row').style.display = '';
   document.querySelector('.go-hint').style.display = '';
   document.getElementById('gameover-modal').classList.remove('active');
-  document.body.classList.add('game-active');
+  SceneManager.transition('game');
 }
 
 /* ── projectiles update + draw ── */
@@ -190,7 +191,7 @@ export function setupGameOverUI(killValueEl) {
    *  Non-contenteditable div → IME 미활성 → e.key가 정상 단일 문자로 옴 ── */
   slots.forEach((slot, i) => {
     slot.addEventListener('keydown', e => {
-      if (!state.gameOver) return;
+      if (!SceneManager.is('gameover')) return;
       e.preventDefault();
 
       /* single A-Z / 0-9 character */

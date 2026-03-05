@@ -10,19 +10,7 @@ import { shake, collectShakeEls }                              from './shake.js'
 import { spawnMonster, scheduleSpawn, tickMonsters }           from './monsters.js';
 import { drawCursor }                                          from './cursor.js';
 import { updateHpHud, tickProjectiles, tickDamageVignette, setupGameOverUI } from './game.js';
-
-/* ── drag / text-select guard ── */
-document.addEventListener('dragstart', e => e.preventDefault());
-document.addEventListener('mousedown', e => {
-  const tag = e.target.tagName;
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-  if (e.target.isContentEditable) return;
-  e.preventDefault();
-  /* tabindex 요소는 preventDefault 후 수동 focus — preventScroll로 모바일 스크롤 방지 */
-  if (e.target.hasAttribute('tabindex') && e.target.tabIndex >= 0) {
-    e.target.focus({ preventScroll: true });
-  }
-});
+import { SceneManager }                                        from './scene.js';
 
 /* ── cursor tracking ── */
 window.addEventListener('mousemove', e => { state.mx = e.clientX; state.my = e.clientY; });
@@ -81,8 +69,7 @@ function fire(cx, cy) {
 }
 
 /* mouse: left=fire, right=reload */
-window.addEventListener('mousedown',   e => { if (e.button === 0) fire(e.clientX, e.clientY); });
-window.addEventListener('contextmenu', e => { e.preventDefault(); doReload(); });
+window.addEventListener('mousedown', e => { if (e.button === 0) fire(e.clientX, e.clientY); });
 
 /* touch: touchstart fires + syncs cursor position so crosshair follows tap */
 window.addEventListener('touchstart', e => {
@@ -122,7 +109,7 @@ setTimeout(spawnMonster, 3200);
 scheduleSpawn();
 
 /* ── init ── */
-document.body.classList.add('game-active');
+SceneManager.init('game', { doReload });
 updateHpHud();
 setupGameOverUI(killValue);
 collectShakeEls();
