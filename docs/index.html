@@ -397,6 +397,55 @@ description: >-
   box-shadow: 0 0 10px rgba(220,38,38,0.5);
 }
 
+/* ── STEAM CARD ───────────────────────────────────── */
+.steam-card-wrap {
+  margin: 0 auto 1.5rem;
+  max-width: 646px;
+  position: relative;
+  display: block;
+}
+.steam-card-label {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 0.85rem;
+}
+.steam-card-wrap a {
+  display: block;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #1f2937;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  position: relative;
+}
+.steam-card-wrap a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(220,38,38,0.0);
+  transition: background 0.3s;
+  pointer-events: none;
+}
+.steam-card-wrap a:hover {
+  border-color: rgba(220,38,38,0.45);
+  box-shadow: 0 8px 40px rgba(220,38,38,0.2), 0 0 0 1px rgba(220,38,38,0.15);
+  transform: translateY(-3px) scale(1.01);
+}
+.steam-card-wrap a:hover::after {
+  background: rgba(220,38,38,0.04);
+}
+.steam-card-wrap img,
+.steam-card-wrap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* ── FEATURE GRID ─────────────────────────────────── */
 #features {
   padding: 5rem 1.5rem;
@@ -933,6 +982,14 @@ description: >-
   </div>
 
   <div class="manifesto-divider"></div>
+
+  <div class="steam-card-wrap reveal">
+    <p class="steam-card-label">Haven't played yet? — Start here.</p>
+    <a href="https://store.steampowered.com/app/2747550/Bloodshed/"
+       target="_blank" rel="noopener" aria-label="Bloodshed on Steam">
+      <img src="images/steam_card.svg" alt="Buy Bloodshed on Steam" width="646" height="190" loading="lazy" />
+    </a>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════════════════
@@ -1174,6 +1231,11 @@ description: >-
     </a>
     <a href="/installation/en/" class="btn-secondary">
       <i class="fa-solid fa-book mr-2"></i>Full Guide
+    </a>
+    <a href="https://store.steampowered.com/app/2747550/Bloodshed/"
+       class="btn-secondary" target="_blank" rel="noopener"
+       style="border-color:#1b2838;color:#c6d4df;">
+      <i class="fa-brands fa-steam mr-2"></i>Get Bloodshed
     </a>
   </div>
 </section>
