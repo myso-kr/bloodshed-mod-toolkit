@@ -77,9 +77,12 @@ function fire(cx, cy) {
 window.addEventListener('mousedown',   e => { if (e.button === 0) fire(e.clientX, e.clientY); });
 window.addEventListener('contextmenu', e => { e.preventDefault(); doReload(); });
 
-/* touch: only touchstart fires (single tap, no drag mis-fires) */
+/* touch: touchstart fires + syncs cursor position so crosshair follows tap */
 window.addEventListener('touchstart', e => {
-  fire(e.touches[0].clientX, e.touches[0].clientY);
+  const t = e.touches[0];
+  state.mx = t.clientX;
+  state.my = t.clientY;
+  fire(t.clientX, t.clientY);
 }, { passive: true });
 
 /* ── BGM toggle ── */

@@ -38,6 +38,8 @@ export function triggerGameOver() {
   document.getElementById('go-score-val').textContent = state.kills;
   document.getElementById('gameover-modal').classList.add('active');
   document.body.style.cursor = 'auto';
+  /* auto-focus first slot for keyboard users; delay for modal animation */
+  setTimeout(() => document.getElementById('ns-0')?.focus(), 200);
 }
 
 /* ── reset ── */
@@ -54,9 +56,7 @@ export function resetGame(killValueEl) {
   state.parts.length       = 0;
   updateHpHud();
   if (killValueEl) killValueEl.textContent = '0';
-  nameSlots[0] = nameSlots[1] = nameSlots[2] = 'A';
-  activeSlot = 0;
-  updateNameUI();
+  [0, 1, 2].forEach(i => { document.getElementById(`ns-${i}`).value = 'A'; });
   document.getElementById('go-submit').style.display = '';
   document.getElementById('go-submit').disabled = false;
   document.getElementById('go-submit').textContent = 'REGISTER SCORE';
@@ -113,18 +113,7 @@ export function tickDamageVignette(dt) {
   }
 }
 
-/* ── arcade name input + leaderboard UI ── */
-const nameSlots = ['A', 'A', 'A'];
-let activeSlot  = 0;
-
-function updateNameUI() {
-  for (let i = 0; i < 3; i++) {
-    const el = document.getElementById(`ns-${i}`);
-    el.textContent = nameSlots[i];
-    el.className   = 'name-slot' + (i === activeSlot ? ' ns-active' : '');
-  }
-}
-
+/* ── Supabase API ── */
 async function insertScore(name, score) {
   try {
     await fetch(`${SB_URL}/rest/v1/leaderboard`, {
@@ -148,42 +137,98 @@ async function fetchLeaderboard() {
   } catch (e) { return []; }
 }
 
+/* ── arcade name input (OTP style) + leaderboard UI ──────────────────────
+ *
+ *  Desktop : arrow keys ↑↓ cycle letter, ←→ move slot, Enter submit
+ *            typing a letter auto-advances to next slot
+ *  Mobile  : tap slot → virtual keyboard opens → type letter → auto-advance
+ *            ▲/▼ buttons cycle letter without keyboard
+ * ────────────────────────────────────────────────────────────────────── */
 export function setupGameOverUI(killValueEl) {
-  /* slot click to select */
-  for (let i = 0; i < 3; i++) {
-    document.getElementById(`ns-${i}`).addEventListener('click', () => {
-      activeSlot = i; updateNameUI();
-    });
+  const slots = [0, 1, 2].map(i => document.getElementById(`ns-${i}`));
+
+  /* read validated A-Z char from slot i */
+  function charAt(i) {
+    const v = (slots[i].value || '').toUpperCase().replace(/[^A-Z]/g, '');
+    return v ? v[0] : 'A';
   }
 
-  /* keyboard navigation */
-  document.addEventListener('keydown', e => {
-    if (!state.gameOver) return;
-    if (!document.getElementById('gameover-modal').classList.contains('active')) return;
-    const charCode = nameSlots[activeSlot].charCodeAt(0);
-    if (e.key === 'ArrowUp') {
-      nameSlots[activeSlot] = String.fromCharCode(charCode === 65 ? 90 : charCode - 1);
-      updateNameUI(); e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      nameSlots[activeSlot] = String.fromCharCode(charCode === 90 ? 65 : charCode + 1);
-      updateNameUI(); e.preventDefault();
-    } else if (e.key === 'ArrowLeft') {
-      activeSlot = Math.max(0, activeSlot - 1); updateNameUI(); e.preventDefault();
-    } else if (e.key === 'ArrowRight') {
-      activeSlot = Math.min(2, activeSlot + 1); updateNameUI(); e.preventDefault();
-    } else if (e.key === 'Enter') {
-      document.getElementById('go-submit').click(); e.preventDefault();
-    }
+  /* cycle slot i by dir (+1 next letter, -1 prev letter) */
+  function cycleLetter(i, dir) {
+    const code = charAt(i).charCodeAt(0);
+    slots[i].value = String.fromCharCode(
+      dir > 0 ? (code >= 90 ? 65 : code + 1)
+              : (code <= 65 ? 90 : code - 1)
+    );
+  }
+
+  /* focus + select-all on slot i (clamps to 0–2) */
+  function focusSlot(i) {
+    const el = slots[Math.max(0, Math.min(2, i))];
+    el.focus();
+    el.select();
+  }
+
+  /* ── ▲ / ▼ arrow buttons ── */
+  document.querySelectorAll('.ns-arrow').forEach(btn => {
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault(); /* keep focus on input */
+      const i   = parseInt(btn.dataset.slot, 10);
+      const dir = parseInt(btn.dataset.dir,  10);
+      cycleLetter(i, dir);
+      focusSlot(i);
+    });
   });
 
-  /* submit score */
+  /* ── OTP input handling (per slot) ── */
+  slots.forEach((inp, i) => {
+    /* select all on focus so next keystroke replaces */
+    inp.addEventListener('focus', () => inp.select());
+
+    /* input event: fired by both physical keyboard and virtual keyboard */
+    inp.addEventListener('input', () => {
+      const raw     = (inp.value || '').toUpperCase();
+      const letters = raw.replace(/[^A-Z]/g, '');
+      if (letters) {
+        /* take last letter typed (handles composition / paste) */
+        inp.value = letters[letters.length - 1];
+        /* auto-advance to next slot */
+        if (i < 2) setTimeout(() => focusSlot(i + 1), 16);
+        else        inp.select(); /* last slot — stay and select */
+      } else {
+        inp.value = charAt(i); /* revert if nothing valid typed */
+      }
+    });
+
+    /* keyboard shortcuts: arrow keys + Backspace + Enter */
+    inp.addEventListener('keydown', e => {
+      if (!state.gameOver) return;
+      switch (e.key) {
+        case 'ArrowUp':    cycleLetter(i,  1); e.preventDefault(); break;
+        case 'ArrowDown':  cycleLetter(i, -1); e.preventDefault(); break;
+        case 'ArrowLeft':  focusSlot(i - 1);   e.preventDefault(); break;
+        case 'ArrowRight': focusSlot(i + 1);   e.preventDefault(); break;
+        case 'Backspace':
+          inp.value = 'A';
+          if (i > 0) focusSlot(i - 1);
+          e.preventDefault();
+          break;
+        case 'Enter':
+          document.getElementById('go-submit').click();
+          e.preventDefault();
+          break;
+      }
+    });
+  });
+
+  /* ── submit score ── */
   document.getElementById('go-submit').addEventListener('click', async () => {
-    const name  = nameSlots.join('');
+    const name  = [0, 1, 2].map(charAt).join('');
     const score = state.kills;
     const btn   = document.getElementById('go-submit');
     btn.textContent = '...'; btn.disabled = true;
     await insertScore(name, score);
-    const rows = await fetchLeaderboard();
+    const rows   = await fetchLeaderboard();
     const lbBody = document.getElementById('lb-body');
     lbBody.innerHTML = '';
     let meFound = false;
@@ -200,7 +245,7 @@ export function setupGameOverUI(killValueEl) {
     btn.style.display = 'none';
   });
 
-  /* play again */
+  /* ── play again ── */
   document.getElementById('go-restart').addEventListener('click', () => {
     resetGame(killValueEl);
   });

@@ -459,11 +459,29 @@ description: >-
   <div class="go-title">GAME OVER</div>
   <div class="go-score">KILLS <span id="go-score-val">0</span></div>
   <div class="name-row">
-    <div class="name-slot ns-active" id="ns-0">A</div>
-    <div class="name-slot" id="ns-1">A</div>
-    <div class="name-slot" id="ns-2">A</div>
+    <div class="name-slot-group">
+      <button class="ns-arrow" data-slot="0" data-dir="1"  tabindex="-1" aria-label="Previous letter">▲</button>
+      <input  class="name-slot" id="ns-0" type="text" value="A"
+              inputmode="text" autocomplete="off" autocorrect="off"
+              autocapitalize="characters" spellcheck="false" aria-label="Name character 1">
+      <button class="ns-arrow" data-slot="0" data-dir="-1" tabindex="-1" aria-label="Next letter">▼</button>
+    </div>
+    <div class="name-slot-group">
+      <button class="ns-arrow" data-slot="1" data-dir="1"  tabindex="-1" aria-label="Previous letter">▲</button>
+      <input  class="name-slot" id="ns-1" type="text" value="A"
+              inputmode="text" autocomplete="off" autocorrect="off"
+              autocapitalize="characters" spellcheck="false" aria-label="Name character 2">
+      <button class="ns-arrow" data-slot="1" data-dir="-1" tabindex="-1" aria-label="Next letter">▼</button>
+    </div>
+    <div class="name-slot-group">
+      <button class="ns-arrow" data-slot="2" data-dir="1"  tabindex="-1" aria-label="Previous letter">▲</button>
+      <input  class="name-slot" id="ns-2" type="text" value="A"
+              inputmode="text" autocomplete="off" autocorrect="off"
+              autocapitalize="characters" spellcheck="false" aria-label="Name character 3">
+      <button class="ns-arrow" data-slot="2" data-dir="-1" tabindex="-1" aria-label="Next letter">▼</button>
+    </div>
   </div>
-  <div class="go-hint">↑↓ CHANGE LETTER · ←→ MOVE · ENTER CONFIRM</div>
+  <div class="go-hint">TAP TO TYPE · ▲▼ CYCLE · ←→ MOVE · ENTER SUBMIT</div>
   <div>
     <button class="go-btn" id="go-submit">REGISTER SCORE</button>
     <button class="go-btn secondary" id="go-restart">▶ PLAY AGAIN</button>
