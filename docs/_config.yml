@@ -2,8 +2,11 @@ title: Bloodshed Mod Toolkit
 description: >-
   BepInEx mod for Bloodshed (Unity IL2CPP) — God Mode, 4-player Steam P2P co-op,
   difficulty tweaks, AI bots. Windows x64. Press F5 in-game.
-url: "https://bloodshed.playpilot.io"
-baseurl: ""
+# url/baseurl은 빌드 시 CNAME 유무에 따라 자동 결정됩니다.
+# CNAME 있음 → https://<domain>, baseurl: ""
+# CNAME 없음 → 아래 폴백값 사용 (.github/workflows/pages.yml 참고)
+url: "https://myso-kr.github.io"
+baseurl: "/bloodshed-mod-toolkit"
 lang: en
 
 permalink: pretty

@@ -1,0 +1,68 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Auto-configure url/baseurl from CNAME
+        run: |
+          # 루트 CNAME 우선, 없으면 docs/CNAME 확인
+          CNAME_FILE=""
+          [ -f CNAME ]      && CNAME_FILE="CNAME"
+          [ -f docs/CNAME ] && CNAME_FILE="docs/CNAME"
+
+          if [ -n "$CNAME_FILE" ]; then
+            DOMAIN=$(cat "$CNAME_FILE" | tr -d '[:space:]')
+            echo "url: \"https://$DOMAIN\""  > docs/_config_auto.yml
+            echo 'baseurl: ""'              >> docs/_config_auto.yml
+          else
+            echo "url: \"https://myso-kr.github.io\""       > docs/_config_auto.yml
+            echo 'baseurl: "/bloodshed-mod-toolkit"'        >> docs/_config_auto.yml
+          fi
+          echo "=== docs/_config_auto.yml ==="
+          cat docs/_config_auto.yml
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: docs
+
+      - name: Build Jekyll
+        run: |
+          bundle exec jekyll build \
+            --config _config.yml,_config_auto.yml \
+            --destination ../_site
+        working-directory: docs
+        env:
+          JEKYLL_ENV: production
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

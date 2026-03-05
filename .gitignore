@@ -24,3 +24,6 @@ release-staging/
 
 # Installer publish output
 Installer/publish/
+
+# Jekyll auto-generated config (created by CI from CNAME)
+docs/_config_auto.yml
