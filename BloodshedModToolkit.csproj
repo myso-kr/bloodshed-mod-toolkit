@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- 단일 버전 진실 원천 — Bump-Version.ps1 로만 수정할 것 -->
-    <Version>1.0.166</Version>
+    <Version>1.0.167</Version>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -108,22 +108,6 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>$(BepInExPath)\interop\UnityEngine.UI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.Entities">
-      <HintPath>$(BepInExPath)\interop\Unity.Entities.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.Transforms">
-      <HintPath>$(BepInExPath)\interop\Unity.Transforms.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.Collections">
-      <HintPath>$(BepInExPath)\interop\Unity.Collections.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.Mathematics">
-      <HintPath>$(BepInExPath)\interop\Unity.Mathematics.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
